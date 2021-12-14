@@ -101,9 +101,8 @@ public class KubernetesTaskManagerParameters extends AbstractKubernetesParameter
 
     @Override
     public Map<String, String> getAnnotations() {
-        return flinkConfig
-                .getOptional(KubernetesConfigOptions.TASK_MANAGER_ANNOTATIONS)
-                .orElse(Collections.emptyMap());
+        return KubernetesUtils.getAnnotations(
+                flinkConfig, KubernetesConfigOptions.TASK_MANAGER_ANNOTATIONS);
     }
 
     @Override

@@ -22,6 +22,7 @@ import org.apache.flink.api.common.resources.ExternalResource;
 import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.highavailability.KubernetesCheckpointStoreUtil;
@@ -674,6 +675,22 @@ public class KubernetesUtils {
     /** Generate namespaced name of the service. */
     public static String getNamespacedServiceName(Service service) {
         return service.getMetadata().getName() + "." + service.getMetadata().getNamespace();
+    }
+
+    /**
+     * Get Annotations with ConfigOption. First get all annotations by option key directly, Then get
+     * all annotations with optionKey as prefix.
+     *
+     * @return annotations.
+     */
+    public static Map<String, String> getAnnotations(
+            Configuration configuration, ConfigOption<Map<String, String>> option) {
+        Map<String, String> annotations =
+                new HashMap<>(configuration.getOptional(option).orElse(Collections.emptyMap()));
+        String annotationPrefix = option.key() + ".";
+        annotations.putAll(
+                ConfigurationUtils.getPrefixedKeyValuePairs(annotationPrefix, configuration));
+        return annotations;
     }
 
     private KubernetesUtils() {}

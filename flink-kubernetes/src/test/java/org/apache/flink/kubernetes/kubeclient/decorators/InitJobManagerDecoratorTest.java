@@ -35,6 +35,7 @@ import io.fabric8.kubernetes.api.model.Toleration;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,6 +53,13 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
                 {
                     put("a1", "v1");
                     put("a2", "v2");
+                }
+            };
+    private static final Map<String, String> ADDITIONAL_ANNOTATIONS =
+            new HashMap<String, String>() {
+                {
+                    put("a3", "v3");
+                    put("a2", "v2_new");
                 }
             };
     private static final String TOLERATION_STRING =
@@ -77,12 +85,19 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
                 KubernetesConfigOptions.KUBERNETES_SERVICE_ACCOUNT, SERVICE_ACCOUNT_NAME);
         this.flinkConfig.set(
                 KubernetesConfigOptions.CONTAINER_IMAGE_PULL_SECRETS, IMAGE_PULL_SECRETS);
-        this.flinkConfig.set(KubernetesConfigOptions.JOB_MANAGER_ANNOTATIONS, ANNOTATIONS);
+        this.flinkConfig.set(
+                KubernetesConfigOptions.JOB_MANAGER_ANNOTATIONS,
+                Collections.unmodifiableMap(ANNOTATIONS));
         this.flinkConfig.setString(
                 KubernetesConfigOptions.JOB_MANAGER_TOLERATIONS.key(), TOLERATION_STRING);
         this.flinkConfig.set(KubernetesConfigOptions.FLINK_LOG_DIR, USER_DEFINED_FLINK_LOG_DIR);
         this.flinkConfig.setString(
                 KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS.key(), FLINK_USER_PORTS);
+        ADDITIONAL_ANNOTATIONS.forEach(
+                (k, v) ->
+                        this.flinkConfig.setString(
+                                KubernetesConfigOptions.JOB_MANAGER_ANNOTATIONS.key() + "." + k,
+                                v));
     }
 
     @Override
@@ -190,7 +205,9 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
     void testPodAnnotations() {
         final Map<String, String> resultAnnotations =
                 kubernetesJobManagerParameters.getAnnotations();
-        assertThat(resultAnnotations).isEqualTo(ANNOTATIONS);
+        final Map<String, String> wantedAnnotations = new HashMap<>(ANNOTATIONS);
+        wantedAnnotations.putAll(ADDITIONAL_ANNOTATIONS);
+        assertThat(resultAnnotations).isEqualTo(wantedAnnotations);
     }
 
     @Test

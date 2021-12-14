@@ -87,9 +87,8 @@ public class KubernetesJobManagerParameters extends AbstractKubernetesParameters
 
     @Override
     public Map<String, String> getAnnotations() {
-        return flinkConfig
-                .getOptional(KubernetesConfigOptions.JOB_MANAGER_ANNOTATIONS)
-                .orElse(Collections.emptyMap());
+        return KubernetesUtils.getAnnotations(
+                flinkConfig, KubernetesConfigOptions.JOB_MANAGER_ANNOTATIONS);
     }
 
     @Override
@@ -112,9 +111,8 @@ public class KubernetesJobManagerParameters extends AbstractKubernetesParameters
     }
 
     public Map<String, String> getRestServiceAnnotations() {
-        return flinkConfig
-                .getOptional(KubernetesConfigOptions.REST_SERVICE_ANNOTATIONS)
-                .orElse(Collections.emptyMap());
+        return KubernetesUtils.getAnnotations(
+                flinkConfig, KubernetesConfigOptions.REST_SERVICE_ANNOTATIONS);
     }
 
     public int getJobManagerMemoryMB() {
