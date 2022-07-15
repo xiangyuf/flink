@@ -251,4 +251,24 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
     void testDNSPolicyDefaultValue() {
         assertThat(this.resultPod.getSpec().getDnsPolicy()).isEqualTo(Constants.DNS_POLICY_DEFAULT);
     }
+
+    @org.junit.Test
+    public void testDisableServiceLinks() {
+        flinkConfig.setBoolean(KubernetesConfigOptions.SERVICE_LINK_ENABLE, false);
+        final InitJobManagerDecorator initJobManagerDecorator =
+                new InitJobManagerDecorator(kubernetesJobManagerParameters);
+        final FlinkPod resultFlinkPod = initJobManagerDecorator.decorateFlinkPod(this.baseFlinkPod);
+        this.resultPod = resultFlinkPod.getPodWithoutMainContainer();
+        assertThat(resultPod.getSpec().getEnableServiceLinks()).isFalse();
+    }
+
+    @org.junit.Test
+    public void testEnableServiceLinks() {
+        flinkConfig.setBoolean(KubernetesConfigOptions.SERVICE_LINK_ENABLE, true);
+        final InitJobManagerDecorator initJobManagerDecorator =
+                new InitJobManagerDecorator(kubernetesJobManagerParameters);
+        final FlinkPod resultFlinkPod = initJobManagerDecorator.decorateFlinkPod(this.baseFlinkPod);
+        this.resultPod = resultFlinkPod.getPodWithoutMainContainer();
+        assertThat(resultPod.getSpec().getEnableServiceLinks()).isTrue();
+    }
 }

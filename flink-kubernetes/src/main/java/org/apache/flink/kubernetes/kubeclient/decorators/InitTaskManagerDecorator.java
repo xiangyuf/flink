@@ -95,6 +95,7 @@ public class InitTaskManagerDecorator extends AbstractKubernetesStepDecorator {
                 .withServiceAccount(serviceAccountName)
                 .withServiceAccountName(serviceAccountName)
                 .withRestartPolicy(Constants.RESTART_POLICY_OF_NEVER)
+                .withEnableServiceLinks(kubernetesTaskManagerParameters.isServiceLinkEnable())
                 .withHostNetwork(kubernetesTaskManagerParameters.isHostNetworkEnabled())
                 .withDnsPolicy(dnsPolicy)
                 .endSpec();

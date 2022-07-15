@@ -87,6 +87,7 @@ public class InitJobManagerDecorator extends AbstractKubernetesStepDecorator {
                 .editOrNewSpec()
                 .withServiceAccount(serviceAccountName)
                 .withServiceAccountName(serviceAccountName)
+                .withEnableServiceLinks(kubernetesJobManagerParameters.isServiceLinkEnable())
                 .withHostNetwork(kubernetesJobManagerParameters.isHostNetworkEnabled())
                 .withDnsPolicy(dnsPolicy)
                 .endSpec();

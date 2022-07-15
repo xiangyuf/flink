@@ -287,6 +287,14 @@ public class KubernetesConfigOptions {
                                                     "apache/flink DockerHub repository"))
                                     .build());
 
+    public static final ConfigOption<Boolean> SERVICE_LINK_ENABLE =
+            key("kubernetes.service_link.enable")
+                    .booleanType()
+                    .defaultValue(Boolean.FALSE)
+                    .withDescription(
+                            "whether to enable service link. If it is true, then kubernetes will inject the "
+                                    + "service related environment variables for all the service.");
+
     public static final ConfigOption<Boolean> KUBERNETES_INGRESS_ENABLE =
             key("kubernetes.ingress.enable")
                     .booleanType()

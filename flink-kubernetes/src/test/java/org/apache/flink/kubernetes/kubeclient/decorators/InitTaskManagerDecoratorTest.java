@@ -296,4 +296,26 @@ class InitTaskManagerDecoratorTest extends KubernetesTaskManagerTestBase {
                                 "NotIn",
                                 new ArrayList<>(BLOCKED_NODES)));
     }
+
+    @org.junit.Test
+    public void testDisableServiceLinks() {
+        flinkConfig.setBoolean(KubernetesConfigOptions.SERVICE_LINK_ENABLE, false);
+        final InitTaskManagerDecorator initTaskManagerDecorator =
+                new InitTaskManagerDecorator(kubernetesTaskManagerParameters);
+        final FlinkPod resultFlinkPod =
+                initTaskManagerDecorator.decorateFlinkPod(this.baseFlinkPod);
+        this.resultPod = resultFlinkPod.getPodWithoutMainContainer();
+        assertThat(resultPod.getSpec().getEnableServiceLinks()).isFalse();
+    }
+
+    @org.junit.Test
+    public void testEnableServiceLinks() {
+        flinkConfig.setBoolean(KubernetesConfigOptions.SERVICE_LINK_ENABLE, true);
+        final InitTaskManagerDecorator initTaskManagerDecorator =
+                new InitTaskManagerDecorator(kubernetesTaskManagerParameters);
+        final FlinkPod resultFlinkPod =
+                initTaskManagerDecorator.decorateFlinkPod(this.baseFlinkPod);
+        this.resultPod = resultFlinkPod.getPodWithoutMainContainer();
+        assertThat(resultPod.getSpec().getEnableServiceLinks()).isTrue();
+    }
 }
