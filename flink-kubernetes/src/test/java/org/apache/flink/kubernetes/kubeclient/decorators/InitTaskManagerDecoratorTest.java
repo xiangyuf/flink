@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +66,8 @@ class InitTaskManagerDecoratorTest extends KubernetesTaskManagerTestBase {
                     new Toleration("NoSchedule", "key1", "Equal", null, "value1"),
                     new Toleration("NoExecute", "key2", "Exists", 6000L, null));
 
+    private static final String FLINK_USER_PORTS = "port1:1;port2:2;port3:3";
+
     private static final String RESOURCE_NAME = "test";
     private static final Long RESOURCE_AMOUNT = 2L;
     private static final String RESOURCE_CONFIG_KEY = "test.com/test";
@@ -87,6 +88,8 @@ class InitTaskManagerDecoratorTest extends KubernetesTaskManagerTestBase {
         this.flinkConfig.set(KubernetesConfigOptions.TASK_MANAGER_ANNOTATIONS, ANNOTATIONS);
         this.flinkConfig.setString(
                 KubernetesConfigOptions.TASK_MANAGER_TOLERATIONS.key(), TOLERATION_STRING);
+        this.flinkConfig.setString(
+                KubernetesConfigOptions.FLINK_TASKMANAGER_USER_PORTS.key(), FLINK_USER_PORTS);
 
         // Set up external resource configs
         flinkConfig.setString(ExternalResourceOptions.EXTERNAL_RESOURCE_LIST.key(), RESOURCE_NAME);
@@ -170,11 +173,14 @@ class InitTaskManagerDecoratorTest extends KubernetesTaskManagerTestBase {
     @Test
     void testMainContainerPorts() {
         final List<ContainerPort> expectedContainerPorts =
-                Collections.singletonList(
+                Arrays.asList(
                         new ContainerPortBuilder()
                                 .withName(Constants.TASK_MANAGER_RPC_PORT_NAME)
                                 .withContainerPort(RPC_PORT)
-                                .build());
+                                .build(),
+                        new ContainerPortBuilder().withName("port1").withContainerPort(1).build(),
+                        new ContainerPortBuilder().withName("port2").withContainerPort(2).build(),
+                        new ContainerPortBuilder().withName("port3").withContainerPort(3).build());
 
         assertThat(this.resultMainContainer.getPorts()).isEqualTo(expectedContainerPorts);
     }

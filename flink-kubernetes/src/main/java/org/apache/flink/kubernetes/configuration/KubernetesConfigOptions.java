@@ -304,6 +304,22 @@ public class KubernetesConfigOptions {
                             "The flink conf directory that will be mounted in pod. The flink-conf.yaml, log4j.properties, "
                                     + "logback.xml in this path will be overwritten from config map.");
 
+    public static final ConfigOption<List<String>> FLINK_JOBMANAGER_USER_PORTS =
+            key("kubernetes.flink.jobmanager-user-ports")
+                    .stringType()
+                    .asList()
+                    .noDefaultValue()
+                    .withDescription(
+                            "List of user defined ports, separated by semicolon, E.g. port0:8080;port1:8081.");
+
+    public static final ConfigOption<List<String>> FLINK_TASKMANAGER_USER_PORTS =
+            key("kubernetes.flink.taskmanager-user-ports")
+                    .stringType()
+                    .asList()
+                    .noDefaultValue()
+                    .withDescription(
+                            "List of user defined ports, separated by semicolon, E.g. port0:8080;port1:8081.");
+
     public static final ConfigOption<String> FLINK_LOG_DIR =
             key("kubernetes.flink.log.dir")
                     .stringType()

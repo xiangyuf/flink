@@ -29,16 +29,16 @@ import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.ContainerPort;
-import io.fabric8.kubernetes.api.model.ContainerPortBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.EnvVarSourceBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -169,19 +169,15 @@ public class InitJobManagerDecorator extends AbstractKubernetesStepDecorator {
         if (kubernetesJobManagerParameters.isHostNetworkEnabled()) {
             return Collections.emptyList();
         }
-        return Arrays.asList(
-                new ContainerPortBuilder()
-                        .withName(Constants.REST_PORT_NAME)
-                        .withContainerPort(kubernetesJobManagerParameters.getRestPort())
-                        .build(),
-                new ContainerPortBuilder()
-                        .withName(Constants.JOB_MANAGER_RPC_PORT_NAME)
-                        .withContainerPort(kubernetesJobManagerParameters.getRPCPort())
-                        .build(),
-                new ContainerPortBuilder()
-                        .withName(Constants.BLOB_SERVER_PORT_NAME)
-                        .withContainerPort(kubernetesJobManagerParameters.getBlobServerPort())
-                        .build());
+        Map<String, Integer> ports = new LinkedHashMap<>();
+        ports.put(Constants.REST_PORT_NAME, kubernetesJobManagerParameters.getRestPort());
+        ports.put(Constants.JOB_MANAGER_RPC_PORT_NAME, kubernetesJobManagerParameters.getRPCPort());
+        ports.put(
+                Constants.BLOB_SERVER_PORT_NAME,
+                kubernetesJobManagerParameters.getBlobServerPort());
+
+        return KubernetesUtils.getContainerPortsWithUserPorts(
+                ports, kubernetesJobManagerParameters.getJobManagerUserDefinedPorts());
     }
 
     private List<EnvVar> getCustomizedEnvs() {

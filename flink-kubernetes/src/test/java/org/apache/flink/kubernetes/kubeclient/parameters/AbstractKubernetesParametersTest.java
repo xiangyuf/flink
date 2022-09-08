@@ -42,6 +42,7 @@ import java.util.Random;
 import static org.apache.flink.core.testutils.FlinkAssertions.anyCauseMatches;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /** General tests for the {@link AbstractKubernetesParameters}. */
 public class AbstractKubernetesParametersTest {
@@ -77,6 +78,29 @@ public class AbstractKubernetesParametersTest {
         final String confDir = "/path/of/flink-conf";
         flinkConfig.set(DeploymentOptionsInternal.CONF_DIR, confDir);
         assertThat(testingKubernetesParameters.getConfigDirectory()).isEqualTo(confDir);
+    }
+
+    @Test
+    public void getIllegalUserPorts() {
+        flinkConfig.setString(
+                KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS.key(), "port1=1;port1:2");
+        assertThrows(
+                IllegalArgumentException.class,
+                testingKubernetesParameters::getJobManagerUserDefinedPorts,
+                "Config of port1=1 format error.");
+        flinkConfig.setString(
+                KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS.key(), "port1:1;port1:2");
+        assertThrows(
+                IllegalArgumentException.class,
+                testingKubernetesParameters::getJobManagerUserDefinedPorts,
+                "Duplicate port name of port1");
+
+        flinkConfig.setString(
+                KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS.key(), "port1:1;port2:1");
+        assertThrows(
+                IllegalArgumentException.class,
+                testingKubernetesParameters::getJobManagerUserDefinedPorts,
+                "Duplicate port of 1");
     }
 
     @Test

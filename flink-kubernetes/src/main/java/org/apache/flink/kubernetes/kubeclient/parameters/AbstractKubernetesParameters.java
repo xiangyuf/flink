@@ -18,6 +18,7 @@
 
 package org.apache.flink.kubernetes.kubeclient.parameters;
 
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.DeploymentOptionsInternal;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
@@ -29,6 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.File;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -118,6 +120,33 @@ public abstract class AbstractKubernetesParameters implements KubernetesParamete
                     .map(LocalObjectReference::new)
                     .toArray(LocalObjectReference[]::new);
         }
+    }
+
+    public Map<String, Integer> getJobManagerUserDefinedPorts() {
+        return getUserDefinedPorts(KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS);
+    }
+
+    public Map<String, Integer> getTaskManagerUserDefinedPorts() {
+        return getUserDefinedPorts(KubernetesConfigOptions.FLINK_TASKMANAGER_USER_PORTS);
+    }
+
+    public Map<String, Integer> getUserDefinedPorts(ConfigOption<List<String>> key) {
+        List<String> portList = flinkConfig.getOptional(key).orElse(Collections.emptyList());
+        Map<String, Integer> ports = new LinkedHashMap<>();
+        for (String portItem : portList) {
+            String[] nameAndPort = portItem.split(":");
+            checkArgument(nameAndPort.length == 2, "Config of " + portItem + " format error.");
+            String name = nameAndPort[0].trim();
+            int port = Integer.parseInt(nameAndPort[1]);
+            if (ports.containsKey(name)) {
+                throw new IllegalArgumentException("Duplicate port name of " + name);
+            }
+            if (ports.containsValue(port)) {
+                throw new IllegalArgumentException("Duplicate port of " + port);
+            }
+            ports.put(name, port);
+        }
+        return ports;
     }
 
     @Override

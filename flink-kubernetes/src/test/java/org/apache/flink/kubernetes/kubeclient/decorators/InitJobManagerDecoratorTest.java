@@ -62,6 +62,8 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
                     new Toleration("NoSchedule", "key1", "Equal", null, "value1"),
                     new Toleration("NoExecute", "key2", "Exists", 6000L, null));
 
+    private static final String FLINK_USER_PORTS = "port1:1;port2:2;port3:3";
+
     private static final String USER_DEFINED_FLINK_LOG_DIR = "/path/of/flink-log";
 
     private Pod resultPod;
@@ -79,6 +81,8 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
         this.flinkConfig.setString(
                 KubernetesConfigOptions.JOB_MANAGER_TOLERATIONS.key(), TOLERATION_STRING);
         this.flinkConfig.set(KubernetesConfigOptions.FLINK_LOG_DIR, USER_DEFINED_FLINK_LOG_DIR);
+        this.flinkConfig.setString(
+                KubernetesConfigOptions.FLINK_JOBMANAGER_USER_PORTS.key(), FLINK_USER_PORTS);
     }
 
     @Override
@@ -143,7 +147,10 @@ class InitJobManagerDecoratorTest extends KubernetesJobManagerTestBase {
                         new ContainerPortBuilder()
                                 .withName(Constants.BLOB_SERVER_PORT_NAME)
                                 .withContainerPort(BLOB_SERVER_PORT)
-                                .build());
+                                .build(),
+                        new ContainerPortBuilder().withName("port1").withContainerPort(1).build(),
+                        new ContainerPortBuilder().withName("port2").withContainerPort(2).build(),
+                        new ContainerPortBuilder().withName("port3").withContainerPort(3).build());
 
         assertThat(this.resultMainContainer.getPorts()).isEqualTo(expectedContainerPorts);
     }
