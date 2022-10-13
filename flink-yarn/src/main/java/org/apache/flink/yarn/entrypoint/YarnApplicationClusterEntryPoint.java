@@ -21,6 +21,7 @@ package org.apache.flink.yarn.entrypoint;
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.client.deployment.application.ApplicationClusterEntryPoint;
 import org.apache.flink.client.deployment.application.ApplicationConfiguration;
+import org.apache.flink.client.deployment.application.classpath.DefaultClasspathConstructor;
 import org.apache.flink.client.program.DefaultPackagedProgramRetriever;
 import org.apache.flink.client.program.PackagedProgram;
 import org.apache.flink.client.program.PackagedProgramRetriever;
@@ -139,11 +140,20 @@ public final class YarnApplicationClusterEntryPoint extends ApplicationClusterEn
                 || PackagedProgramUtils.isPython(programArguments))) {
             final File userApplicationJar = getUserApplicationJar(userLibDir, configuration);
             return DefaultPackagedProgramRetriever.create(
-                    userLibDir, userApplicationJar, jobClassName, programArguments, configuration);
+                    userLibDir,
+                    userApplicationJar,
+                    jobClassName,
+                    programArguments,
+                    configuration,
+                    DefaultClasspathConstructor.INSTANCE);
         }
 
         return DefaultPackagedProgramRetriever.create(
-                userLibDir, jobClassName, programArguments, configuration);
+                userLibDir,
+                jobClassName,
+                programArguments,
+                configuration,
+                DefaultClasspathConstructor.INSTANCE);
     }
 
     private static File getUserApplicationJar(

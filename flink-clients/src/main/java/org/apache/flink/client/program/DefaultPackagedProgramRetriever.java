@@ -22,6 +22,7 @@ import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.client.deployment.application.EntryClassInformationProvider;
 import org.apache.flink.client.deployment.application.FromClasspathEntryClassInformationProvider;
 import org.apache.flink.client.deployment.application.FromJarEntryClassInformationProvider;
+import org.apache.flink.client.deployment.application.classpath.UserClasspathConstructor;
 import org.apache.flink.configuration.ConfigUtils;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.PipelineOptions;
@@ -72,9 +73,11 @@ public class DefaultPackagedProgramRetriever implements PackagedProgramRetriever
             @Nullable File userLibDir,
             @Nullable String jobClassName,
             String[] programArgs,
-            Configuration configuration)
+            Configuration configuration,
+            @Nullable UserClasspathConstructor classpathConstructor)
             throws FlinkException {
-        return create(userLibDir, null, jobClassName, programArgs, configuration);
+        return create(
+                userLibDir, null, jobClassName, programArgs, configuration, classpathConstructor);
     }
 
     /**
@@ -97,19 +100,26 @@ public class DefaultPackagedProgramRetriever implements PackagedProgramRetriever
             @Nullable File jarFile,
             @Nullable String jobClassName,
             String[] programArgs,
-            Configuration configuration)
+            Configuration configuration,
+            @Nullable UserClasspathConstructor classpathConstructor)
             throws FlinkException {
         List<URL> userClasspaths;
         try {
-            final List<URL> classpathsFromUserLibDir = getClasspathsFromUserLibDir(userLibDir);
-            final List<URL> classpathsFromConfiguration =
-                    getClasspathsFromConfiguration(configuration);
+            if (classpathConstructor == null) {
+                final List<URL> classpathsFromUserLibDir = getClasspathsFromUserLibDir(userLibDir);
+                final List<URL> classpathsFromConfiguration =
+                        getClasspathsFromConfiguration(configuration);
 
-            final List<URL> classpaths = new ArrayList<>();
-            classpaths.addAll(classpathsFromUserLibDir);
-            classpaths.addAll(classpathsFromConfiguration);
+                final List<URL> classpaths = new ArrayList<>();
+                classpaths.addAll(classpathsFromUserLibDir);
+                classpaths.addAll(classpathsFromConfiguration);
 
-            userClasspaths = Collections.unmodifiableList(classpaths);
+                userClasspaths = Collections.unmodifiableList(classpaths);
+            } else {
+                userClasspaths =
+                        UserClasspathConstructor.getFlinkUserClasspath(
+                                classpathConstructor, configuration, userLibDir, null);
+            }
         } catch (IOException e) {
             throw new FlinkException("An error occurred while extracting the user classpath.", e);
         }

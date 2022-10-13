@@ -47,6 +47,7 @@ import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.core.execution.DefaultExecutorServiceLoader;
 import org.apache.flink.core.execution.SavepointFormatType;
 import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.core.plugin.PluginUtils;
 import org.apache.flink.runtime.client.JobStatusMessage;
 import org.apache.flink.runtime.messages.Acknowledge;
@@ -54,7 +55,9 @@ import org.apache.flink.runtime.security.SecurityConfiguration;
 import org.apache.flink.runtime.security.SecurityUtils;
 import org.apache.flink.runtime.util.EnvironmentInformation;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.FlinkException;
+import org.apache.flink.util.function.FunctionUtils;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Options;
@@ -102,6 +105,7 @@ public class CliFrontend {
     private static final String ACTION_CANCEL = "cancel";
     private static final String ACTION_STOP = "stop";
     private static final String ACTION_SAVEPOINT = "savepoint";
+    private static final String ACTION_DOWNLOAD = "download";
 
     // configuration dir parameters
     private static final String CONFIG_DIRECTORY_FALLBACK_1 = "../conf";
@@ -128,7 +132,9 @@ public class CliFrontend {
         this.configuration = checkNotNull(configuration);
         this.customCommandLines = checkNotNull(customCommandLines);
         this.clusterClientServiceLoader = checkNotNull(clusterClientServiceLoader);
-
+        // the file system initialization should be called after getting the final effective
+        // configuration, but to ensure
+        // no additional issue happened, we keep this initialization here.
         FileSystem.initialize(
                 configuration, PluginUtils.createPluginManagerFromRootFolder(configuration));
 
@@ -285,7 +291,10 @@ public class CliFrontend {
                 checkNotNull(activeCustomCommandLine).toConfiguration(commandLine);
 
         effectiveConfiguration.addAll(commandLineConfiguration);
-
+        LOG.info("reinitialize file system with effective configuration");
+        FileSystem.initialize(
+                effectiveConfiguration,
+                PluginUtils.createPluginManagerFromRootFolder(effectiveConfiguration));
         return effectiveConfiguration;
     }
 
@@ -308,6 +317,10 @@ public class CliFrontend {
         LOG.debug(
                 "Effective configuration after Flink conf, custom commandline, and program options: {}",
                 effectiveConfiguration);
+        LOG.info("reinitialize file system with effective configuration");
+        FileSystem.initialize(
+                effectiveConfiguration,
+                PluginUtils.createPluginManagerFromRootFolder(effectiveConfiguration));
         return effectiveConfiguration;
     }
 
@@ -789,6 +802,44 @@ public class CliFrontend {
         }
     }
 
+    /**
+     * command: `bin/flink download -src "file1;file2" -dest /opt/tiger/workdir`.
+     *
+     * @param args
+     * @throws Exception
+     */
+    public void download(String[] args) throws Exception {
+        LOG.info("Running 'download' command with args: {}", String.join(" ", args));
+        final Options commandOptions = CliFrontendParser.getDownloadCommandOptions();
+        final CommandLine commandLine = getCommandLine(commandOptions, args, true);
+        if (commandLine.hasOption(HELP_OPTION.getOpt())) {
+            CliFrontendParser.printHelpForDownload(customCommandLines);
+            return;
+        }
+        final DownloadOptions downloadOptions = new DownloadOptions(commandLine);
+        downloadOptions.validate();
+        String targetDir = downloadOptions.getSavePath();
+        List<URI> remoteFiles =
+                downloadOptions.getRemoteFiles().stream()
+                        .map(FunctionUtils.uncheckedFunction(PackagedProgramUtils::resolveURI))
+                        .collect(Collectors.toList());
+        for (URI uri : remoteFiles) {
+            Path path = new Path(uri);
+            Path targetPath = new Path(targetDir, getSavedFileName(uri));
+            LOG.info("download remote file {} into local dir {}", uri.toString(), targetPath);
+            FileUtils.copy(path, targetPath, false);
+        }
+    }
+
+    private String getSavedFileName(URI uri) {
+        Map<String, String> pathToFileName =
+                configuration.get(ApplicationConfiguration.EXTERNAL_RESOURCES_NAME_MAPPING);
+        if (pathToFileName != null && pathToFileName.containsKey(uri.toString())) {
+            return pathToFileName.get(uri.toString());
+        }
+        return new File(uri.getPath()).getName();
+    }
+
     /** Sends a SavepointTriggerMessage to the job manager. */
     private void triggerSavepoint(
             ClusterClient<?> clusterClient,
@@ -1111,6 +1162,9 @@ public class CliFrontend {
                     return 0;
                 case ACTION_SAVEPOINT:
                     savepoint(params);
+                    return 0;
+                case ACTION_DOWNLOAD:
+                    download(params);
                     return 0;
                 case "-h":
                 case "--help":

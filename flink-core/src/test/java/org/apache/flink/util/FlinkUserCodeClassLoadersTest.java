@@ -18,6 +18,8 @@
 
 package org.apache.flink.util;
 
+import org.apache.flink.configuration.Configuration;
+
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -26,6 +28,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
@@ -33,6 +37,7 @@ import static org.apache.flink.util.FlinkUserCodeClassLoader.NOOP_EXCEPTION_HAND
 import static org.assertj.core.api.Assertions.fail;
 import static org.hamcrest.CoreMatchers.isA;
 import static org.hamcrest.Matchers.startsWith;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotSame;
@@ -325,6 +330,38 @@ public class FlinkUserCodeClassLoadersTest extends TestLogger {
         parentClassLoader.close();
         childClassLoader1.close();
         childClassLoader2.close();
+    }
+
+    @Test
+    public void testClasspathWithEnvironmentVar() throws MalformedURLException {
+        final URL[] urls =
+                new URL[] {
+                    new URL("file:file1.jar"),
+                    new URL("file:%JAVA_HOME%/file2.jar"),
+                    new URL("file:%JAVA_HOME%/%HOME%/file2.jar"),
+                    new URL("file:%JAVA_HOME%/%HOME2%/file2.jar"),
+                };
+        String javaHome = System.getenv("JAVA_HOME");
+        String home = System.getenv("HOME");
+        final URL[] expectedUrls =
+                new URL[] {
+                    new URL("file:file1.jar"),
+                    new URL("file:%JAVA_HOME%/file2.jar".replaceAll("%JAVA_HOME%", javaHome)),
+                    new URL(
+                            "file:%JAVA_HOME%/%HOME%/file2.jar"
+                                    .replaceAll("%JAVA_HOME%", javaHome)
+                                    .replaceAll("%HOME%", home)),
+                    new URL(
+                            "file:%JAVA_HOME%/%HOME2%/file2.jar"
+                                    .replaceAll("%JAVA_HOME%", javaHome)),
+                };
+        try (URLClassLoader urlClassLoader =
+                FlinkUserCodeClassLoaders.create(
+                        urls, getClass().getClassLoader(), new Configuration())) {
+            assertArrayEquals(expectedUrls, urlClassLoader.getURLs());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void assertClassNotFoundException(

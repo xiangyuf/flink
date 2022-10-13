@@ -26,6 +26,7 @@ import org.apache.flink.client.program.PackagedProgram;
 import org.apache.flink.client.program.PackagedProgramRetriever;
 import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.kubernetes.kubeclient.classpath.KubernetesUserClasspathConstructor;
 import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import org.apache.flink.runtime.entrypoint.ClusterEntrypoint;
 import org.apache.flink.runtime.entrypoint.ClusterEntrypointUtils;
@@ -115,10 +116,19 @@ public final class KubernetesApplicationClusterEntrypoint extends ApplicationClu
                     KubernetesUtils.checkJarFileForApplicationMode(configuration);
             Preconditions.checkArgument(pipelineJars.size() == 1, "Should only have one jar");
             return DefaultPackagedProgramRetriever.create(
-                    userLibDir, pipelineJars.get(0), jobClassName, programArguments, configuration);
+                    userLibDir,
+                    pipelineJars.get(0),
+                    jobClassName,
+                    programArguments,
+                    configuration,
+                    KubernetesUserClasspathConstructor.INSTANCE);
         }
 
         return DefaultPackagedProgramRetriever.create(
-                userLibDir, jobClassName, programArguments, configuration);
+                userLibDir,
+                jobClassName,
+                programArguments,
+                configuration,
+                KubernetesUserClasspathConstructor.INSTANCE);
     }
 }

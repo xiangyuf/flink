@@ -20,6 +20,7 @@ package org.apache.flink.kubernetes.kubeclient.factory;
 
 import org.apache.flink.configuration.DeploymentOptions;
 import org.apache.flink.configuration.HighAvailabilityOptions;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.SecurityOptions;
 import org.apache.flink.kubernetes.KubernetesTestUtils;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
@@ -52,6 +53,7 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentSpec;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -63,6 +65,8 @@ import static org.apache.flink.configuration.GlobalConfiguration.FLINK_CONF_FILE
 import static org.apache.flink.kubernetes.utils.Constants.CONFIG_FILE_LOG4J_NAME;
 import static org.apache.flink.kubernetes.utils.Constants.CONFIG_FILE_LOGBACK_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /** General tests for the {@link KubernetesJobManagerFactory}. */
 class KubernetesJobManagerFactoryTest extends KubernetesJobManagerTestBase {
@@ -484,5 +488,55 @@ class KubernetesJobManagerFactoryTest extends KubernetesJobManagerTestBase {
                                 x instanceof ConfigMap
                                         && x.getMetadata().getName().equals(configMapName))
                 .collect(Collectors.toList());
+    }
+
+    @Test
+    public void testInitContainerWithRemoteJar() throws IOException {
+        flinkConfig.set(
+                PipelineOptions.JARS, Collections.singletonList("local:///path/of/user.jar"));
+        flinkConfig.set(
+                PipelineOptions.EXTERNAL_RESOURCES,
+                Arrays.asList(
+                        "hdfs:///path/of/file1.jar",
+                        "hdfs:///path/file2.jar",
+                        "hdfs:///path/file3.jar"));
+        flinkConfig.set(DeploymentOptions.TARGET, KubernetesDeploymentTarget.APPLICATION.getName());
+
+        KubernetesJobManagerSpecification kubernetesJobManagerSpecification =
+                KubernetesJobManagerFactory.buildKubernetesJobManagerSpecification(
+                        flinkPod, kubernetesJobManagerParameters);
+
+        final PodSpec podSpec =
+                kubernetesJobManagerSpecification.getDeployment().getSpec().getTemplate().getSpec();
+        assertFalse(
+                "should use init container to download hdfs file",
+                podSpec.getInitContainers().isEmpty());
+        assertTrue(
+                "should use init container to download hdfs file",
+                podSpec.getInitContainers().get(0).getArgs().stream()
+                        .anyMatch(arg -> arg.contains("hdfs:///path/of/file1.jar")));
+        assertTrue(
+                "hdfs file should be downloaded to emptyDir type volume",
+                podSpec.getVolumes().stream().anyMatch(volume -> volume.getEmptyDir() != null));
+    }
+
+    @Test
+    public void testInitContainerWithLocalJar() throws IOException {
+        flinkConfig.set(
+                PipelineOptions.JARS, Collections.singletonList("local:///path/of/user.jar"));
+        flinkConfig.set(DeploymentOptions.TARGET, KubernetesDeploymentTarget.APPLICATION.getName());
+
+        KubernetesJobManagerSpecification kubernetesJobManagerSpecification =
+                KubernetesJobManagerFactory.buildKubernetesJobManagerSpecification(
+                        flinkPod, kubernetesJobManagerParameters);
+
+        final PodSpec podSpec =
+                kubernetesJobManagerSpecification.getDeployment().getSpec().getTemplate().getSpec();
+        assertTrue(
+                "should not use init container for local file",
+                podSpec.getInitContainers().isEmpty());
+        assertTrue(
+                "should not create emptyDir volume",
+                podSpec.getVolumes().stream().allMatch(volume -> volume.getEmptyDir() == null));
     }
 }

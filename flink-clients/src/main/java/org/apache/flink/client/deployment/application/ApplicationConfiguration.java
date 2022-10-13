@@ -27,6 +27,7 @@ import org.apache.flink.configuration.Configuration;
 import javax.annotation.Nullable;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -43,6 +44,16 @@ public class ApplicationConfiguration {
 
     public static final ConfigOption<String> APPLICATION_MAIN_CLASS =
             ConfigOptions.key("$internal.application.main").stringType().noDefaultValue();
+
+    public static final ConfigOption<Map<String, String>> EXTERNAL_RESOURCES_NAME_MAPPING =
+            ConfigOptions.key("$internal.external-resources.download-name-mapping")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "A map to store the downloaded file name for each remote files. The key is the "
+                                    + "remote file uri and the value is the file name of saving path. The downloaded file name "
+                                    + "will be the same as original name by default. Flink will rename file if there are multiple"
+                                    + " files with same name. This parameter is for internal usage only.");
 
     private final String[] programArguments;
 

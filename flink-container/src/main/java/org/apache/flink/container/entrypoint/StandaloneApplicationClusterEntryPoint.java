@@ -22,6 +22,7 @@ import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.client.deployment.application.ApplicationClusterEntryPoint;
+import org.apache.flink.client.deployment.application.classpath.DefaultClasspathConstructor;
 import org.apache.flink.client.program.DefaultPackagedProgramRetriever;
 import org.apache.flink.client.program.PackagedProgram;
 import org.apache.flink.client.program.PackagedProgramRetriever;
@@ -107,7 +108,8 @@ public final class StandaloneApplicationClusterEntryPoint extends ApplicationClu
                         userLibDir,
                         clusterConfiguration.getJobClassName(),
                         clusterConfiguration.getArgs(),
-                        flinkConfiguration);
+                        flinkConfiguration,
+                        DefaultClasspathConstructor.INSTANCE);
         return programRetriever.getPackagedProgram();
     }
 

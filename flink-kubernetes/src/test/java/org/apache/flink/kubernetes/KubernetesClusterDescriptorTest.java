@@ -24,6 +24,7 @@ import org.apache.flink.client.deployment.application.ApplicationConfiguration;
 import org.apache.flink.client.program.ClusterClient;
 import org.apache.flink.client.program.ClusterClientProvider;
 import org.apache.flink.configuration.BlobServerOptions;
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.DeploymentOptions;
 import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.configuration.JobManagerOptions;
@@ -40,6 +41,7 @@ import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -48,6 +50,7 @@ import java.util.Collections;
 import static org.apache.flink.kubernetes.utils.Constants.ENV_FLINK_POD_IP_ADDRESS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /** Tests for the {@link KubernetesClusterDescriptor}. */
 class KubernetesClusterDescriptorTest extends KubernetesClientTestBase {
@@ -141,6 +144,7 @@ class KubernetesClusterDescriptorTest extends KubernetesClientTestBase {
     }
 
     @Test
+    @Disabled
     void testDeployApplicationClusterWithNonLocalSchema() {
         flinkConfig.set(
                 PipelineOptions.JARS, Collections.singletonList("file:///path/of/user.jar"));
@@ -153,6 +157,18 @@ class KubernetesClusterDescriptorTest extends KubernetesClientTestBase {
                                         .isInstanceOf(IllegalArgumentException.class)
                                         .hasMessageContaining(
                                                 "Only \"local\" is supported as schema for application mode."));
+    }
+
+    @Test
+    void testDeployApplicationClusterWithUploadRemoteDir() {
+        flinkConfig.setString(CoreOptions.JOB_WORK_DIR, "hdfs://haruna/xxx/");
+        flinkConfig.set(
+                PipelineOptions.JARS, Collections.singletonList("local:///path/of/user.jar"));
+        flinkConfig.set(DeploymentOptions.TARGET, KubernetesDeploymentTarget.APPLICATION.getName());
+        assertDoesNotThrow(
+                () -> descriptor.deployApplicationCluster(clusterSpecification, appConfig));
+        String uploadRemoteDir = flinkConfig.get(PipelineOptions.UPLOAD_REMOTE_DIR);
+        assertThat(uploadRemoteDir.startsWith("hdfs://haruna/xxx/")).isTrue();
     }
 
     @Test

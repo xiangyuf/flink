@@ -40,6 +40,7 @@ import org.apache.flink.util.concurrent.ScheduledExecutor;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -108,10 +109,16 @@ public class ApplicationClusterEntryPoint extends ClusterEntrypoint {
     private static List<URL> getClasspath(
             final Configuration configuration, final PackagedProgram program)
             throws MalformedURLException {
-        final List<URL> classpath =
+        final List<URL> programClassPaths = program.getClasspaths();
+        final List<URL> classpathInConfig =
                 ConfigUtils.decodeListFromConfig(
                         configuration, PipelineOptions.CLASSPATHS, URL::new);
-        classpath.addAll(program.getClasspaths());
+        final List<URL> classpath =
+                new ArrayList<>(programClassPaths.size() + classpathInConfig.size());
+        // We need to guarantee the order, the classpath of package program contains external files.
+        // And the external files should be in front of pipeline.classpath.
+        classpath.addAll(programClassPaths);
+        classpath.addAll(classpathInConfig);
         return Collections.unmodifiableList(
                 classpath.stream().distinct().collect(Collectors.toList()));
     }

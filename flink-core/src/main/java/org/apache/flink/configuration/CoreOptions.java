@@ -389,6 +389,13 @@ public class CoreOptions {
                     .defaultValue(1)
                     .withDescription("Default parallelism for jobs.");
 
+    public static final ConfigOption<String> JOB_WORK_DIR =
+            ConfigOptions.key("job.work.dir")
+                    .stringType()
+                    .defaultValue("hdfs://haruna/flink/")
+                    .withDescription(
+                            "The base folder used as job work dir. Flink application will create its own folder under this directory.");
+
     // ------------------------------------------------------------------------
     //  file systems
     // ------------------------------------------------------------------------

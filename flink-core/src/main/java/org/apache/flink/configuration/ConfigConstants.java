@@ -1756,6 +1756,9 @@ public final class ConfigConstants {
     /** The user lib directory name. */
     public static final String DEFAULT_FLINK_USR_LIB_DIR = "usrlib";
 
+    public static final String FILE_SCHEME = "file";
+    public static final String LOCAL_SCHEME = "local";
+
     // ---------------------------- Encoding ------------------------------
 
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;

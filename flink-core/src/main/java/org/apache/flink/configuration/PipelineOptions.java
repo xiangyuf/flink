@@ -67,6 +67,50 @@ public class PipelineOptions {
                             "A semicolon-separated list of the classpaths to package with the job jars to be sent to"
                                     + " the cluster. These have to be valid URLs.");
 
+    /**
+     * For k8s application mode, use this key to store list format from string format. For example,
+     * pipeline.external-resources -> hdfs:///path/of/file1;hdfs:///path/of/file2
+     */
+    public static final ConfigOption<List<String>> EXTERNAL_RESOURCES =
+            key("pipeline.external-resources")
+                    .stringType()
+                    .asList()
+                    .noDefaultValue()
+                    .withDescription(
+                            "A list of external files (hdfs, local disk, local container) separated by semicolon. "
+                                    + "In k8s application mode, these files will need to be downloaded to JM/TM container."
+                                    + "In session mode, files will be added into pipeline.jars and then be uploaded to JM blob server");
+
+    public static final ConfigOption<String> DOWNLOAD_TEMPLATE =
+            key("pipeline.download-template")
+                    .stringType()
+                    .defaultValue("flink download -src '%files%' -dest %target%")
+                    .withDescription(
+                            "For k8s application mode, use this template to download external files. "
+                                    + "The %files% will be replaced by the file list which is a string where each file is separated by semicolon."
+                                    + "The %target% will be replaced by the saved path in container.");
+
+    public static final ConfigOption<String> FILE_MOUNTED_PATH =
+            key("pipeline.file-mounted-path")
+                    .stringType()
+                    .defaultValue("/opt/tiger/workdir")
+                    .withDescription(
+                            "For k8s application mode, Flink will download remote files to this path in container");
+
+    /**
+     * For k8s application mode, use this key to indicate the upload path of disk files. This path
+     * should be accessible for every TM/JM pods, because they will download files from this path to
+     * their container.
+     */
+    public static final ConfigOption<String> UPLOAD_REMOTE_DIR =
+            key("pipeline.upload-remote-dir")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "For k8s application mode, for those files that stores in the disk, "
+                                    + "Flink need to upload them to this remote directory. After that, "
+                                    + "JM/TM pod init-container could download remote files from this directory.");
+
     public static final ConfigOption<Boolean> AUTO_GENERATE_UIDS =
             key("pipeline.auto-generate-uids")
                     .booleanType()

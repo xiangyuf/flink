@@ -24,7 +24,6 @@ mvn clean package -U -Dfast -DskipTests -Dflink.hadoop.version=3.2.1 -Psql-jars 
 
 # copy flink-1.17 to output
 mkdir -p output
-rm -rf flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/opt
 cp -r flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/* output/
 # common jar conflict
 bash tools/common-jar-check/common_jar_check.sh "output/"

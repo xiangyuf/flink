@@ -20,16 +20,21 @@ package org.apache.flink.kubernetes.utils;
 
 import org.apache.flink.api.common.resources.ExternalResource;
 import org.apache.flink.client.program.PackagedProgramUtils;
+import org.apache.flink.configuration.ConfigConstants;
 import org.apache.flink.configuration.ConfigOption;
+import org.apache.flink.configuration.ConfigUtils;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.PipelineOptions;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.highavailability.KubernetesCheckpointStoreUtil;
 import org.apache.flink.kubernetes.highavailability.KubernetesJobGraphStoreUtil;
 import org.apache.flink.kubernetes.highavailability.KubernetesStateHandleStore;
 import org.apache.flink.kubernetes.kubeclient.FlinkKubeClient;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
+import org.apache.flink.kubernetes.kubeclient.decorators.AbstractFileDownloadDecorator;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesConfigMap;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesPod;
 import org.apache.flink.runtime.checkpoint.CompletedCheckpoint;
@@ -47,6 +52,7 @@ import org.apache.flink.runtime.persistence.RetrievableStateStorageHelper;
 import org.apache.flink.runtime.persistence.filesystem.FileSystemStateStorageHelper;
 import org.apache.flink.runtime.state.SharedStateRegistryFactory;
 import org.apache.flink.util.ExceptionUtils;
+import org.apache.flink.util.FileUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
@@ -72,7 +78,11 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nullable;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -84,7 +94,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.apache.flink.kubernetes.utils.Constants.CHECKPOINT_ID_KEY_PREFIX;
 import static org.apache.flink.kubernetes.utils.Constants.COMPLETED_CHECKPOINT_FILE_SUFFIX;
@@ -410,13 +422,66 @@ public class KubernetesUtils {
                                     final URI jarURI = PackagedProgramUtils.resolveURI(uri);
                                     if (jarURI.getScheme().equals("local") && jarURI.isAbsolute()) {
                                         return new File(jarURI.getPath());
+                                    } else if (!jarURI.getScheme()
+                                            .equals(ConfigConstants.FILE_SCHEME)) {
+                                        // for remote file, return downloaded path
+                                        String jarFile =
+                                                AbstractFileDownloadDecorator.getDownloadedPath(
+                                                        jarURI, configuration);
+                                        return new File(jarFile);
                                     }
+                                    // local disk file (scheme: file) should be uploaded to external
+                                    // storage and save its remote URI in this key
                                     throw new IllegalArgumentException(
-                                            "Only \"local\" is supported as schema for application mode."
-                                                    + " This assumes that the jar is located in the image, not the Flink client."
-                                                    + " An example of such path is: local:///opt/flink/examples/streaming/WindowJoin.jar");
+                                            "Only \"local\" or remote storage (hdfs/s3 etc) is supported as schema for application mode."
+                                                    + " This assumes that the jar is located in the image, not the Flink client. Or the jar could be downloaded."
+                                                    + " If you provide a disk file, have you specified a correct upload path on external storage so Flink could upload your disk file to that place?"
+                                                    + " An example of such local path is: local:///opt/flink/examples/streaming/WindowJoin.jar"
+                                                    + " An example of remote path is: s3://test-client-log/WindowJoin.jar");
                                 }))
                 .collect(Collectors.toList());
+    }
+
+    public static List<URL> getExternalFiles(Configuration configuration) {
+        if (configuration.contains(PipelineOptions.EXTERNAL_RESOURCES)) {
+            // filter the files in pipeline.jars because user jar will be added to classpath
+            // separately.
+            List<String> userJars =
+                    ConfigUtils.decodeListFromConfig(
+                            configuration, PipelineOptions.JARS, jar -> jar);
+            return configuration.get(PipelineOptions.EXTERNAL_RESOURCES).stream()
+                    .filter(
+                            resource ->
+                                    !userJars.contains(resource)
+                                            && FileUtils.isJarFile(Paths.get(resource)))
+                    .map(
+                            FunctionUtils.uncheckedFunction(
+                                    uri -> {
+                                        final URI jarURI = PackagedProgramUtils.resolveURI(uri);
+                                        if (jarURI.getScheme().equals(ConfigConstants.LOCAL_SCHEME)
+                                                && jarURI.isAbsolute()) {
+                                            return new File(jarURI.getPath()).toURI().toURL();
+                                        } else if (!jarURI.getScheme()
+                                                .equals(ConfigConstants.FILE_SCHEME)) {
+                                            // for remote file, return downloaded path
+                                            String jarFile =
+                                                    AbstractFileDownloadDecorator.getDownloadedPath(
+                                                            jarURI, configuration);
+                                            return new File(jarFile).toURI().toURL();
+                                        }
+                                        // local disk file (scheme: file) should be uploaded to
+                                        // external storage and save its remote URI in this key
+                                        throw new IllegalArgumentException(
+                                                "Only \"local\" or remote storage (hdfs/s3 etc) is supported as schema for application mode."
+                                                        + " This assumes that the jar is located in the image, not the Flink client. Or the jar could be downloaded."
+                                                        + " If you provide a disk file, have you specified a correct upload path on external storage so Flink could upload your disk file to that place?"
+                                                        + " An example of such local path is: local:///opt/flink/examples/streaming/WindowJoin.jar"
+                                                        + " An example of remote path is: s3://test-client-log/WindowJoin.jar");
+                                    }))
+                    .collect(Collectors.toList());
+        } else {
+            return Collections.emptyList();
+        }
     }
 
     public static FlinkPod loadPodFromTemplateFile(
@@ -593,6 +658,159 @@ public class KubernetesUtils {
                     String.format("Could not create the config map %s.", configMapName),
                     lastException);
         }
+    }
+
+    /**
+     * Upload local disk files in JARS and RESOURCES to remote storage system. <\p> This method will
+     * rewrite the JARS and RESOURCES URIs into the configuration. For the files that need to upload
+     * ("file" scheme), it will save the remote URI. For the files that has been already in remote
+     * storage or in the image, it will save the original URI.
+     *
+     * @param flinkConfig
+     */
+    public static void uploadLocalDiskFilesToRemote(
+            Configuration flinkConfig, String targetDirPath) {
+        // we don't support uploading a folder because some downloader (e.g. CSI driver) don't
+        // support it.
+        removeFolderInExternalFiles(flinkConfig);
+        // count number of files that need to upload
+        long numOfDiskFiles =
+                Stream.concat(
+                                flinkConfig.getOptional(PipelineOptions.JARS)
+                                        .orElse(Collections.emptyList()).stream(),
+                                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
+                                        .orElse(Collections.emptyList()).stream())
+                        .filter(
+                                uri -> {
+                                    final URI jarURI;
+                                    try {
+                                        jarURI = PackagedProgramUtils.resolveURI(uri);
+                                        return jarURI.getScheme()
+                                                .equals(ConfigConstants.FILE_SCHEME);
+                                    } catch (URISyntaxException e) {
+                                        LOG.warn("Can not resolve URI for path: {}", uri, e);
+                                        return false;
+                                    }
+                                })
+                        .count();
+        AtomicReference<Path> targetDirOptional = new AtomicReference<>(null);
+        if (numOfDiskFiles > 0) {
+            // If there are any file to be uploaded, we should ensure the target dir is existing
+            targetDirOptional.set(new Path(targetDirPath));
+            Path targetDir = targetDirOptional.get();
+            try {
+                FileSystem fileSystem = targetDir.getFileSystem();
+                if (!fileSystem.exists(targetDir)) {
+                    fileSystem.mkdirs(targetDir);
+                }
+            } catch (IOException e) {
+                LOG.error("create target dir {} failed:", targetDir, e);
+                return;
+            }
+        }
+        // upload user jar
+        List<String> toBeDownloadedFiles = new ArrayList<>();
+        List<String> jars =
+                flinkConfig.get(PipelineOptions.JARS).stream()
+                        .map(
+                                FunctionUtils.uncheckedFunction(
+                                        uri -> {
+                                            final URI jarURI = PackagedProgramUtils.resolveURI(uri);
+                                            if (jarURI.getScheme()
+                                                    .equals(ConfigConstants.FILE_SCHEME)) {
+                                                // upload to target dir
+                                                String uploadedPath =
+                                                        copyFileToTargetRemoteDir(
+                                                                jarURI, targetDirOptional.get());
+                                                toBeDownloadedFiles.add(uploadedPath);
+                                                return uploadedPath;
+                                            } else if (jarURI.getScheme()
+                                                    .equals(ConfigConstants.LOCAL_SCHEME)) {
+                                                // return the path directly if it is a local file
+                                                // path (located inside the image)
+                                                return jarURI.toString();
+                                            } else {
+                                                // if it is a remote file path, add it into
+                                                // download-file list and return this path directly
+                                                toBeDownloadedFiles.add(jarURI.toString());
+                                                return jarURI.toString();
+                                            }
+                                        }))
+                        .collect(Collectors.toList());
+        // replace path of user jar by the uploaded path
+        flinkConfig.set(PipelineOptions.JARS, jars);
+        // upload resources
+        List<String> resources =
+                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
+                        .orElse(Collections.emptyList()).stream()
+                        .map(
+                                FunctionUtils.uncheckedFunction(
+                                        uri -> {
+                                            final URI jarURI = PackagedProgramUtils.resolveURI(uri);
+                                            if (jarURI.getScheme()
+                                                    .equals(ConfigConstants.FILE_SCHEME)) {
+                                                return copyFileToTargetRemoteDir(
+                                                        jarURI, targetDirOptional.get());
+                                            } else {
+                                                // return directly if it is a local (located inside
+                                                // the image) or remote file path
+                                                return jarURI.toString();
+                                            }
+                                        }))
+                        .collect(Collectors.toList());
+        // add remote files in "JARS" to "EXTERNAL_RESOURCES", FileDownloadDecorator will setup to
+        // download these files.
+        resources.addAll(toBeDownloadedFiles);
+        // replace path of resources by the uploaded path
+        flinkConfig.set(PipelineOptions.EXTERNAL_RESOURCES, resources);
+    }
+
+    private static void removeFolderInExternalFiles(Configuration flinkConfig) {
+        List<String> filesWithoutFolder =
+                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
+                        .orElse(Collections.emptyList()).stream()
+                        .filter(
+                                path -> {
+                                    try {
+                                        URI uri = PackagedProgramUtils.resolveURI(path);
+                                        if (uri.getScheme().equals(ConfigConstants.FILE_SCHEME)
+                                                && new File(uri.getPath()).isDirectory()) {
+                                            LOG.warn(
+                                                    "Remove folder in external resources: {}", uri);
+                                            return false;
+                                        }
+                                        return true;
+                                    } catch (URISyntaxException e) {
+                                        LOG.error(
+                                                "can not resolve uri from this path:{}, ignore it",
+                                                path,
+                                                e);
+                                        return false;
+                                    }
+                                })
+                        .collect(Collectors.toList());
+        flinkConfig.set(PipelineOptions.EXTERNAL_RESOURCES, filesWithoutFolder);
+    }
+
+    /**
+     * Copy one file to target directory.
+     *
+     * @param uri The uri of this file
+     * @param targetDir destination directory of this file
+     * @return The copied path of the file if copy succeed otherwise return the original path
+     */
+    private static String copyFileToTargetRemoteDir(URI uri, Path targetDir) {
+        Path path = new Path(uri);
+        try {
+            Path targetPath = new Path(targetDir, path.getName());
+            LOG.info("upload local file {} into remote dir {}", path, targetPath);
+            FileUtils.copy(path, targetPath, false);
+            return targetPath.toString();
+        } catch (IOException e) {
+            LOG.error("upload local file {} into remote dir {} failed:", path, targetDir, e);
+        }
+        // will return the original path if copy failed
+        return uri.toString();
     }
 
     /** Cluster components. */

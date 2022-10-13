@@ -556,6 +556,50 @@ public class KubernetesConfigOptions {
                             "The node label whose value is the same as the node name. "
                                     + "Currently, this will only be used to set the node affinity of TM pods to avoid being scheduled on blocked nodes.");
 
+    public static final ConfigOption<DownloadMode> FILE_DOWNLOAD_MODE =
+            key("kubernetes.file-download-mode")
+                    .enumType(DownloadMode.class)
+                    .defaultValue(DownloadMode.INIT_CONTAINER)
+                    .withDescription(
+                            "The way to download user external files to Job manager and task manager container.");
+
+    public static final ConfigOption<String> FILE_DOWNLOAD_VOLUME_SIZE =
+            key("kubernetes.file-download-volume.size")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The volume size for user downloaded resources.");
+
+    public static final ConfigOption<String> GDPR_SECRETE_NAME_TEMPLATE =
+            key("kubernetes.gdpr-secret.name-template")
+                    .stringType()
+                    .defaultValue("deployment-%cluster-id%")
+                    .withDescription(
+                            "The name template for GDPR secret. The secret should be created by Arcee or Kubernetes."
+                                    + "The name of the secret must follow this template.");
+
+    public static final ConfigOption<String> CSI_DRIVER =
+            key("kubernetes.csi-driver")
+                    .stringType()
+                    .defaultValue("localpath.csi.bytedance.com")
+                    .withDescription(
+                            "The driver name required by csi volume to download resources.");
+
+    public static final ConfigOption<String> CSI_DISK_RESOURCE_KEY =
+            key("kubernetes.csi-disk-resource-key")
+                    .stringType()
+                    .defaultValue("bytedance.com/local-disk")
+                    .withDescription(
+                            "The key to indicate the disk resource for container. CSI driver need to set this"
+                                    + " key to let device plugin allocate special disk for file downloading.");
+
+    public static final ConfigOption<String> CSI_DISK_RESOURCE_VALUE =
+            key("kubernetes.csi-disk-resource-value")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The value to indicate the disk resource for container. 1 means enable the "
+                                    + "disk resource guarantee and 0 means disable.");
+
     private static String getDefaultFlinkImage() {
         // The default container image that ties to the exact needed versions of both Flink and
         // Scala.
@@ -663,6 +707,17 @@ public class KubernetesConfigOptions {
                 .filter(FallbackKey::isDeprecated)
                 .map(FallbackKey::getKey)
                 .toArray(String[]::new);
+    }
+
+    /** File Download Mode for job external resources. */
+    public enum DownloadMode {
+        /** Download external files by csi driver to a csi type volume and mount it to container. */
+        CSI,
+        /**
+         * Download external files by flink use init container to a emptyDir type volume. And then
+         * this volume will be shared to main container.
+         */
+        INIT_CONTAINER
     }
 
     /** This class is not meant to be instantiated. */

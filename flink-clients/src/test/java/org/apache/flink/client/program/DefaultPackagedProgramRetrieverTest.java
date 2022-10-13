@@ -21,6 +21,7 @@ package org.apache.flink.client.program;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.api.dag.Pipeline;
 import org.apache.flink.client.deployment.application.EntryClassInformationProvider;
+import org.apache.flink.client.deployment.application.classpath.UserClasspathConstructor;
 import org.apache.flink.client.deployment.executors.PipelineExecutorUtils;
 import org.apache.flink.client.testjar.ClasspathProviderExtension;
 import org.apache.flink.configuration.ConfigUtils;
@@ -45,11 +46,15 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /** {@code PackagedProgramRetrieverImplTest} tests {@link DefaultPackagedProgramRetriever}. */
 class DefaultPackagedProgramRetrieverTest {
@@ -174,7 +179,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         singleEntryClassClasspathProvider.getJobClassName(),
                         new String[0],
-                        new Configuration());
+                        new Configuration(),
+                        null);
 
         // the right information is picked up without any error
         assertThat(retriever.getPackagedProgram().getMainClassName())
@@ -196,7 +202,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         testJobEntryClassClasspathProvider.getJobClassName(),
                         ClasspathProviderExtension.parametersForTestJob(expectedSuffix),
-                        new Configuration());
+                        new Configuration(),
+                        null);
 
         final JobGraph jobGraph = retrieveJobGraph(retriever, configuration);
 
@@ -221,7 +228,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         null,
                         ClasspathProviderExtension.parametersForTestJob(expectedSuffix),
-                        new Configuration());
+                        new Configuration(),
+                        null);
 
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
 
@@ -243,7 +251,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         testJobEntryClassClasspathProvider.getJobClassName(),
                         ClasspathProviderExtension.parametersForTestJob(expectedSuffix),
-                        new Configuration());
+                        new Configuration(),
+                        null);
 
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
 
@@ -268,7 +277,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         testJobEntryClassClasspathProvider.getJobClassName(),
                         ClasspathProviderExtension.parametersForTestJob(expectedSuffix),
-                        new Configuration());
+                        new Configuration(),
+                        null);
 
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, configuration);
 
@@ -285,7 +295,8 @@ class DefaultPackagedProgramRetrieverTest {
                                             null,
                                             "NotExistingClass",
                                             new String[0],
-                                            new Configuration());
+                                            new Configuration(),
+                                            null);
                             // the getPackagedProgram fails do to the missing class. We could make
                             // it fail earlier by
                             // validating the existence of the passed Java class on the system
@@ -307,7 +318,8 @@ class DefaultPackagedProgramRetrieverTest {
                                                 noEntryClassClasspathProvider.getDirectory(),
                                                 jobClassName,
                                                 new String[0],
-                                                new Configuration())
+                                                new Configuration(),
+                                                null)
                                         .getPackagedProgram())
                 .isInstanceOf(FlinkException.class)
                 .hasMessageContaining("Could not load the provided entrypoint class.")
@@ -328,7 +340,8 @@ class DefaultPackagedProgramRetrieverTest {
                                     multipleEntryClassesClasspathProvider.getDirectory(),
                                     null,
                                     new String[0],
-                                    new Configuration());
+                                    new Configuration(),
+                                    null);
                         })
                 .isInstanceOf(FlinkException.class);
     }
@@ -338,7 +351,7 @@ class DefaultPackagedProgramRetrieverTest {
         assertThatThrownBy(
                         () ->
                                 DefaultPackagedProgramRetriever.create(
-                                        null, null, new String[0], new Configuration()))
+                                        null, null, new String[0], new Configuration(), null))
                 .isInstanceOf(FlinkException.class);
     }
 
@@ -349,7 +362,8 @@ class DefaultPackagedProgramRetrieverTest {
                         multipleEntryClassesClasspathProvider.getDirectory(),
                         multipleEntryClassesClasspathProvider.getJobClassName(),
                         new String[0],
-                        new Configuration());
+                        new Configuration(),
+                        null);
         assertThat(retriever.getPackagedProgram().getMainClassName())
                 .isEqualTo(multipleEntryClassesClasspathProvider.getJobClassName());
     }
@@ -364,7 +378,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         multipleEntryClassesClasspathProvider.getJobClassName(),
                         new String[0],
-                        new Configuration());
+                        new Configuration(),
+                        null);
         assertThat(retriever.getPackagedProgram().getMainClassName())
                 .isEqualTo(multipleEntryClassesClasspathProvider.getJobClassName());
     }
@@ -377,7 +392,8 @@ class DefaultPackagedProgramRetrieverTest {
                         singleEntryClassClasspathProvider.getDirectory(),
                         null,
                         ClasspathProviderExtension.parametersForTestJob("suffix"),
-                        new Configuration());
+                        new Configuration(),
+                        null);
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
         final List<String> actualClasspath =
                 jobGraph.getClasspaths().stream().map(URL::toString).collect(Collectors.toList());
@@ -397,7 +413,8 @@ class DefaultPackagedProgramRetrieverTest {
                         singleEntryClassClasspathProvider.getDirectory(),
                         singleEntryClassClasspathProvider.getJobClassName(),
                         ClasspathProviderExtension.parametersForTestJob("suffix"),
-                        new Configuration());
+                        new Configuration(),
+                        null);
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
         final List<String> actualClasspath =
                 jobGraph.getClasspaths().stream().map(URL::toString).collect(Collectors.toList());
@@ -425,7 +442,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         singleEntryClassClasspathProvider.getJobClassName(),
                         ClasspathProviderExtension.parametersForTestJob("suffix"),
-                        configuration);
+                        configuration,
+                        null);
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
         assertThat(jobGraph.getClasspaths()).isEqualTo(expectedMergedURLs);
     }
@@ -439,7 +457,8 @@ class DefaultPackagedProgramRetrieverTest {
                         testJobEntryClassClasspathProvider.getJobJar(),
                         null,
                         ClasspathProviderExtension.parametersForTestJob("suffix"),
-                        new Configuration());
+                        new Configuration(),
+                        null);
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
 
         assertThat(jobGraph.getUserJars())
@@ -459,7 +478,8 @@ class DefaultPackagedProgramRetrieverTest {
                         testJobEntryClassClasspathProvider.getJobJar(),
                         null,
                         ClasspathProviderExtension.parametersForTestJob("suffix"),
-                        new Configuration());
+                        new Configuration(),
+                        null);
         final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
 
         assertThat(jobGraph.getUserJars())
@@ -489,7 +509,8 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         singleEntryClassClasspathProvider.getJobClassName(),
                         new String[0],
-                        configuration);
+                        configuration,
+                        null);
 
         assertThat(retriever.getPackagedProgram().getUserCodeClassLoader())
                 .isInstanceOf(ChildFirstClassLoader.class);
@@ -514,10 +535,106 @@ class DefaultPackagedProgramRetrieverTest {
                         null,
                         singleEntryClassClasspathProvider.getJobClassName(),
                         new String[0],
-                        configuration);
+                        configuration,
+                        null);
 
         assertThat(retriever.getPackagedProgram().getUserCodeClassLoader())
                 .isInstanceOf(FlinkUserCodeClassLoaders.ParentFirstClassLoader.class);
+    }
+
+    @Test
+    public void testGenerateProgramWithExternalFiles() throws FlinkException, IOException {
+        final Configuration configuration = new Configuration();
+        List<String> externalFiles =
+                Arrays.asList(
+                        "file:/opt/tiger/workdir/file1.jar", "file:/opt/tiger/workdir/file2.jar");
+        configuration.set(PipelineOptions.EXTERNAL_RESOURCES, externalFiles);
+        final PackagedProgramRetriever retrieverUnderTest =
+                DefaultPackagedProgramRetriever.create(
+                        null,
+                        // the testJob jar is not on the user classpath
+                        testJobEntryClassClasspathProvider.getJobJar(),
+                        null,
+                        ClasspathProviderExtension.parametersForTestJob("suffix"),
+                        configuration,
+                        ExternalResourceUserClasspathConstructor.INSTANCE);
+        final PackagedProgram program = retrieverUnderTest.getPackagedProgram();
+        assertArrayEquals(
+                externalFiles.toArray(),
+                program.getClasspaths().stream().map(URL::toString).toArray());
+    }
+
+    @Test
+    public void testGenerateProgramWithPipelineClasspath() throws FlinkException, IOException {
+        final Configuration configuration = new Configuration();
+        List<URL> expectedClasspath =
+                Arrays.asList(new URL("file:file1.jar"), new URL("file:file2.jar"));
+        configuration.set(
+                PipelineOptions.CLASSPATHS,
+                expectedClasspath.stream().map(URL::toString).collect(Collectors.toList()));
+        final PackagedProgramRetriever retrieverUnderTest =
+                DefaultPackagedProgramRetriever.create(
+                        null,
+                        // the testJob jar is not on the user classpath
+                        testJobEntryClassClasspathProvider.getJobJar(),
+                        null,
+                        ClasspathProviderExtension.parametersForTestJob("suffix"),
+                        configuration,
+                        ExternalResourceUserClasspathConstructor.INSTANCE);
+        final PackagedProgram program = retrieverUnderTest.getPackagedProgram();
+        // should have the expected files in classpath
+        assertThat(program.getClasspaths()).isEqualTo(expectedClasspath);
+    }
+
+    @Test
+    public void verifyExternalFilesAndClasspathInOrder() throws Exception {
+        // prepare parameters
+        final Configuration configuration = new Configuration();
+        final List<String> externalJars = Collections.singletonList("file:file1.jar");
+        final List<String> pipelineClassPaths = Collections.singletonList("file:file2.jar");
+        configuration.set(PipelineOptions.EXTERNAL_RESOURCES, externalJars);
+        configuration.set(PipelineOptions.CLASSPATHS, pipelineClassPaths);
+        final PackagedProgramRetriever retrieverUnderTest =
+                DefaultPackagedProgramRetriever.create(
+                        null,
+                        // the testJob jar is not on the user classpath
+                        testJobEntryClassClasspathProvider.getJobJar(),
+                        null,
+                        ClasspathProviderExtension.parametersForTestJob("suffix"),
+                        configuration,
+                        ExternalResourceUserClasspathConstructor.INSTANCE);
+        PackagedProgram program = retrieverUnderTest.getPackagedProgram();
+        // the external files should be in front of files in pipeline.classpath
+        assertThat(program.getClasspaths())
+                .isEqualTo(Arrays.asList(new URL("file:file1.jar"), new URL("file:file2.jar")));
+        final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, new Configuration());
+        // the external files should be in front of files in pipeline.classpath
+        assertThat(jobGraph.getClasspaths())
+                .isEqualTo(Arrays.asList(new URL("file:file1.jar"), new URL("file:file2.jar")));
+    }
+
+    @Test
+    public void testJobGraphClasspathWithExternalFiles() throws FlinkException, IOException {
+        final Configuration configuration = new Configuration();
+        final List<String> externalJars = Arrays.asList("file:file1.jar", "file:file2.jar");
+        configuration.set(PipelineOptions.EXTERNAL_RESOURCES, externalJars);
+        final PackagedProgramRetriever retrieverUnderTest =
+                DefaultPackagedProgramRetriever.create(
+                        null,
+                        // the testJob jar is not on the user classpath
+                        testJobEntryClassClasspathProvider.getJobJar(),
+                        null,
+                        ClasspathProviderExtension.parametersForTestJob("suffix"),
+                        configuration,
+                        ExternalResourceUserClasspathConstructor.INSTANCE);
+        try {
+            final JobGraph jobGraph = retrieveJobGraph(retrieverUnderTest, configuration);
+            assertArrayEquals(
+                    externalJars.toArray(),
+                    jobGraph.getClasspaths().stream().map(URL::toString).toArray());
+        } catch (ProgramInvocationException e) {
+            fail("can not generate job graph" + e);
+        }
     }
 
     private JobGraph retrieveJobGraph(
@@ -564,5 +681,24 @@ class DefaultPackagedProgramRetrieverTest {
         }
 
         return relativizedURLs;
+    }
+
+    private enum ExternalResourceUserClasspathConstructor implements UserClasspathConstructor {
+        INSTANCE;
+
+        @Override
+        public List<URL> getUserJar(Configuration flinkConfiguration) {
+            return Collections.emptyList();
+        }
+
+        @Override
+        public List<URL> getExternalJars(Configuration flinkConfiguration) {
+            try {
+                return ConfigUtils.decodeListFromConfig(
+                        flinkConfiguration, PipelineOptions.EXTERNAL_RESOURCES, URL::new);
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 }

@@ -29,10 +29,13 @@ import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.BlobServerOptions;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.CoreOptions;
 import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptionsInternal;
 import org.apache.flink.kubernetes.configuration.KubernetesDeploymentTarget;
@@ -55,6 +58,7 @@ import org.apache.flink.runtime.jobmanager.HighAvailabilityMode;
 import org.apache.flink.runtime.rpc.AddressResolution;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -202,6 +206,17 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
         }
 
         applicationConfiguration.applyToConfiguration(flinkConfig);
+        String uploadPath = flinkConfig.getString(PipelineOptions.UPLOAD_REMOTE_DIR);
+        if (StringUtils.isNullOrWhitespaceOnly(uploadPath)) {
+            String jobWorkDir = flinkConfig.getString(CoreOptions.JOB_WORK_DIR);
+            uploadPath = new Path(new Path(jobWorkDir), ".flink").toString();
+            flinkConfig.set(PipelineOptions.UPLOAD_REMOTE_DIR, uploadPath);
+            LOG.warn(
+                    "{} is not set, set it to {}",
+                    PipelineOptions.UPLOAD_REMOTE_DIR.key(),
+                    uploadPath);
+        }
+        KubernetesUtils.uploadLocalDiskFilesToRemote(flinkConfig, uploadPath);
 
         // No need to do pipelineJars validation if it is a PyFlink job.
         if (!(PackagedProgramUtils.isPython(applicationConfiguration.getApplicationClassName())
