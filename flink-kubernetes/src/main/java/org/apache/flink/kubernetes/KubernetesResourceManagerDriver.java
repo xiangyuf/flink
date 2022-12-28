@@ -22,7 +22,10 @@ import org.apache.flink.configuration.BlobServerOptions;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
+import org.apache.flink.core.fs.FileSystem;
+import org.apache.flink.core.fs.Path;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesResourceManagerDriverConfiguration;
 import org.apache.flink.kubernetes.kubeclient.FlinkKubeClient;
@@ -51,6 +54,7 @@ import org.apache.flink.runtime.util.config.memory.ProcessMemoryUtils;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.StringUtils;
 import org.apache.flink.util.concurrent.FutureUtils;
 
 import javax.annotation.Nullable;
@@ -161,6 +165,20 @@ public class KubernetesResourceManagerDriver
                 optionalDiagnostics == null ? "" : optionalDiagnostics);
         flinkKubeClient.reportApplicationStatus(clusterId, finalStatus, optionalDiagnostics);
         flinkKubeClient.stopAndCleanupCluster(clusterId);
+        String uploadPath = flinkConfig.getString(PipelineOptions.UPLOAD_REMOTE_DIR);
+        if (!StringUtils.isNullOrWhitespaceOnly(uploadPath)) {
+            String stagingDir = KubernetesUtils.getStagingDirectory(uploadPath, clusterId);
+            Path path = new Path(stagingDir);
+            log.info("Start to delete staging directory {}", stagingDir);
+            try {
+                FileSystem fs = path.getFileSystem();
+                if (!fs.delete(path, true)) {
+                    log.error("Deleting directory {} was unsuccessful", stagingDir);
+                }
+            } catch (Exception e) {
+                log.error("Failed to delete staging directory {}", stagingDir, e);
+            }
+        }
     }
 
     @Override

@@ -661,6 +661,14 @@ public class KubernetesUtils {
     }
 
     /**
+     * Get staging directory used to store JARS and RESOURCES. This directory will be deleted when
+     * cluster is killed. It will be a child directory of user defined upload directory.
+     */
+    public static String getStagingDirectory(String uploadDir, String clusterId) {
+        return new Path(new Path(uploadDir), clusterId).toString();
+    }
+
+    /**
      * Upload local disk files in JARS and RESOURCES to remote storage system. <\p> This method will
      * rewrite the JARS and RESOURCES URIs into the configuration. For the files that need to upload
      * ("file" scheme), it will save the remote URI. For the files that has been already in remote

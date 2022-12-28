@@ -216,7 +216,8 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
                     PipelineOptions.UPLOAD_REMOTE_DIR.key(),
                     uploadPath);
         }
-        KubernetesUtils.uploadLocalDiskFilesToRemote(flinkConfig, uploadPath);
+        String stagingDir = KubernetesUtils.getStagingDirectory(uploadPath, clusterId);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(flinkConfig, stagingDir);
 
         // No need to do pipelineJars validation if it is a PyFlink job.
         if (!(PackagedProgramUtils.isPython(applicationConfiguration.getApplicationClassName())
