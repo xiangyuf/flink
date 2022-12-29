@@ -287,6 +287,28 @@ public class KubernetesConfigOptions {
                                                     "apache/flink DockerHub repository"))
                                     .build());
 
+    public static final ConfigOption<Boolean> KUBERNETES_INGRESS_ENABLE =
+            key("kubernetes.ingress.enable")
+                    .booleanType()
+                    .defaultValue(Boolean.FALSE)
+                    .withDescription("Whether to enable ingress in kubernetes.");
+
+    public static final ConfigOption<Map<String, String>> KUBERNETES_INGRESS_ANNOTATIONS =
+            key("kubernetes.ingress.annotations")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The user-specified annotations that are set to the Ingress. "
+                                    + "The value could be in the form of a1:v1,a2:v2");
+
+    public static final ConfigOption<String> KUBERNETES_INGRESS_HOST =
+            key("kubernetes.ingress.host")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The user-specified host that are set to the Ingress. "
+                                    + "e.g. lf-cloudnative.byted.org");
+
     /** The following config options need to be set according to the image. */
     public static final ConfigOption<String> KUBERNETES_ENTRY_PATH =
             key("kubernetes.entry.path")

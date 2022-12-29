@@ -47,6 +47,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import org.slf4j.Logger;
@@ -173,7 +174,19 @@ public class Fabric8FlinkKubeClient implements FlinkKubeClient {
     }
 
     @Override
-    public Optional<Endpoint> getRestEndpoint(String clusterId) {
+    public Optional<Endpoint> getRestEndpoint(String clusterId, boolean enableIngress) {
+        if (enableIngress) {
+            Optional<Ingress> ingress = getIngress(clusterId);
+            if (ingress.isPresent()) {
+                // The port number is always 443 (https) for ingress
+                return Optional.of(
+                        new Endpoint(ingress.get().getSpec().getRules().get(0).getHost(), 443));
+            } else {
+                LOG.warn(
+                        "Ingress enabled but can not found corresponding ingress, try find rest endpoint from service");
+            }
+        }
+
         Optional<KubernetesService> restService =
                 getService(ExternalServiceDecorator.getExternalServiceName(clusterId));
         if (!restService.isPresent()) {
@@ -219,6 +232,20 @@ public class Fabric8FlinkKubeClient implements FlinkKubeClient {
             return Optional.empty();
         }
         return Optional.of(new KubernetesService(service));
+    }
+
+    private Optional<Ingress> getIngress(String clusterId) {
+        final String ingressName = ExternalServiceDecorator.getIngressName(clusterId);
+
+        final Ingress ingress =
+                this.internalClient.network().ingresses().withName(ingressName).fromServer().get();
+
+        if (ingress == null) {
+            LOG.info("Ingress {} does not exist", ingressName);
+            return Optional.empty();
+        }
+
+        return Optional.of(ingress);
     }
 
     @Override

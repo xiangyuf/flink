@@ -96,7 +96,10 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
         return () -> {
             final Configuration configuration = new Configuration(flinkConfig);
 
-            final Optional<Endpoint> restEndpoint = client.getRestEndpoint(clusterId);
+            final Optional<Endpoint> restEndpoint =
+                    client.getRestEndpoint(
+                            clusterId,
+                            flinkConfig.get(KubernetesConfigOptions.KUBERNETES_INGRESS_ENABLE));
 
             if (restEndpoint.isPresent()) {
                 configuration.setString(RestOptions.ADDRESS, restEndpoint.get().getAddress());

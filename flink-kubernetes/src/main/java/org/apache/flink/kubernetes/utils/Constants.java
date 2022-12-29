@@ -24,6 +24,7 @@ public class Constants {
     // Kubernetes api version
     public static final String API_VERSION = "v1";
     public static final String APPS_API_VERSION = "apps/v1";
+    public static final String INGRESS_API_VERSION = "networking.k8s.io/v1beta1";
 
     public static final String DNS_POLICY_DEFAULT = "ClusterFirst";
     public static final String DNS_POLICY_HOSTNETWORK = "ClusterFirstWithHostNet";
@@ -52,6 +53,7 @@ public class Constants {
     public static final String KERBEROS_KRB5CONF_FILE = "krb5.conf";
 
     public static final String FLINK_REST_SERVICE_SUFFIX = "-rest";
+    public static final String FLINK_INGRESS_SUFFIX = "-ingress";
 
     public static final String NAME_SEPARATOR = "-";
 

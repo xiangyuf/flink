@@ -22,11 +22,20 @@ import org.apache.flink.kubernetes.kubeclient.parameters.KubernetesJobManagerPar
 import org.apache.flink.kubernetes.utils.Constants;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.HTTPIngressRuleValueBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.Ingress;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBackendBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressBuilder;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRule;
+import io.fabric8.kubernetes.api.model.networking.v1beta1.IngressRuleBuilder;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -47,12 +56,73 @@ public class ExternalServiceDecorator extends AbstractKubernetesStepDecorator {
                         .serviceType()
                         .buildUpExternalRestService(kubernetesJobManagerParameters);
 
-        return Collections.singletonList(service);
+        if (!kubernetesJobManagerParameters.enableIngress()) {
+            return Collections.singletonList(service);
+        } else {
+            final Ingress ingress = buildIngress(kubernetesJobManagerParameters);
+            return Arrays.asList(service, ingress);
+        }
+    }
+
+    /** Build the ingress through the {@link KubernetesJobManagerParameters} for the cluster. */
+    public static Ingress buildIngress(
+            KubernetesJobManagerParameters kubernetesJobManagerParameters) {
+        final String serviceName =
+                getExternalServiceName(kubernetesJobManagerParameters.getClusterId());
+
+        final String ingressName = getIngressName(kubernetesJobManagerParameters.getClusterId());
+        final String host =
+                getIngressHost(
+                        kubernetesJobManagerParameters.getClusterId(),
+                        kubernetesJobManagerParameters.getIngressHost());
+        final Map<String, String> annotations =
+                kubernetesJobManagerParameters.getIngressAnnotations();
+        final IngressRule ingressRule =
+                new IngressRuleBuilder()
+                        .withHost(host)
+                        .withHttp(
+                                new HTTPIngressRuleValueBuilder()
+                                        .addNewPath()
+                                        .withPath("/")
+                                        .withBackend(
+                                                new IngressBackendBuilder()
+                                                        .withServiceName(serviceName)
+                                                        .withServicePort(
+                                                                new IntOrString(
+                                                                        kubernetesJobManagerParameters
+                                                                                .getRestPort()))
+                                                        .build())
+                                        .endPath()
+                                        .build())
+                        .build();
+        final Ingress ingress =
+                new IngressBuilder()
+                        .withApiVersion(Constants.INGRESS_API_VERSION)
+                        .withNewMetadata()
+                        .withName(ingressName)
+                        .withNamespace(kubernetesJobManagerParameters.getNamespace())
+                        .withAnnotations(annotations)
+                        .endMetadata()
+                        .withNewSpec()
+                        .withRules(ingressRule)
+                        .endSpec()
+                        .build();
+        return ingress;
     }
 
     /** Generate name of the external rest Service. */
     public static String getExternalServiceName(String clusterId) {
         return clusterId + Constants.FLINK_REST_SERVICE_SUFFIX;
+    }
+
+    /** Generate name of the created ingress. */
+    public static String getIngressName(String clusterId) {
+        return clusterId + Constants.FLINK_INGRESS_SUFFIX;
+    }
+
+    /** Generate hostname of the created ingress. */
+    public static String getIngressHost(String clusterId, String host) {
+        return clusterId + "." + host;
     }
 
     /**
