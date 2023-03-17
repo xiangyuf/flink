@@ -249,7 +249,7 @@ import java.util.stream.Collectors;
  * <p>Every #convert() should return a {@link Operation} which can be used in {@link
  * org.apache.flink.table.delegation.Planner}.
  */
-public class SqlToOperationConverter {
+public class SqlNodeToOperationConversion {
     private final FlinkPlannerImpl flinkPlanner;
     private final CatalogManager catalogManager;
     private final SqlCreateTableConverter createTableConverter;
@@ -257,7 +257,8 @@ public class SqlToOperationConverter {
 
     // ~ Constructors -----------------------------------------------------------
 
-    private SqlToOperationConverter(FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager) {
+    private SqlNodeToOperationConversion(
+            FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager) {
         this.flinkPlanner = flinkPlanner;
         this.catalogManager = catalogManager;
         this.createTableConverter =
@@ -292,8 +293,8 @@ public class SqlToOperationConverter {
     private static Optional<Operation> convertValidatedSqlNode(
             FlinkPlannerImpl flinkPlanner, CatalogManager catalogManager, SqlNode validated) {
         beforeConversion();
-        SqlToOperationConverter converter =
-                new SqlToOperationConverter(flinkPlanner, catalogManager);
+        SqlNodeToOperationConversion converter =
+                new SqlNodeToOperationConversion(flinkPlanner, catalogManager);
         if (validated instanceof SqlCreateCatalog) {
             return Optional.of(converter.convertCreateCatalog((SqlCreateCatalog) validated));
         } else if (validated instanceof SqlDropCatalog) {
