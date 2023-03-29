@@ -206,7 +206,7 @@ try:
             print("Temp path for symlink to parent already exists {0}".format(TEMP_PATH),
                   file=sys.stderr)
             sys.exit(-1)
-        flink_version = VERSION.replace(".dev0", "-SNAPSHOT")
+        flink_version = '1.17-byted-SNAPSHOT'
         FLINK_HOME = os.path.abspath(
             "../flink-dist/target/flink-%s-bin/flink-%s" % (flink_version, flink_version))
         FLINK_ROOT = os.path.abspath("..")
@@ -253,12 +253,12 @@ try:
                   "directory.")
             sys.exit(-1)
     if VERSION.find('dev0') != -1:
-        apache_flink_libraries_dependency = 'apache-flink-libraries==%s' % VERSION
+        apache_flink_libraries_dependency = 'byted-apache-flink-libraries==%s' % VERSION
     else:
         split_versions = VERSION.split('.')
         split_versions[-1] = str(int(split_versions[-1]) + 1)
         NEXT_VERSION = '.'.join(split_versions)
-        apache_flink_libraries_dependency = 'apache-flink-libraries>=%s,<%s' % \
+        apache_flink_libraries_dependency = 'byted-apache-flink-libraries>=%s,<%s' % \
                                             (VERSION, NEXT_VERSION)
 
     script_names = ["pyflink-shell.sh", "find-flink-home.sh"]
@@ -305,18 +305,18 @@ try:
         'pyflink.examples': ['*.py', '*/*.py'],
         'pyflink.bin': ['*']}
 
-    install_requires = ['py4j==0.10.9.7', 'python-dateutil>=2.8.0,<3', 'apache-beam==2.43.0',
-                        'cloudpickle==2.2.0', 'avro-python3>=1.8.1,!=1.9.2,<1.10.0',
-                        'pytz>=2018.3', 'fastavro>=1.1.0,<1.4.8', 'requests>=2.26.0',
+    install_requires = ['py4j>=0.10.9.7,<0.10.9.8', 'python-dateutil>=2.8.0,<3', 'apache-beam>=2.43.0,<2.43.1',
+                        'cloudpickle>=2.2.0,<2.2.1', 'avro-python3>=1.8.1,!=1.9.2,<1.10.0',
+                        'pytz>=2018.3,<2018.4', 'fastavro>=1.1.0,<1.4.8', 'requests>=2.26.0,<2.26.1',
                         'protobuf>=3.19.0,<=3.21',
                         'numpy>=1.21.4,<1.22.0',
                         'pandas>=1.3.0,<1.4.0',
                         'pyarrow>=5.0.0,<9.0.0',
-                        'pemja==0.3.0;platform_system != "Windows"',
+                        'pemja>=0.3.0,<=0.3.1;platform_system != "Windows"',
                         'httplib2>=0.19.0,<=0.20.4', apache_flink_libraries_dependency]
 
     setup(
-        name='apache-flink',
+        name='byted-apache-flink',
         version=VERSION,
         packages=PACKAGES,
         include_package_data=True,

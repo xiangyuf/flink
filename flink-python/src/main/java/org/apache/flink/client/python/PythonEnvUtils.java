@@ -365,6 +365,7 @@ final class PythonEnvUtils {
                         .map(e -> e.getKey() + "=" + e.getValue())
                         .collect(Collectors.joining(", ")),
                 String.join(" ", commands));
+        LOG.info("Python command: {}", String.join(" ", commands));
         Process process = pythonProcessBuilder.start();
         if (!process.isAlive()) {
             throw new RuntimeException("Failed to start Python process. ");

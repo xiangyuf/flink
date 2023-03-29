@@ -98,7 +98,7 @@ try:
             print("Temp path for symlink to parent already exists {0}".format(TEMP_PATH),
                   file=sys.stderr)
             sys.exit(-1)
-        flink_version = VERSION.replace(".dev0", "-byted-SNAPSHOT")
+        flink_version = '1.17-byted-SNAPSHOT'
         FLINK_HOME = os.path.abspath(
             "../../flink-dist/target/flink-%s-bin/flink-%s" % (flink_version, flink_version))
 
@@ -213,7 +213,7 @@ run sdist.
         PACKAGE_DATA['pyflink.licenses'] = ['*']
 
     setup(
-        name='apache-flink-libraries',
+        name='byted-apache-flink-libraries',
         version=VERSION,
         packages=PACKAGES,
         include_package_data=True,
