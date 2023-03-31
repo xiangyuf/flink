@@ -42,4 +42,16 @@ export JVM_ARGS="$JVM_ARGS $FLINK_TM_JVM_MEM_OPTS"
 
 ARGS=("--configDir" "${FLINK_CONF_DIR}" "${ARGS[@]}")
 
+# set PYTHON PATH for pyflink jobs
+PYTHONPATH=$PYTHONPATH:$FLINK_HOME
+# add workdir and its sub files/folders to python path
+if [[ -d "/opt/tiger/workdir" ]]; then
+  PYTHONPATH=$PYTHONPATH:$(printf "%s:" $(find /opt/tiger/workdir/ -maxdepth 1))
+fi
+# add venv and its sub files/folders to python path
+if [[ -d "/opt/tiger/venv" ]]; then
+  PYTHONPATH=$PYTHONPATH:$(printf "%s:" $(find /opt/tiger/venv/ -maxdepth 1))
+fi
+export PYTHONPATH
+
 exec "${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT "${ARGS[@]}"
