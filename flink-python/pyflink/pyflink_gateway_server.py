@@ -64,6 +64,11 @@ def find_java_executable():
     flink_home = _find_flink_home()
     flink_conf_file = os.path.join(flink_home, "conf", "flink-conf.yaml")
     java_home = read_from_config(KEY_ENV_JAVA_HOME, None, flink_conf_file)
+    if java_home is not None and not os.path.exists(java_home):
+        print('Warning: %s: %s from %s is not a valid java home path.\nUse JAVA_HOME env variable '
+              'or default \'java\' command instead.'
+              % (KEY_ENV_JAVA_HOME, java_home, flink_conf_file))
+        java_home = None
 
     if java_home is None and "JAVA_HOME" in os.environ:
         java_home = os.environ["JAVA_HOME"]

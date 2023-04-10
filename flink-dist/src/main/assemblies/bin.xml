@@ -90,6 +90,12 @@ under the License.
 			<destName>flink-table-planner-loader-${project.version}.jar</destName>
 			<fileMode>0644</fileMode>
 		</file>
+		<file>
+			<source>../flink-connectors/flink-connector-datagen/target/flink-connector-datagen-${project.version}.jar</source>
+			<outputDirectory>lib/</outputDirectory>
+			<destName>flink-connector-datagen-${project.version}.jar</destName>
+			<fileMode>0644</fileMode>
+		</file>
 
 		<!-- CEP (required for SQL MATCH_RECOGNIZE) -->
 		<file>
