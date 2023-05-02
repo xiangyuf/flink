@@ -67,6 +67,9 @@ def main():
 
     custom_print = CustomPrint(print)
     builtins.print = custom_print.print
+    this_module = sys.modules[__name__]
+    this_module.print = builtins.print
+
     # Remove all the built-in log handles
     logging.getLogger().handlers = []
     apache_beam.runners.worker.sdk_worker_main.main(sys.argv)
