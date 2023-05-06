@@ -80,6 +80,7 @@ import java.net.InetSocketAddress;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -186,13 +187,21 @@ public class ExecutorImpl implements Executor {
 
     public ReadableConfig getSessionConfig() {
         try {
+            return Configuration.fromMap(getSessionConfigMap());
+        } catch (Exception e) {
+            throw new SqlExecutionException("Failed to get the get session config.", e);
+        }
+    }
+
+    public Map<String, String> getSessionConfigMap() {
+        try {
             GetSessionConfigResponseBody response =
                     getResponse(
                             sendRequest(
                                     GetSessionConfigHeaders.getInstance(),
                                     new SessionMessageParameters(sessionHandle),
                                     EmptyRequestBody.getInstance()));
-            return Configuration.fromMap(response.getProperties());
+            return response.getProperties();
         } catch (Exception e) {
             throw new SqlExecutionException("Failed to get the get session config.", e);
         }
