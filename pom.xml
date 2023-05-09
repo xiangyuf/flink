@@ -28,12 +28,23 @@ under the License.
 
 	<groupId>org.apache.flink</groupId>
 	<artifactId>flink-parent</artifactId>
-	<version>1.17.0</version>
+	<version>1.17-byted-SNAPSHOT</version>
 
 	<name>Flink : </name>
 	<packaging>pom</packaging>
 	<url>https://flink.apache.org</url>
 	<inceptionYear>2014</inceptionYear>
+
+	<distributionManagement>
+		<repository>
+			<id>bytedance-releases</id>
+			<url>https://maven.byted.org/repository/releases</url>
+		</repository>
+		<snapshotRepository>
+			<id>bytedance-snapshots</id>
+			<url>https://maven.byted.org/repository/snapshots</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<licenses>
 		<license>
