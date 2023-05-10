@@ -1,0 +1,34 @@
+name: Flink 1.17 CI ATLAS
+trigger:
+  change:
+    branches: [ "flink-1.17" ]
+    paths:
+      - "!flink-dist/src/main/resources/flink-conf*.yaml"
+jobs:
+  build:
+    image: hub.byted.org/compile/flink_bet_maven_scm_jdk11:bd193dea72ddee0ef6bad6bf6d4b90cc
+    runs-on:
+      spec: m1.4xlarge
+    steps:
+      - uses: actions/checkout@v1
+        inputs:
+          depth: 1
+      - name: setup ssh
+        commands:
+          - apt update
+          - DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-client || echo failed to install ssh
+          - command -v ssh
+      - id: checksum
+        uses: actions/checksum@v1
+        inputs:
+          paths:
+            - pom.xml
+      # - uses: actions/setup-proxy
+      - name: build
+        commands:
+          - sudo -u tiger mkdir -p /home/tiger/.m2
+          - cp -f /opt/settings.xml /home/tiger/.m2/settings.xml
+          - chmod -R a+w ./*
+          - chown -R tiger ./*
+          - chown -R tiger /home/tiger/
+          - sudo -u tiger /bin/bash ./build_local.sh

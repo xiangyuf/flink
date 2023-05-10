@@ -1,0 +1,13 @@
+name: Flink 1.17 Config CI ATLAS
+trigger:
+  change:
+    branches: [ "flink-1.17" ]
+    paths:
+      - "flink-dist/src/main/resources/flink-conf*.yaml"
+jobs:
+  build:
+    image: hub.byted.org/compile/flink_bet_maven_scm_jdk11:bd193dea72ddee0ef6bad6bf6d4b90cc
+    steps:
+      - uses: actions/checkout@v1
+        inputs:
+          depth: 1
