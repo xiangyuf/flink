@@ -272,6 +272,7 @@ under the License.
 							<environmentVariables>
 								<HUSKY_SKIP_INSTALL>true</HUSKY_SKIP_INSTALL>
 							</environmentVariables>
+							<npmRegistryURL>https://bnpm.byted.org</npmRegistryURL>
 						</configuration>
 					</execution>
 					<execution>
