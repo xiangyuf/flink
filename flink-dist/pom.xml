@@ -34,6 +34,7 @@ under the License.
 
 	<properties>
 		<japicmp.skip>true</japicmp.skip>
+		<dist.shading.prefix>org.apache.flink.dist.shaded</dist.shading.prefix>
 	</properties>
 
 	<dependencies>
@@ -684,6 +685,32 @@ under the License.
 									<exclude>org.apache.logging.log4j:*</exclude>
 								</excludes>
 							</artifactSet>
+							<relocations>
+								<relocation>
+									<pattern>org.yaml</pattern>
+									<shadedPattern>${dist.shading.prefix}.org.yaml</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.codahale.metrics</pattern>
+									<shadedPattern>${dist.shading.prefix}.com.codahale.metrics</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.fasterxml.jackson</pattern>
+									<shadedPattern>${dist.shading.prefix}.com.fasterxml.jackson</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>okhttp3</pattern>
+									<shadedPattern>${dist.shading.prefix}.okhttp3</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.json.simple</pattern>
+									<shadedPattern>${dist.shading.prefix}.org.json.simple</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>okio</pattern>
+									<shadedPattern>${dist.shading.prefix}.okio</shadedPattern>
+								</relocation>
+							</relocations>
 						</configuration>
 					</execution>
 					<execution>
