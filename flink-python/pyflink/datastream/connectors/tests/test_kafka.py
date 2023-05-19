@@ -22,7 +22,7 @@ import pyflink.datastream.data_stream as data_stream
 from pyflink.common import typeinfo
 
 from pyflink.common.configuration import Configuration
-from pyflink.common.serialization import SimpleStringSchema, DeserializationSchema
+from pyflink.common.serialization import SimpleStringSchema, DeserializationSchema, ByteArraySchema
 from pyflink.common.typeinfo import Types
 from pyflink.common.types import Row
 from pyflink.common.watermark_strategy import WatermarkStrategy
@@ -315,6 +315,7 @@ class KafkaSourceTests(PyFlinkStreamingTestCase):
                              class_name)
 
         _check(SimpleStringSchema(), 'org.apache.flink.api.common.serialization.SimpleStringSchema')
+        _check(ByteArraySchema(), 'org.apache.flink.api.common.serialization.ByteArraySchema')
         _check(
             JsonRowDeserializationSchema.builder().type_info(Types.ROW([Types.STRING()])).build(),
             'org.apache.flink.formats.json.JsonRowDeserializationSchema'
@@ -628,6 +629,10 @@ class KafkaRecordSerializationSchemaTests(PyFlinkTestCase):
         check_function(
             SimpleStringSchema(),
             'org.apache.flink.api.common.serialization.SimpleStringSchema'
+        )
+        check_function(
+            ByteArraySchema(),
+            'org.apache.flink.api.common.serialization.ByteArraySchema'
         )
 
 

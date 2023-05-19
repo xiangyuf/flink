@@ -15,7 +15,7 @@
 #  See the License for the specific language governing permissions and
 # limitations under the License.
 ################################################################################
-from pyflink.common.serialization import SimpleStringSchema
+from pyflink.common.serialization import SimpleStringSchema, ByteArraySchema
 from pyflink.testing.test_case_utils import PyFlinkTestCase
 
 
@@ -29,3 +29,16 @@ class SimpleStringSchemaTests(PyFlinkTestCase):
 
         self.assertEqual(expected_string, simple_string_schema._j_deserialization_schema
                          .deserialize(expected_string.encode(encoding='utf-8')))
+
+
+class ByteArraySchemaTests(PyFlinkTestCase):
+    def test_byte_array_schema(self):
+        sample_string = '之掃描古籍版實乃姚鼐的'
+        sample_byte_array = bytes(sample_string, 'utf-8')
+        expected_byte_array = sample_byte_array
+        byte_array_schema = ByteArraySchema()
+        self.assertEqual(expected_byte_array,
+                         byte_array_schema._j_serialization_schema.serialize(sample_byte_array))
+
+        self.assertEqual(expected_byte_array, byte_array_schema._j_deserialization_schema
+                         .deserialize(sample_byte_array))
