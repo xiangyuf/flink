@@ -68,6 +68,7 @@ import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestEndpointUtils;
 import org.apache.flink.table.gateway.service.context.DefaultContext;
 import org.apache.flink.util.CloseableIterator;
+import org.apache.flink.util.NetUtils;
 import org.apache.flink.util.Preconditions;
 
 import org.slf4j.Logger;
@@ -77,6 +78,7 @@ import javax.annotation.Nullable;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URL;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -102,16 +104,45 @@ public class ExecutorImpl implements Executor {
     private static final long HEARTBEAT_INTERVAL_MILLISECONDS = 60_000L;
 
     private final AutoCloseableRegistry registry;
-    private final InetSocketAddress gatewayAddress;
+    private final URL gatewayUrl;
+
     private final ExecutorService executorService;
     private final RestClient restClient;
 
     private final SqlGatewayRestAPIVersion connectionVersion;
     private final SessionHandle sessionHandle;
+    private final RowFormat rowFormat;
 
     public ExecutorImpl(
             DefaultContext defaultContext, InetSocketAddress gatewayAddress, String sessionId) {
-        this(defaultContext, gatewayAddress, sessionId, HEARTBEAT_INTERVAL_MILLISECONDS);
+        this(
+                defaultContext,
+                NetUtils.socketToUrl(gatewayAddress),
+                sessionId,
+                HEARTBEAT_INTERVAL_MILLISECONDS,
+                RowFormat.PLAIN_TEXT);
+    }
+
+    public ExecutorImpl(
+            DefaultContext defaultContext,
+            InetSocketAddress gatewayAddress,
+            String sessionId,
+            RowFormat rowFormat) {
+        this(
+                defaultContext,
+                NetUtils.socketToUrl(gatewayAddress),
+                sessionId,
+                HEARTBEAT_INTERVAL_MILLISECONDS,
+                rowFormat);
+    }
+
+    public ExecutorImpl(DefaultContext defaultContext, URL gatewayUrl, String sessionId) {
+        this(
+                defaultContext,
+                gatewayUrl,
+                sessionId,
+                HEARTBEAT_INTERVAL_MILLISECONDS,
+                RowFormat.PLAIN_TEXT);
     }
 
     @VisibleForTesting
@@ -120,9 +151,25 @@ public class ExecutorImpl implements Executor {
             InetSocketAddress gatewayAddress,
             String sessionId,
             long heartbeatInterval) {
+        this(
+                defaultContext,
+                NetUtils.socketToUrl(gatewayAddress),
+                sessionId,
+                heartbeatInterval,
+                RowFormat.PLAIN_TEXT);
+    }
+
+    @VisibleForTesting
+    ExecutorImpl(
+            DefaultContext defaultContext,
+            URL gatewayUrl,
+            String sessionId,
+            long heartbeatInterval,
+            RowFormat rowFormat) {
         this.registry = new AutoCloseableRegistry();
+        this.gatewayUrl = gatewayUrl;
+        this.rowFormat = rowFormat;
         try {
-            this.gatewayAddress = gatewayAddress;
             // register required resource
             this.executorService = Executors.newCachedThreadPool();
             registry.registerCloseable(executorService::shutdownNow);
@@ -135,7 +182,7 @@ public class ExecutorImpl implements Executor {
             // register session
             LOG.info(
                     "Open session to {} with connection version: {}.",
-                    gatewayAddress,
+                    gatewayUrl,
                     connectionVersion);
             OpenSessionResponseBody response =
                     sendRequest(
@@ -366,8 +413,8 @@ public class ExecutorImpl implements Executor {
                     SqlGatewayRestAPIVersion connectionVersion) {
         try {
             return restClient.sendRequest(
-                    gatewayAddress.getHostName(),
-                    gatewayAddress.getPort(),
+                    gatewayUrl.getHost(),
+                    gatewayUrl.getPort(),
                     messageHeaders,
                     messageParameters,
                     request,
@@ -408,7 +455,7 @@ public class ExecutorImpl implements Executor {
             return sendRequest(
                             FetchResultsHeaders.getDefaultInstance(),
                             new FetchResultsMessageParameters(
-                                    sessionHandle, operationHandle, token, RowFormat.PLAIN_TEXT),
+                                    sessionHandle, operationHandle, token, rowFormat),
                             EmptyRequestBody.getInstance())
                     .get();
         } catch (InterruptedException e) {
