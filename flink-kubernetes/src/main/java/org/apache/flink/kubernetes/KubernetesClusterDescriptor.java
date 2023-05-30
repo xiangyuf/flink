@@ -277,6 +277,7 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
                     flinkConfig.get(JobManagerOptions.PORT));
         }
 
+        setCSIModeWhenArceeEnabled(flinkConfig);
         try {
             final KubernetesJobManagerParameters kubernetesJobManagerParameters =
                     new KubernetesJobManagerParameters(flinkConfig, clusterSpecification);
@@ -310,6 +311,25 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
             }
             throw new ClusterDeploymentException(
                     "Could not create Kubernetes cluster \"" + clusterId + "\".", e);
+        }
+    }
+
+    /**
+     * set downloading mode to CSI when Arcee is enabled and user do not specify other download
+     * mode.
+     */
+    public static void setCSIModeWhenArceeEnabled(Configuration flinkConfig) {
+        if (flinkConfig.getBoolean(KubernetesConfigOptions.ARCEE_ENABLED)) {
+            if (!flinkConfig.contains(KubernetesConfigOptions.FILE_DOWNLOAD_MODE)) {
+                flinkConfig.set(
+                        KubernetesConfigOptions.FILE_DOWNLOAD_MODE,
+                        KubernetesConfigOptions.DownloadMode.CSI);
+            }
+            if (!flinkConfig.contains(KubernetesConfigOptions.GDPR_SECRETE_NAME_TEMPLATE)) {
+                flinkConfig.setString(
+                        KubernetesConfigOptions.GDPR_SECRETE_NAME_TEMPLATE,
+                        Constants.ARCEE_SECRETE_TEMPLATE);
+            }
         }
     }
 

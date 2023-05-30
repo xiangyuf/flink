@@ -120,4 +120,11 @@ public class Constants {
 
     public static final String FILE_DOWNLOAD_VOLUME = "file-download-volume";
     public static final String JAR_FILE_EXTENSION = ".jar";
+
+    // constants for arcee
+    public static final String POD_GROUP_MINMEMBER_ANNOTATION_KEY =
+            "godel.bytedance.com/pod-group-minmember";
+    public static final String POD_GROUP_NAME_ANNOTATION_KEY = "godel.bytedance.com/pod-group-name";
+    public static final String POD_GROUP_NAME_PREFIX = "app-";
+    public static final String ARCEE_SECRETE_TEMPLATE = "arceeapplication-%cluster-id%";
 }

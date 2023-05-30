@@ -32,6 +32,7 @@ import org.apache.flink.kubernetes.kubeclient.resources.KubernetesService;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesWatch;
 import org.apache.flink.kubernetes.kubeclient.services.ServiceType;
 import org.apache.flink.kubernetes.utils.KubernetesUtils;
+import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.persistence.PossibleInconsistentStateException;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.ExecutorUtils;
@@ -52,6 +53,8 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.NamespacedKubernetesClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -74,13 +77,14 @@ public class Fabric8FlinkKubeClient implements FlinkKubeClient {
 
     private static final Logger LOG = LoggerFactory.getLogger(Fabric8FlinkKubeClient.class);
 
-    private final String clusterId;
-    private final String namespace;
-    private final int maxRetryAttempts;
+    protected final NamespacedKubernetesClient internalClient;
+    protected final String clusterId;
+    protected final String namespace;
+    protected final int maxRetryAttempts;
+    protected final ExecutorService kubeClientExecutorService;
+
     private final KubernetesConfigOptions.NodePortAddressType nodePortAddressType;
 
-    private final NamespacedKubernetesClient internalClient;
-    private final ExecutorService kubeClientExecutorService;
     // save the master deployment atomic reference for setting owner reference of task manager pods
     private final AtomicReference<Deployment> masterDeploymentRef;
 
@@ -211,6 +215,12 @@ public class Fabric8FlinkKubeClient implements FlinkKubeClient {
         }
 
         return podList.stream().map(KubernetesPod::new).collect(Collectors.toList());
+    }
+
+    @Override
+    public void reportApplicationStatus(
+            String clusterId, ApplicationStatus finalStatus, @Nullable String diagnostics) {
+        // not supported
     }
 
     @Override

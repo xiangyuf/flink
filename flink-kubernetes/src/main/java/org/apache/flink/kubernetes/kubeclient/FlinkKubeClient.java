@@ -24,7 +24,10 @@ import org.apache.flink.kubernetes.kubeclient.resources.KubernetesLeaderElector;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesPod;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesService;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesWatch;
+import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.persistence.PossibleInconsistentStateException;
+
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.util.List;
@@ -72,6 +75,16 @@ public interface FlinkKubeClient extends AutoCloseable {
      * @param clusterId cluster id
      */
     void stopAndCleanupCluster(String clusterId);
+
+    /**
+     * Report the application final status to operator.
+     *
+     * @param clusterId cluster id.
+     * @param finalStatus the application status to report.
+     * @param diagnostics a diagnostics message or {@code null}.
+     */
+    void reportApplicationStatus(
+            String clusterId, ApplicationStatus finalStatus, @Nullable String diagnostics);
 
     /**
      * Get the kubernetes service of the given flink clusterId.

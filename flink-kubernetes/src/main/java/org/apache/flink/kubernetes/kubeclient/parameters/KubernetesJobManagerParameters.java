@@ -24,6 +24,7 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.ConfigurationUtils;
 import org.apache.flink.configuration.IllegalConfigurationException;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.ResourceManagerOptions;
 import org.apache.flink.configuration.RestOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
@@ -221,5 +222,67 @@ public class KubernetesJobManagerParameters extends AbstractKubernetesParameters
 
     public String getEntrypointArgs() {
         return flinkConfig.getString(KubernetesConfigOptions.KUBERNETES_JOBMANAGER_ENTRYPOINT_ARGS);
+    }
+
+    // Arcee Parameter
+    public boolean isArceeEnabled() {
+        return flinkConfig.get(KubernetesConfigOptions.ARCEE_ENABLED);
+    }
+
+    public Map<String, String> getArceeApplicationAnnotations() {
+        return KubernetesUtils.getAnnotations(
+                flinkConfig, KubernetesConfigOptions.ARCEE_APP_ANNOTATIONS);
+    }
+
+    public String getArceeApplicationName() {
+        String appName = flinkConfig.getString(KubernetesConfigOptions.ARCEE_APP_NAME);
+        if (appName == null) {
+            appName = flinkConfig.getString(PipelineOptions.NAME, "");
+            flinkConfig.setString(KubernetesConfigOptions.ARCEE_APP_NAME, appName);
+        }
+        return appName;
+    }
+
+    public String getArceeAdmissionConfigAccount() {
+        return flinkConfig.getString(KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_ACCOUNT);
+    }
+
+    public String getArceeAdmissionConfigUser() {
+        return flinkConfig.getString(KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_USER);
+    }
+
+    public String getArceeAdmissionConfigGroup() {
+        return flinkConfig.getString(KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_GROUP);
+    }
+
+    public String getArceeSchedulingConfigQueue() {
+        return flinkConfig.getString(KubernetesConfigOptions.ARCEE_SCHEDULING_CONFIG_QUEUE);
+    }
+
+    public int getArceeSchedulingConfigScheduleTimeoutSec() {
+        return flinkConfig.getInteger(
+                KubernetesConfigOptions.ARCEE_SCHEDULING_CONFIG_SCHEDULE_TIMEOUT_SECONDS);
+    }
+
+    public String getArceeSchedulingConfigPriorityClassName() {
+        return flinkConfig.getString(
+                KubernetesConfigOptions.ARCEE_SCHEDULING_CONFIG_PRIORITY_CLASS_NAME);
+    }
+
+    public String getArceeRestartPolicyType() {
+        return flinkConfig.getString(KubernetesConfigOptions.ARCEE_RESTART_POLICY_TYPE);
+    }
+
+    public int getArceeRestartPolicyMaxRetries() {
+        return flinkConfig.getInteger(KubernetesConfigOptions.ARCEE_RESTART_POLICY_MAX_RETRIES);
+    }
+
+    public int getArceeRestartPolicyMaxScheduleFailures() {
+        return flinkConfig.getInteger(
+                KubernetesConfigOptions.ARCEE_RESTART_POLICY_MAX_SCHEDULE_FAILURES);
+    }
+
+    public long getArceeRestartPolicyInterval() {
+        return flinkConfig.getLong(KubernetesConfigOptions.ARCEE_RESTART_POLICY_INTERVAL);
     }
 }

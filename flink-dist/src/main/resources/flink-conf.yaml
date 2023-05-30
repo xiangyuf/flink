@@ -88,6 +88,9 @@ kubernetes.arcee.scheduling-config.schedule-timeout-seconds: 120
 kubernetes.arcee.restart-policy.max-retries: 5
 kubernetes.arcee.restart-policy.interval-second: 5
 kubernetes.arcee.restart-policy.type: OnFailure
+
+# Arcee will mount hadoop in host to pod and set the hadoop related environments
+kubernetes.decorator.hadoop-conf-mount.enabled: false
 #==============================================================================
 # High Availability
 #==============================================================================

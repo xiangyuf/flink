@@ -608,6 +608,92 @@ public class KubernetesConfigOptions {
                             "The value to indicate the disk resource for container. 1 means enable the "
                                     + "disk resource guarantee and 0 means disable.");
 
+    public static final ConfigOption<Boolean> ARCEE_ENABLED =
+            key("kubernetes.arcee.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Whether using Arcee operator.");
+
+    public static final ConfigOption<Map<String, String>> ARCEE_APP_ANNOTATIONS =
+            key("kubernetes.arcee.annotations")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The user-specified annotations that are set to the Arcee Application. "
+                                    + "The value could be in the form of a1:v1,a2:v2");
+
+    public static final ConfigOption<String> ARCEE_APP_NAME =
+            key("kubernetes.arcee.app-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The job name used for printing and logging.");
+
+    public static final ConfigOption<String> ARCEE_ADMISSION_CONFIG_ACCOUNT =
+            key("kubernetes.arcee.admission-config.account")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("PSM/AccountId the application to use.");
+
+    public static final ConfigOption<String> ARCEE_ADMISSION_CONFIG_USER =
+            key("kubernetes.arcee.admission-config.user")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("User who owns the application.");
+
+    public static final ConfigOption<String> ARCEE_ADMISSION_CONFIG_GROUP =
+            key("kubernetes.arcee.admission-config.group")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Group that owns the application.");
+    public static final ConfigOption<String> ARCEE_SCHEDULING_CONFIG_QUEUE =
+            key("kubernetes.arcee.scheduling-config.queue")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Queue the Arcee Application to use.");
+
+    public static final ConfigOption<String> ARCEE_SCHEDULING_CONFIG_PRIORITY_CLASS_NAME =
+            key("kubernetes.arcee.scheduling-config.priority-class-name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("Priority of the application, used for scheduling.");
+
+    public static final ConfigOption<Integer> ARCEE_SCHEDULING_CONFIG_SCHEDULE_TIMEOUT_SECONDS =
+            key("kubernetes.arcee.scheduling-config.schedule-timeout-seconds")
+                    .intType()
+                    .defaultValue(120)
+                    .withDescription("Application scheduling timeout seconds, default to 120(s)");
+
+    public static final ConfigOption<String> ARCEE_RESTART_POLICY_TYPE =
+            key("kubernetes.arcee.restart-policy.type")
+                    .stringType()
+                    .defaultValue("Always")
+                    .withDescription(
+                            "The policy of if and in which conditions should the application be restarted, "
+                                    + "supported value is among \"Always\", \"Never\" and \"OnFailure\" and the default policy is Always");
+
+    public static final ConfigOption<Integer> ARCEE_RESTART_POLICY_MAX_RETRIES =
+            key("kubernetes.arcee.restart-policy.max-retries")
+                    .intType()
+                    .defaultValue(0)
+                    .withDescription(
+                            "The number of times to retry running an application before giving up, "
+                                    + "the default is 0 which means the restarting times is unlimited.");
+
+    public static final ConfigOption<Integer> ARCEE_RESTART_POLICY_MAX_SCHEDULE_FAILURES =
+            key("kubernetes.arcee.restart-policy.max-schedule-failures")
+                    .intType()
+                    .defaultValue(0)
+                    .withDescription(
+                            "The number of times to retry scheduling an application before giving up, "
+                                    + "the default is 0 which means the scheduling retry times is unlimited.");
+
+    public static final ConfigOption<Long> ARCEE_RESTART_POLICY_INTERVAL =
+            key("kubernetes.arcee.restart-policy.interval-second")
+                    .longType()
+                    .defaultValue(5L)
+                    .withDescription(
+                            "the interval in seconds between retries runs, the default value is 5(s)");
+
     private static String getDefaultFlinkImage() {
         // The default container image that ties to the exact needed versions of both Flink and
         // Scala.

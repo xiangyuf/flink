@@ -19,6 +19,7 @@
 package org.apache.flink.kubernetes.kubeclient.factory;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.kubernetes.entrypoint.KubernetesApplicationClusterEntrypoint;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
 import org.apache.flink.kubernetes.kubeclient.KubernetesJobManagerSpecification;
 import org.apache.flink.kubernetes.kubeclient.decorators.AbstractFileDownloadDecorator;
@@ -39,6 +40,15 @@ import org.apache.flink.kubernetes.utils.Constants;
 import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import org.apache.flink.util.Preconditions;
 
+import com.bytedance.openplatform.arcee.resources.v1alpha1.AdmissionConfig;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.AppMasterSpec;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ApplicationType;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ArceeApplication;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ArceeApplicationSpec;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.DeployMode;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.RestartPolicy;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.RestartPolicyType;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.SchedulingConfig;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -50,6 +60,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.kubernetes.configuration.KubernetesConfigOptions.KUBERNETES_HADOOP_CONF_MOUNT_DECORATOR_ENABLED;
@@ -99,7 +110,11 @@ public class KubernetesJobManagerFactory {
         final Deployment deployment =
                 createJobManagerDeployment(flinkPod, kubernetesJobManagerParameters);
 
-        return new KubernetesJobManagerSpecification(deployment, accompanyingResources);
+        final ArceeApplication application =
+                createApplication(deployment, kubernetesJobManagerParameters);
+
+        return new KubernetesJobManagerSpecification(
+                deployment, application, accompanyingResources);
     }
 
     private static Deployment createJobManagerDeployment(
@@ -137,5 +152,79 @@ public class KubernetesJobManagerFactory {
                 .endSelector()
                 .endSpec()
                 .build();
+    }
+
+    private static ArceeApplication createApplication(
+            Deployment deployment, KubernetesJobManagerParameters kubernetesJobManagerParameters) {
+
+        if (!kubernetesJobManagerParameters.isArceeEnabled()) {
+            return null;
+        }
+
+        Map<String, String> appAnnotation =
+                kubernetesJobManagerParameters.getArceeApplicationAnnotations();
+        String appName = kubernetesJobManagerParameters.getArceeApplicationName();
+
+        DeployMode entryPointMode =
+                KubernetesApplicationClusterEntrypoint.class
+                                .getName()
+                                .equals(kubernetesJobManagerParameters.getEntrypointClass())
+                        ? DeployMode.Application
+                        : DeployMode.Session;
+
+        AdmissionConfig admissionConfig =
+                AdmissionConfig.builder()
+                        .account(kubernetesJobManagerParameters.getArceeAdmissionConfigAccount())
+                        .user(kubernetesJobManagerParameters.getArceeAdmissionConfigUser())
+                        .group(kubernetesJobManagerParameters.getArceeAdmissionConfigGroup())
+                        .build();
+
+        SchedulingConfig schedulingConfig =
+                SchedulingConfig.builder()
+                        .queue(kubernetesJobManagerParameters.getArceeSchedulingConfigQueue())
+                        .priorityClassName(
+                                kubernetesJobManagerParameters
+                                        .getArceeSchedulingConfigPriorityClassName())
+                        .scheduleTimeoutSeconds(
+                                kubernetesJobManagerParameters
+                                        .getArceeSchedulingConfigScheduleTimeoutSec())
+                        .build();
+
+        RestartPolicy restartPolicy =
+                RestartPolicy.builder()
+                        .type(
+                                RestartPolicyType.valueOf(
+                                        kubernetesJobManagerParameters.getArceeRestartPolicyType()))
+                        .maxRetries(
+                                kubernetesJobManagerParameters.getArceeRestartPolicyMaxRetries())
+                        .maxScheduleFail(
+                                kubernetesJobManagerParameters
+                                        .getArceeRestartPolicyMaxScheduleFailures())
+                        .retryIntervalSecond(
+                                kubernetesJobManagerParameters.getArceeRestartPolicyInterval())
+                        .build();
+
+        AppMasterSpec amSpec =
+                AppMasterSpec.builder()
+                        .replicas(deployment.getSpec().getReplicas())
+                        .podSpec(deployment.getSpec().getTemplate())
+                        .build();
+
+        ArceeApplicationSpec spec =
+                ArceeApplicationSpec.builder()
+                        .type(ApplicationType.Flink)
+                        .mode(entryPointMode)
+                        .name(appName)
+                        .admissionConfig(admissionConfig)
+                        .restartPolicy(restartPolicy)
+                        .schedulingConfig(schedulingConfig)
+                        .amSpec(amSpec)
+                        .build();
+
+        ArceeApplication application = ArceeApplication.builder().spec(spec).build();
+        application.setMetadata(deployment.getMetadata());
+        application.getMetadata().getAnnotations().putAll(appAnnotation);
+
+        return application;
     }
 }

@@ -159,6 +159,7 @@ public class KubernetesResourceManagerDriver
                 "Deregistering Flink Kubernetes cluster, clusterId: {}, diagnostics: {}",
                 clusterId,
                 optionalDiagnostics == null ? "" : optionalDiagnostics);
+        flinkKubeClient.reportApplicationStatus(clusterId, finalStatus, optionalDiagnostics);
         flinkKubeClient.stopAndCleanupCluster(clusterId);
     }
 

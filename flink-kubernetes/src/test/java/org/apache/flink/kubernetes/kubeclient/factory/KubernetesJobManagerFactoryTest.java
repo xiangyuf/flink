@@ -40,6 +40,11 @@ import org.apache.flink.kubernetes.utils.Constants;
 import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import org.apache.flink.runtime.jobmanager.HighAvailabilityMode;
 
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ApplicationType;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ArceeApplication;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.ArceeApplicationSpec;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.DeployMode;
+import com.bytedance.openplatform.arcee.resources.v1alpha1.RestartPolicyType;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -65,7 +70,10 @@ import static org.apache.flink.configuration.GlobalConfiguration.FLINK_CONF_FILE
 import static org.apache.flink.kubernetes.utils.Constants.CONFIG_FILE_LOG4J_NAME;
 import static org.apache.flink.kubernetes.utils.Constants.CONFIG_FILE_LOGBACK_NAME;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /** General tests for the {@link KubernetesJobManagerFactory}. */
@@ -538,5 +546,74 @@ class KubernetesJobManagerFactoryTest extends KubernetesJobManagerTestBase {
         assertTrue(
                 "should not create emptyDir volume",
                 podSpec.getVolumes().stream().allMatch(volume -> volume.getEmptyDir() == null));
+    }
+
+    @Test
+    public void testApplicationArceeNotEnabled() throws IOException {
+        assertFalse(flinkConfig.getBoolean(KubernetesConfigOptions.ARCEE_ENABLED));
+        this.kubernetesJobManagerSpecification =
+                KubernetesJobManagerFactory.buildKubernetesJobManagerSpecification(
+                        flinkPod, kubernetesJobManagerParameters);
+        final ArceeApplication resultApplication =
+                this.kubernetesJobManagerSpecification.getApplication();
+        assertNull(resultApplication);
+    }
+
+    @Test
+    public void testApplicationMetadataAndSpecFromDeployment() throws IOException {
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_ENABLED, true);
+        KubernetesJobManagerSpecification kubernetesJobManagerSpecification =
+                KubernetesJobManagerFactory.buildKubernetesJobManagerSpecification(
+                        flinkPod, kubernetesJobManagerParameters);
+
+        final ArceeApplication resultApplication =
+                kubernetesJobManagerSpecification.getApplication();
+        assertEquals(
+                KubernetesUtils.getDeploymentName(CLUSTER_ID),
+                resultApplication.getMetadata().getName());
+        final Map<String, String> expectedLabels = getCommonLabels();
+        expectedLabels.put(Constants.LABEL_COMPONENT_KEY, Constants.LABEL_COMPONENT_JOB_MANAGER);
+        expectedLabels.putAll(userLabels);
+        assertEquals(expectedLabels, resultApplication.getMetadata().getLabels());
+        assertEquals(1, resultApplication.getSpec().getAmSpec().getReplicas().intValue());
+        assertEquals(
+                expectedLabels,
+                resultApplication.getSpec().getAmSpec().getPodSpec().getMetadata().getLabels());
+        assertNotNull(resultApplication.getSpec().getAmSpec().getPodSpec().getSpec());
+    }
+
+    @Test
+    public void testApplicationSpecFromConfiguration() throws IOException {
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_ENABLED, true);
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_APP_NAME, "test_app_name");
+        flinkConfig.set(
+                KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_ACCOUNT, "test_arcee_account");
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_USER, "test_arcee_user");
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_ADMISSION_CONFIG_GROUP, "test_arcee_group");
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_RESTART_POLICY_TYPE, "OnFailure");
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_RESTART_POLICY_MAX_RETRIES, 7);
+        flinkConfig.set(KubernetesConfigOptions.ARCEE_SCHEDULING_CONFIG_QUEUE, "test_arcee_queue");
+        flinkConfig.set(
+                KubernetesConfigOptions.ARCEE_SCHEDULING_CONFIG_SCHEDULE_TIMEOUT_SECONDS, 130);
+
+        KubernetesJobManagerSpecification kubernetesJobManagerSpecification =
+                KubernetesJobManagerFactory.buildKubernetesJobManagerSpecification(
+                        flinkPod, kubernetesJobManagerParameters);
+
+        final ArceeApplicationSpec resultApplicationSpec =
+                kubernetesJobManagerSpecification.getApplication().getSpec();
+        assertEquals(resultApplicationSpec.getMode(), DeployMode.Session);
+        assertEquals(resultApplicationSpec.getType(), ApplicationType.Flink);
+        assertEquals(resultApplicationSpec.getName(), "test_app_name");
+        assertEquals(resultApplicationSpec.getAdmissionConfig().getAccount(), "test_arcee_account");
+        assertEquals(resultApplicationSpec.getAdmissionConfig().getUser(), "test_arcee_user");
+        assertEquals(resultApplicationSpec.getAdmissionConfig().getGroup(), "test_arcee_group");
+        assertEquals(
+                resultApplicationSpec.getRestartPolicy().getType(), RestartPolicyType.OnFailure);
+        assertEquals(resultApplicationSpec.getRestartPolicy().getMaxRetries().longValue(), 7);
+        assertEquals(resultApplicationSpec.getSchedulingConfig().getQueue(), "test_arcee_queue");
+        assertEquals(
+                resultApplicationSpec.getSchedulingConfig().getScheduleTimeoutSeconds().longValue(),
+                130);
     }
 }

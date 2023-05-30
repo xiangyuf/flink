@@ -64,6 +64,12 @@ under the License.
 			<version>${kubernetes.client.version}</version>
 		</dependency>
 
+		<dependency>
+			<groupId>com.bytedance.openplatform</groupId>
+			<artifactId>arcee-sdk</artifactId>
+			<version>fabric8_5.12.3-1.0.0.9</version>
+		</dependency>
+
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>io.fabric8</groupId>
@@ -118,6 +124,7 @@ under the License.
 									<include>com.squareup.okio:okio</include>
 									<include>org.yaml:*</include>
 									<include>dk.brics.automaton:*</include>
+									<include>com.bytedance.openplatform:arcee-sdk</include>
 
 									<include>META-INF/services/org.apache.flink.*</include>
 								</includes>
@@ -166,6 +173,10 @@ under the License.
 								<relocation>
 									<pattern>dk.brics.automaton</pattern>
 									<shadedPattern>org.apache.flink.kubernetes.shaded.dk.brics.automaton</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.bytedance.openplatform.arcee</pattern>
+									<shadedPattern>org.apache.flink.kubernetes.shaded.com.bytedance.openplatform.arcee</shadedPattern>
 								</relocation>
 								<relocation>
 								    <pattern>io.fabric8</pattern>

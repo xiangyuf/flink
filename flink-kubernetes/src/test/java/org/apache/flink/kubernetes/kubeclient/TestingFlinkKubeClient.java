@@ -25,6 +25,7 @@ import org.apache.flink.kubernetes.kubeclient.resources.KubernetesLeaderElector;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesPod;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesService;
 import org.apache.flink.kubernetes.kubeclient.resources.KubernetesWatch;
+import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.concurrent.FutureUtils;
 
@@ -135,6 +136,12 @@ public class TestingFlinkKubeClient implements FlinkKubeClient {
     @Override
     public void stopAndCleanupCluster(String clusterId) {
         stopAndCleanupClusterConsumer.accept(clusterId);
+    }
+
+    @Override
+    public void reportApplicationStatus(
+            String clusterId, ApplicationStatus finalStatus, @Nullable String diagnostics) {
+        // not supported
     }
 
     @Override

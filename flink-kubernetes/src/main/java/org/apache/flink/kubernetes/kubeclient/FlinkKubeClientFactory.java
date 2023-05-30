@@ -98,8 +98,18 @@ public class FlinkKubeClientFactory {
         final NamespacedKubernetesClient client = new DefaultKubernetesClient(config);
         final int poolSize =
                 flinkConfig.get(KubernetesConfigOptions.KUBERNETES_CLIENT_IO_EXECUTOR_POOL_SIZE);
-        return new Fabric8FlinkKubeClient(
-                flinkConfig, client, createThreadPoolForAsyncIO(poolSize, useCase));
+
+        FlinkKubeClient flinkKubeClient;
+        if (flinkConfig.get(KubernetesConfigOptions.ARCEE_ENABLED)) {
+            flinkKubeClient =
+                    new ArceeFlinkKubeClient(
+                            flinkConfig, client, createThreadPoolForAsyncIO(poolSize, useCase));
+        } else {
+            flinkKubeClient =
+                    new Fabric8FlinkKubeClient(
+                            flinkConfig, client, createThreadPoolForAsyncIO(poolSize, useCase));
+        }
+        return flinkKubeClient;
     }
 
     private static ExecutorService createThreadPoolForAsyncIO(int poolSize, String useCase) {
