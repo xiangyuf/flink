@@ -55,7 +55,7 @@ akka.tcp.timeout: 80 s
 # Fault tolerance
 #==============================================================================
 jobmanager.execution.failover-strategy: region
-restart-strategy: fixed-delay
+restart-strategy: failure-rate
 restart-strategy.failure-rate.max-failures-per-interval: 100
 restart-strategy.failure-rate.failure-rate-interval: 40 min
 restart-strategy.failure-rate.delay: 20 s
