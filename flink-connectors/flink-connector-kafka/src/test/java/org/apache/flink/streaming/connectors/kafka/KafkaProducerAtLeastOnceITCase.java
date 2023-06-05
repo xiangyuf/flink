@@ -19,9 +19,11 @@
 package org.apache.flink.streaming.connectors.kafka;
 
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 
 /** IT cases for the {@link FlinkKafkaProducer}. */
 @SuppressWarnings("serial")
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaProducerAtLeastOnceITCase extends KafkaProducerTestBase {
 
     @BeforeClass

@@ -25,6 +25,7 @@ import org.apache.flink.streaming.api.operators.StreamSink;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.junit.Ignore;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
@@ -39,6 +40,7 @@ import java.util.Properties;
  * Flink release-* branch.
  */
 @RunWith(Parameterized.class)
+@Ignore("Disabled because dock environment is not supported now")
 public class FlinkKafkaProducerMigrationTest extends KafkaMigrationTestBase {
     @Parameterized.Parameters(name = "Migration Savepoint: {0}")
     public static Collection<FlinkVersion> parameters() {

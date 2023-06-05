@@ -57,6 +57,7 @@ import static org.assertj.core.api.Assertions.fail;
  * <p>Do not run this class in the same junit execution with other tests in your IDE. This may lead
  * leaking threads.
  */
+@Ignore("Disabled because dock environment is not supported now")
 public class FlinkKafkaProducerITCase extends KafkaTestBase {
 
     protected String transactionalId;

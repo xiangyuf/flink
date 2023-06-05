@@ -26,6 +26,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.slf4j.Logger;
@@ -47,6 +48,7 @@ import static org.apache.flink.util.DockerImageVersions.KAFKA;
 
 @Testcontainers
 @ExtendWith(TestLoggerExtension.class)
+@Disabled("Disabled because dock environment is not supported now")
 class KafkaMetricMutableWrapperTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaMetricMutableWrapperTest.class);

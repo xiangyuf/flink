@@ -31,6 +31,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -42,6 +43,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for our own {@link FlinkKafkaInternalProducer}. */
 @SuppressWarnings("serial")
+@Ignore("Disabled because dock environment is not supported now")
 public class FlinkKafkaInternalProducerITCase extends KafkaTestBase {
     protected String transactionalId;
     protected Properties extraProperties;

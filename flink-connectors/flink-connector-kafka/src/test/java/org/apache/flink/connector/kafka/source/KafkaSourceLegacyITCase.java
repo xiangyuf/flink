@@ -31,6 +31,7 @@ import org.junit.Test;
  * An IT case class that runs all the IT cases of the legacy {@link
  * org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer} with the new {@link KafkaSource}.
  */
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaSourceLegacyITCase extends KafkaConsumerTestBase {
 
     public KafkaSourceLegacyITCase() throws Exception {

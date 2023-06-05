@@ -39,6 +39,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.annotation.Nullable;
@@ -49,6 +50,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 /** IT cases for Kafka. */
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaITCase extends KafkaConsumerTestBase {
 
     @BeforeClass

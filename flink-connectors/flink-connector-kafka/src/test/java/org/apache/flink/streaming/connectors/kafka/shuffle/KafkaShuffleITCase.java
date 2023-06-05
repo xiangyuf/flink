@@ -38,6 +38,7 @@ import org.apache.flink.shaded.guava31.com.google.common.collect.Iterables;
 import org.apache.flink.shaded.guava31.com.google.common.collect.Lists;
 
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -60,6 +61,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 /** Simple End to End Test for Kafka. */
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaShuffleITCase extends KafkaShuffleTestBase {
 
     @Rule public final Timeout timeout = Timeout.millis(600000L);

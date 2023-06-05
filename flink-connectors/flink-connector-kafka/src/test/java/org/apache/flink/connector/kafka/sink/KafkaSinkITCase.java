@@ -73,8 +73,10 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -108,6 +110,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 /** Tests for using KafkaSink writing to a Kafka cluster. */
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaSinkITCase extends TestLogger {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSinkITCase.class);
@@ -165,6 +168,7 @@ public class KafkaSinkITCase extends TestLogger {
 
     /** Integration test based on connector testing framework. */
     @Nested
+    @Disabled("Disabled because dock environment is not supported now")
     class IntegrationTests extends SinkTestSuiteBase<String> {
         // Defines test environment on Flink MiniCluster
         @SuppressWarnings("unused")

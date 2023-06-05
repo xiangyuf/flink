@@ -27,6 +27,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.connectors.kafka.testutils.FailingIdentityMapper;
 import org.apache.flink.streaming.connectors.kafka.testutils.ValidatingExactlyOnceSink;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.Timeout;
@@ -39,6 +40,7 @@ import static org.apache.flink.streaming.api.TimeCharacteristic.ProcessingTime;
 import static org.apache.flink.test.util.TestUtils.tryExecute;
 
 /** Failure Recovery IT Test for KafkaShuffle. */
+@Ignore("Disabled because dock environment is not supported now")
 public class KafkaShuffleExactlyOnceITCase extends KafkaShuffleTestBase {
 
     @Rule public final Timeout timeout = Timeout.millis(600000L);

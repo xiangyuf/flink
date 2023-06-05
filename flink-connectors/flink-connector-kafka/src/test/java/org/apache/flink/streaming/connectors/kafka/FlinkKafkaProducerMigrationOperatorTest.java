@@ -34,6 +34,7 @@ import java.util.Collection;
  * by the {@link #getOperatorSnapshotPath(FlinkVersion)} method then copy the resource to the path
  * also specified by the {@link #getOperatorSnapshotPath(FlinkVersion)} method.
  */
+@Ignore("Disabled because dock environment is not supported now")
 public class FlinkKafkaProducerMigrationOperatorTest extends FlinkKafkaProducerMigrationTest {
     @Parameterized.Parameters(name = "Migration Savepoint: {0}")
     public static Collection<FlinkVersion> parameters() {
