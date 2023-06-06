@@ -302,6 +302,8 @@ public class FsCheckpointStorageAccessTest extends AbstractFileCheckpointStorage
                         randomTempPath(),
                         null,
                         new JobID(),
+                        null,
+                        null,
                         FILE_SIZE_THRESHOLD,
                         WRITE_BUFFER_SIZE);
 

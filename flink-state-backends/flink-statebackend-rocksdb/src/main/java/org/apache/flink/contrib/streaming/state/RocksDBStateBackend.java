@@ -308,6 +308,13 @@ public class RocksDBStateBackend extends AbstractManagedMemoryStateBackend
         return ((CheckpointStorage) checkpointStreamBackend).createCheckpointStorage(jobId);
     }
 
+    @Override
+    public CheckpointStorageAccess createCheckpointStorage(JobID jobId, String jobName)
+            throws IOException {
+        return ((CheckpointStorage) checkpointStreamBackend)
+                .createCheckpointStorage(jobId, jobName);
+    }
+
     // ------------------------------------------------------------------------
     //  State holding data structures
     // ------------------------------------------------------------------------

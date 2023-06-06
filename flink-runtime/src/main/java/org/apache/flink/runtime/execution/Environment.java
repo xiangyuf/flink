@@ -76,6 +76,15 @@ public interface Environment {
     JobID getJobID();
 
     /**
+     * Returns the Name of the job that the task belongs to.
+     *
+     * @return the Name of the job from the original job graph
+     */
+    default String getJobName() {
+        return "Environment";
+    }
+
+    /**
      * Gets the ID of the JobVertex for which this task executes a parallel subtask.
      *
      * @return The JobVertexID of this task.

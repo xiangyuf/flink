@@ -82,6 +82,7 @@ public class FailoverStrategyCheckpointCoordinatorTest extends TestLogger {
         CheckpointCoordinator checkpointCoordinator =
                 new CheckpointCoordinator(
                         graph.getJobID(),
+                        "test",
                         checkpointCoordinatorConfiguration,
                         Collections.emptyList(),
                         new StandaloneCheckpointIDCounter(),

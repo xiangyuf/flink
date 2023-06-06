@@ -214,6 +214,15 @@ public abstract class AbstractFsCheckpointStorageAccess implements CheckpointSto
         return new Path(baseCheckpointPath, jobId.toString());
     }
 
+    protected static Path getCheckpointDirectoryForJob(
+            Path baseCheckpointPath, String jobName, @Nullable String checkpointsNamespace) {
+        if (checkpointsNamespace != null) {
+            return new Path(new Path(baseCheckpointPath, jobName), checkpointsNamespace);
+        } else {
+            return new Path(baseCheckpointPath, jobName);
+        }
+    }
+
     /**
      * Creates the directory path for the data exclusive to a specific checkpoint.
      *

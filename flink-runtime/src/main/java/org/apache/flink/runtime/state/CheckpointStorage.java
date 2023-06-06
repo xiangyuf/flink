@@ -87,4 +87,9 @@ public interface CheckpointStorage extends java.io.Serializable {
      * @throws IOException Thrown if the checkpoint storage cannot be initialized.
      */
     CheckpointStorageAccess createCheckpointStorage(JobID jobId) throws IOException;
+
+    default CheckpointStorageAccess createCheckpointStorage(JobID jobId, String jobName)
+            throws IOException {
+        return this.createCheckpointStorage(jobId);
+    }
 }

@@ -443,7 +443,8 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
                                     .getAvailabilityProvider();
 
             CheckpointStorageAccess checkpointStorageAccess =
-                    checkpointStorage.createCheckpointStorage(getEnvironment().getJobID());
+                    checkpointStorage.createCheckpointStorage(
+                            getEnvironment().getJobID(), getEnvironment().getJobName());
 
             environment.setCheckpointStorageAccess(checkpointStorageAccess);
 

@@ -832,6 +832,7 @@ public class CheckpointCoordinatorTestingUtils {
 
             return new CheckpointCoordinator(
                     executionGraph.getJobID(),
+                    "test",
                     checkpointCoordinatorConfiguration,
                     coordinatorsToCheckpoint,
                     checkpointIDCounter,

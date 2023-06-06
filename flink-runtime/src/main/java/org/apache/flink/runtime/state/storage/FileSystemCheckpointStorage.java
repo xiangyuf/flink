@@ -93,6 +93,8 @@ public class FileSystemCheckpointStorage
     /** The location where snapshots will be externalized. */
     private final ExternalizedSnapshotLocation location;
 
+    private String namespace;
+
     /**
      * State below this size will be stored as part of the metadata, rather than in files. A value
      * of '-1' means not yet configured, in which case the default will be used.
@@ -263,6 +265,7 @@ public class FileSystemCheckpointStorage
                         .withSavepointPath(original.location.getBaseSavepointPath())
                         .withConfiguration(configuration)
                         .build();
+        this.namespace = configuration.get(CheckpointingOptions.CHECKPOINTS_NAMESPACE);
     }
 
     private int getValidFileStateThreshold(long fileStateThreshold) {
@@ -320,6 +323,21 @@ public class FileSystemCheckpointStorage
                 location.getBaseCheckpointPath(),
                 location.getBaseSavepointPath(),
                 jobId,
+                getMinFileSizeThreshold(),
+                getWriteBufferSize());
+    }
+
+    @Override
+    public CheckpointStorageAccess createCheckpointStorage(JobID jobId, String jobName)
+            throws IOException {
+        checkNotNull(jobId, "jobId");
+        return new FsCheckpointStorageAccess(
+                location.getBaseCheckpointPath().getFileSystem(),
+                location.getBaseCheckpointPath(),
+                location.getBaseSavepointPath(),
+                jobId,
+                jobName,
+                namespace,
                 getMinFileSizeThreshold(),
                 getWriteBufferSize());
     }

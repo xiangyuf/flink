@@ -243,4 +243,10 @@ public class CheckpointingOptions {
                                             + "The actual write buffer size is determined to be the maximum of the value of this option and option '%s'.",
                                     FS_SMALL_FILE_THRESHOLD.key()))
                     .withDeprecatedKeys("state.backend.fs.write-buffer-size");
+
+    /** The namespace for checkpoints of one job. */
+    public static final ConfigOption<String> CHECKPOINTS_NAMESPACE =
+            ConfigOptions.key("state.checkpoints.namespace")
+                    .defaultValue("default")
+                    .withDescription("The namespace for checkpoints of one job.");
 }
