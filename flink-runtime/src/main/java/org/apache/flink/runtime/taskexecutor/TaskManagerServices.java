@@ -88,6 +88,7 @@ public class TaskManagerServices {
     private final LibraryCacheManager libraryCacheManager;
     private final SlotAllocationSnapshotPersistenceService slotAllocationSnapshotPersistenceService;
     private final SharedResources sharedResources;
+    private final ShuffleDescriptorsCache shuffleDescriptorsCache;
 
     TaskManagerServices(
             UnresolvedTaskManagerLocation unresolvedTaskManagerLocation,
@@ -106,7 +107,8 @@ public class TaskManagerServices {
             ExecutorService ioExecutor,
             LibraryCacheManager libraryCacheManager,
             SlotAllocationSnapshotPersistenceService slotAllocationSnapshotPersistenceService,
-            SharedResources sharedResources) {
+            SharedResources sharedResources,
+            ShuffleDescriptorsCache shuffleDescriptorsCache) {
 
         this.unresolvedTaskManagerLocation =
                 Preconditions.checkNotNull(unresolvedTaskManagerLocation);
@@ -126,6 +128,7 @@ public class TaskManagerServices {
         this.libraryCacheManager = Preconditions.checkNotNull(libraryCacheManager);
         this.slotAllocationSnapshotPersistenceService = slotAllocationSnapshotPersistenceService;
         this.sharedResources = Preconditions.checkNotNull(sharedResources);
+        this.shuffleDescriptorsCache = Preconditions.checkNotNull(shuffleDescriptorsCache);
     }
 
     // --------------------------------------------------------------------------------------------
@@ -194,6 +197,10 @@ public class TaskManagerServices {
 
     public SharedResources getSharedResources() {
         return sharedResources;
+    }
+
+    public ShuffleDescriptorsCache getShuffleDescriptorCache() {
+        return shuffleDescriptorsCache;
     }
 
     // --------------------------------------------------------------------------------------------
@@ -386,6 +393,9 @@ public class TaskManagerServices {
                     NoOpSlotAllocationSnapshotPersistenceService.INSTANCE;
         }
 
+        final ShuffleDescriptorsCache shuffleDescriptorsCache =
+                new DefaultShuffleDescriptorsCache.Factory().create();
+
         return new TaskManagerServices(
                 unresolvedTaskManagerLocation,
                 taskManagerServicesConfiguration.getManagedMemorySize().getBytes(),
@@ -403,7 +413,8 @@ public class TaskManagerServices {
                 ioExecutor,
                 libraryCacheManager,
                 slotAllocationSnapshotPersistenceService,
-                new SharedResources());
+                new SharedResources(),
+                shuffleDescriptorsCache);
     }
 
     private static TaskSlotTable<Task> createTaskSlotTable(
