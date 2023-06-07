@@ -21,6 +21,7 @@ package org.apache.flink.runtime.state.filesystem;
 import org.apache.flink.annotation.VisibleForTesting;
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.core.fs.DuplicatingFileSystem;
+import org.apache.flink.core.fs.FileStatus;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.runtime.state.CheckpointStateOutputStream;
@@ -31,15 +32,24 @@ import org.apache.flink.runtime.state.CheckpointStreamFactory;
 import org.apache.flink.runtime.state.NotDuplicatingCheckpointStateToolset;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStreamFactory.FsCheckpointStateOutputStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nullable;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /** An implementation of durable checkpoint storage to file systems. */
 public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess {
+    private static final Logger LOG = LoggerFactory.getLogger(FsCheckpointStorageAccess.class);
 
     private final FileSystem fileSystem;
 
@@ -212,5 +222,53 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         final CheckpointStorageLocationReference reference = encodePathAsReference(location);
         return new FsCheckpointStorageLocation(
                 fs, location, location, location, reference, fileSizeThreshold, writeBufferSize);
+    }
+
+    @Override
+    public List<String> findCompletedCheckpointPointer() throws IOException {
+        FileStatus[] statuses = fileSystem.listStatus(checkpointsDirectory);
+        if (statuses == null) {
+            return Collections.emptyList();
+        }
+        return Arrays.stream(statuses)
+                .filter(
+                        fileStatus -> {
+                            try {
+                                return fileStatus
+                                                .getPath()
+                                                .getName()
+                                                .startsWith(CHECKPOINT_DIR_PREFIX)
+                                        && fileSystem.exists(
+                                                new Path(fileStatus.getPath(), METADATA_FILE_NAME));
+                            } catch (IOException e) {
+                                LOG.info(
+                                        "Exception when checking {} is completed checkpoint.",
+                                        fileStatus.getPath(),
+                                        e);
+                                return false;
+                            }
+                        })
+                .sorted(
+                        Comparator.comparingInt(
+                                        (FileStatus fileStatus) -> {
+                                            try {
+                                                return Integer.parseInt(
+                                                        fileStatus
+                                                                .getPath()
+                                                                .getName()
+                                                                .substring(
+                                                                        CHECKPOINT_DIR_PREFIX
+                                                                                .length()));
+                                            } catch (Exception e) {
+                                                LOG.info(
+                                                        "Exception when parsing checkpoint {} id.",
+                                                        fileStatus.getPath(),
+                                                        e);
+                                                return Integer.MIN_VALUE;
+                                            }
+                                        })
+                                .reversed())
+                .map(fileStatus -> fileStatus.getPath().toString())
+                .collect(Collectors.toList());
     }
 }

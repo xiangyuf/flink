@@ -523,7 +523,8 @@ public class DefaultExecutionGraph implements ExecutionGraph, InternalExecutionG
                         createCheckpointPlanCalculator(
                                 chkConfig.isEnableCheckpointsAfterTasksFinish()),
                         new ExecutionAttemptMappingProvider(getAllExecutionVertices()),
-                        checkpointStatsTracker);
+                        checkpointStatsTracker,
+                        userClassLoader);
 
         // register the master hooks on the checkpoint coordinator
         for (MasterTriggerRestoreHook<?> hook : masterHooks) {

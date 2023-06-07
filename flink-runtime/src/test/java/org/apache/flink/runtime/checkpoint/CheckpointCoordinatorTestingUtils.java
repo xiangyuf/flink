@@ -846,7 +846,8 @@ public class CheckpointCoordinatorTestingUtils {
                     new ExecutionAttemptMappingProvider(executionGraph.getAllExecutionVertices()),
                     SystemClock.getInstance(),
                     checkpointStatsTracker,
-                    vertexFinishedStateCheckerFactory);
+                    vertexFinishedStateCheckerFactory,
+                    ClassLoader.getSystemClassLoader());
         }
     }
 

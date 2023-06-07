@@ -502,7 +502,8 @@ class CheckpointCoordinatorMasterHooksTest {
                         graph.getVerticesTopologically(),
                         false),
                 new ExecutionAttemptMappingProvider(graph.getAllExecutionVertices()),
-                new CheckpointStatsTracker(1, new DummyMetricGroup()));
+                new CheckpointStatsTracker(1, new DummyMetricGroup()),
+                ClassLoader.getSystemClassLoader());
     }
 
     private static <T> T mockGeneric(Class<?> clazz) {

@@ -60,6 +60,16 @@ public interface CompletedCheckpointStore {
             Runnable postCleanup)
             throws Exception;
 
+    @Nullable
+    default CompletedCheckpoint addCheckpointAndSubsumeOldestOne(
+            CompletedCheckpoint checkpoint,
+            CheckpointsCleaner checkpointsCleaner,
+            Runnable postCleanup,
+            boolean cleanUp)
+            throws Exception {
+        return addCheckpointAndSubsumeOldestOne(checkpoint, checkpointsCleaner, postCleanup);
+    }
+
     /**
      * Returns the latest {@link CompletedCheckpoint} instance or <code>null</code> if none was
      * added.

@@ -98,7 +98,8 @@ public class FailoverStrategyCheckpointCoordinatorTest extends TestLogger {
                                 graph.getVerticesTopologically(),
                                 false),
                         new ExecutionAttemptMappingProvider(graph.getAllExecutionVertices()),
-                        mock(CheckpointStatsTracker.class));
+                        mock(CheckpointStatsTracker.class),
+                        ClassLoader.getSystemClassLoader());
 
         // switch current execution's state to running to allow checkpoint could be triggered.
         graph.transitionToRunning();

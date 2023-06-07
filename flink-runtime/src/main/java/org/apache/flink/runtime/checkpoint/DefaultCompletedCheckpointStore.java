@@ -126,6 +126,16 @@ public class DefaultCompletedCheckpointStore<R extends ResourceVersion<R>>
             CheckpointsCleaner checkpointsCleaner,
             Runnable postCleanup)
             throws Exception {
+        return addCheckpointAndSubsumeOldestOne(checkpoint, checkpointsCleaner, postCleanup, true);
+    }
+
+    @Override
+    public CompletedCheckpoint addCheckpointAndSubsumeOldestOne(
+            final CompletedCheckpoint checkpoint,
+            CheckpointsCleaner checkpointsCleaner,
+            Runnable postCleanup,
+            boolean cleanUp)
+            throws Exception {
         Preconditions.checkState(running.get(), "Checkpoint store has already been shutdown.");
         checkNotNull(checkpoint, "Checkpoint");
 
@@ -145,7 +155,8 @@ public class DefaultCompletedCheckpointStore<R extends ResourceVersion<R>>
                         completedCheckpoint -> {
                             tryRemove(completedCheckpoint.getCheckpointID());
                             checkpointsCleaner.addSubsumedCheckpoint(completedCheckpoint);
-                        });
+                        },
+                        cleanUp);
 
         findLowest(completedCheckpoints)
                 .ifPresent(

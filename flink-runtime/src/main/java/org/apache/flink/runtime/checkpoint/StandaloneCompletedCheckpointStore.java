@@ -115,7 +115,8 @@ public class StandaloneCompletedCheckpointStore extends AbstractCompleteCheckpoi
                                 (cc) -> {
                                     cc.markAsDiscardedOnSubsume();
                                     checkpointsCleaner.addSubsumedCheckpoint(cc);
-                                })
+                                },
+                                true)
                         .orElse(null);
 
         findLowest(checkpoints)
