@@ -41,7 +41,7 @@ import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.testutils.MetricListener;
 import org.apache.flink.runtime.metrics.groups.InternalSourceReaderMetricGroup;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -89,7 +89,7 @@ public class KafkaSourceReaderTest extends SourceReaderTestBase<KafkaPartitionSp
     @BeforeAll
     public static void setup() throws Throwable {
         KafkaSourceTestEnv.setup();
-        try (AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+        try (BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
             adminClient
                     .createTopics(
                             Collections.singleton(new NewTopic(TOPIC, NUM_PARTITIONS, (short) 1)))
@@ -165,7 +165,7 @@ public class KafkaSourceReaderTest extends SourceReaderTestBase<KafkaPartitionSp
                     "The offset commit did not finish before timeout.");
         }
         // Verify the committed offsets.
-        try (AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+        try (BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
             Map<TopicPartition, OffsetAndMetadata> committedOffsets =
                     adminClient
                             .listConsumerGroupOffsets(groupId)
@@ -188,7 +188,7 @@ public class KafkaSourceReaderTest extends SourceReaderTestBase<KafkaPartitionSp
             reader.notifyCheckpointComplete(100L);
         }
         // Verify the committed offsets.
-        try (AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+        try (BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
             Map<TopicPartition, OffsetAndMetadata> committedOffsets =
                     adminClient
                             .listConsumerGroupOffsets(groupId)
@@ -236,7 +236,7 @@ public class KafkaSourceReaderTest extends SourceReaderTestBase<KafkaPartitionSp
         }
 
         // Verify the committed offsets.
-        try (AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+        try (BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
             Map<TopicPartition, OffsetAndMetadata> committedOffsets =
                     adminClient
                             .listConsumerGroupOffsets(groupId)

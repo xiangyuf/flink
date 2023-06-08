@@ -32,8 +32,8 @@ import org.apache.flink.streaming.api.CheckpointingMode;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -80,7 +80,7 @@ public class KafkaSinkExternalContext implements DataStreamSinkV2ExternalContext
 
     private List<URL> connectorJarPaths;
 
-    protected final AdminClient kafkaAdminClient;
+    protected final BytedKafkaAdmin kafkaAdminClient;
 
     public KafkaSinkExternalContext(String bootstrapServers, List<URL> connectorJarPaths) {
         this.bootstrapServers = bootstrapServers;
@@ -116,10 +116,10 @@ public class KafkaSinkExternalContext implements DataStreamSinkV2ExternalContext
         }
     }
 
-    private AdminClient createAdminClient() {
+    private BytedKafkaAdmin createAdminClient() {
         final Properties config = new Properties();
         config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return AdminClient.create(config);
+        return new BytedKafkaAdmin(config);
     }
 
     @Override
@@ -193,7 +193,7 @@ public class KafkaSinkExternalContext implements DataStreamSinkV2ExternalContext
 
     protected Map<String, TopicDescription> getTopicMetadata(List<String> topics) {
         try {
-            return kafkaAdminClient.describeTopics(topics).allTopicNames().get();
+            return kafkaAdminClient.describeTopics(topics).all().get();
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to get metadata for topics %s.", topics), e);
@@ -202,7 +202,7 @@ public class KafkaSinkExternalContext implements DataStreamSinkV2ExternalContext
 
     private boolean topicExists(String topic) {
         try {
-            kafkaAdminClient.describeTopics(Arrays.asList(topic)).allTopicNames().get();
+            kafkaAdminClient.describeTopics(Arrays.asList(topic)).all().get();
             return true;
         } catch (Exception e) {
             return false;

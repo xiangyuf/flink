@@ -32,6 +32,7 @@ import org.apache.flink.util.DockerImageVersions;
 
 import org.apache.commons.collections.list.UnmodifiableList;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.admin.TopicListing;
@@ -170,7 +171,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
     public void createTestTopic(
             String topic, int numberOfPartitions, int replicationFactor, Properties properties) {
         LOG.info("Creating topic {}", topic);
-        try (AdminClient adminClient = AdminClient.create(getStandardProperties())) {
+        try (BytedKafkaAdmin adminClient = new BytedKafkaAdmin(getStandardProperties())) {
             NewTopic topicObj = new NewTopic(topic, numberOfPartitions, (short) replicationFactor);
             adminClient.createTopics(Collections.singleton(topicObj)).all().get();
             CommonTestUtils.waitUtil(
@@ -180,7 +181,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
                             topicDescriptions =
                                     adminClient
                                             .describeTopics(Collections.singleton(topic))
-                                            .allTopicNames()
+                                            .all()
                                             .get(REQUEST_TIMEOUT_SECONDS, TimeUnit.SECONDS);
                         } catch (Exception e) {
                             LOG.warn("Exception caught when describing Kafka topics", e);
@@ -331,10 +332,7 @@ public class KafkaTestEnvironmentImpl extends KafkaTestEnvironment {
     public int getLeaderToShutDown(String topic) throws Exception {
         try (final AdminClient client = AdminClient.create(getStandardProperties())) {
             TopicDescription result =
-                    client.describeTopics(Collections.singleton(topic))
-                            .allTopicNames()
-                            .get()
-                            .get(topic);
+                    client.describeTopics(Collections.singleton(topic)).all().get().get(topic);
             return result.partitions().get(0).leader().id();
         }
     }

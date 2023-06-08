@@ -20,7 +20,7 @@ package org.apache.flink.connector.kafka.source.enumerator.subscriber;
 
 import org.apache.flink.connector.kafka.testutils.KafkaSourceTestEnv;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.junit.AfterClass;
@@ -45,7 +45,7 @@ public class KafkaSubscriberTest {
     private static final String TOPIC1 = "topic1";
     private static final String TOPIC2 = "pattern-topic";
     private static final TopicPartition NON_EXISTING_TOPIC = new TopicPartition("removed", 0);
-    private static AdminClient adminClient;
+    private static BytedKafkaAdmin adminClient;
 
     @BeforeClass
     public static void setup() throws Throwable {

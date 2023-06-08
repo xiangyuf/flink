@@ -21,7 +21,7 @@ package org.apache.flink.connector.kafka.testutils;
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.streaming.connectors.kafka.KafkaTestBase;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsOptions;
 import org.apache.kafka.clients.admin.RecordsToDelete;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -52,7 +52,7 @@ public class KafkaSourceTestEnv extends KafkaTestBase {
     public static final int NUM_PARTITIONS = 10;
     public static final int NUM_RECORDS_PER_PARTITION = 10;
 
-    private static AdminClient adminClient;
+    private static BytedKafkaAdmin adminClient;
     private static KafkaConsumer<String, Integer> consumer;
 
     public static void setup() throws Throwable {
@@ -69,10 +69,10 @@ public class KafkaSourceTestEnv extends KafkaTestBase {
 
     // --------------------- public client related helpers ------------------
 
-    public static AdminClient getAdminClient() {
+    public static BytedKafkaAdmin getAdminClient() {
         Properties props = new Properties();
         props.putAll(standardProps);
-        return AdminClient.create(props);
+        return new BytedKafkaAdmin(props);
     }
 
     public static KafkaConsumer<String, Integer> getConsumer() {

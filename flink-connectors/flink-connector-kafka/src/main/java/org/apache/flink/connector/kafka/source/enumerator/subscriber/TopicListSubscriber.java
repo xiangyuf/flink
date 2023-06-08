@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.kafka.source.enumerator.subscriber;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
@@ -46,7 +46,7 @@ class TopicListSubscriber implements KafkaSubscriber {
     }
 
     @Override
-    public Set<TopicPartition> getSubscribedTopicPartitions(AdminClient adminClient) {
+    public Set<TopicPartition> getSubscribedTopicPartitions(BytedKafkaAdmin adminClient) {
         LOG.debug("Fetching descriptions for topics: {}", topics);
         final Map<String, TopicDescription> topicMetadata =
                 getTopicMetadata(adminClient, new HashSet<>(topics));

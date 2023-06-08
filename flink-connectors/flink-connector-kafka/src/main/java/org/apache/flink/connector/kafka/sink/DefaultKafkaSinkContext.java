@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.kafka.sink;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.common.PartitionInfo;
 
@@ -63,7 +63,7 @@ public class DefaultKafkaSinkContext implements KafkaRecordSerializationSchema.K
     }
 
     private int[] fetchPartitionsForTopic(String topic) {
-        try (final Producer<?, ?> producer = new KafkaProducer<>(kafkaProducerConfig)) {
+        try (final Producer<?, ?> producer = new BytedKafkaProducer<>(kafkaProducerConfig)) {
             // the fetched list is immutable, so we're creating a mutable copy in order to sort
             // it
             final List<PartitionInfo> partitionsList =

@@ -30,6 +30,7 @@ import org.apache.flink.connector.kafka.testutils.KafkaSourceTestEnv;
 import org.apache.flink.mock.Whitebox;
 
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
@@ -257,7 +258,7 @@ public class KafkaEnumeratorTest {
                                 context,
                                 ENABLE_PERIODIC_PARTITION_DISCOVERY,
                                 INCLUDE_DYNAMIC_TOPIC);
-                AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+                BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
 
             startEnumeratorAndRegisterReaders(context, enumerator);
 
@@ -293,7 +294,7 @@ public class KafkaEnumeratorTest {
                     Collections.singleton(DYNAMIC_TOPIC_NAME),
                     3);
         } finally {
-            try (AdminClient adminClient = KafkaSourceTestEnv.getAdminClient()) {
+            try (BytedKafkaAdmin adminClient = KafkaSourceTestEnv.getAdminClient()) {
                 adminClient.deleteTopics(Collections.singleton(DYNAMIC_TOPIC_NAME)).all().get();
             } catch (Exception e) {
                 // Let it go.

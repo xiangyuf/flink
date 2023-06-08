@@ -29,8 +29,8 @@ import org.apache.flink.connector.testframe.external.ExternalSystemSplitDataWrit
 import org.apache.flink.connector.testframe.external.source.DataStreamSourceExternalContext;
 import org.apache.flink.connector.testframe.external.source.TestingSourceSettings;
 
-import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.NewPartitions;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
@@ -68,7 +68,7 @@ public class KafkaSourceExternalContext implements DataStreamSourceExternalConte
     private final String bootstrapServers;
     private final String topicName;
     private final SplitMappingMode splitMappingMode;
-    private final AdminClient adminClient;
+    private final BytedKafkaAdmin adminClient;
     private final List<KafkaPartitionDataWriter> writers = new ArrayList<>();
 
     protected KafkaSourceExternalContext(
@@ -169,10 +169,10 @@ public class KafkaSourceExternalContext implements DataStreamSourceExternalConte
         return prefix + ThreadLocalRandom.current().nextLong(0, Long.MAX_VALUE);
     }
 
-    private AdminClient createAdminClient() {
+    private BytedKafkaAdmin createAdminClient() {
         Properties config = new Properties();
         config.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        return AdminClient.create(config);
+        return new BytedKafkaAdmin(config);
     }
 
     private KafkaPartitionDataWriter createSinglePartitionTopic(int topicIndex) throws Exception {
@@ -190,10 +190,7 @@ public class KafkaSourceExternalContext implements DataStreamSourceExternalConte
         final Set<String> topics = adminClient.listTopics().names().get();
         if (topics.contains(topicName)) {
             final Map<String, TopicDescription> topicDescriptions =
-                    adminClient
-                            .describeTopics(Collections.singletonList(topicName))
-                            .allTopicNames()
-                            .get();
+                    adminClient.describeTopics(Collections.singletonList(topicName)).all().get();
             final int numPartitions = topicDescriptions.get(topicName).partitions().size();
             LOG.info("Creating partition {} for topic '{}'", numPartitions + 1, topicName);
             adminClient

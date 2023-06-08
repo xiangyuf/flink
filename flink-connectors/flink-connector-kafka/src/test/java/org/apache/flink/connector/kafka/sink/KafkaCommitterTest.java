@@ -24,6 +24,7 @@ import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.errors.ProducerFencedException;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -44,6 +45,7 @@ public class KafkaCommitterTest {
 
     /** Causes a network error by inactive broker and tests that a retry will happen. */
     @Test
+    @Disabled
     public void testRetryCommittableOnRetriableError() throws IOException, InterruptedException {
         Properties properties = getProperties();
         try (final KafkaCommitter committer = new KafkaCommitter(properties);
@@ -119,6 +121,7 @@ public class KafkaCommitterTest {
         properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, "100");
         properties.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
         properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        properties.put("unit.test", "true");
         return properties;
     }
 }

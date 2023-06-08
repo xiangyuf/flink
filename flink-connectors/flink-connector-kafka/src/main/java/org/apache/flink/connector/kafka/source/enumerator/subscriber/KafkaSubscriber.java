@@ -20,7 +20,7 @@ package org.apache.flink.connector.kafka.source.enumerator.subscriber;
 
 import org.apache.flink.annotation.PublicEvolving;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.common.TopicPartition;
 
 import java.io.Serializable;
@@ -49,7 +49,7 @@ public interface KafkaSubscriber extends Serializable {
      * @param adminClient The admin client used to retrieve subscribed topic partitions.
      * @return A set of subscribed {@link TopicPartition}s
      */
-    Set<TopicPartition> getSubscribedTopicPartitions(AdminClient adminClient);
+    Set<TopicPartition> getSubscribedTopicPartitions(BytedKafkaAdmin adminClient);
 
     // ----------------- factory methods --------------
 

@@ -191,9 +191,6 @@ public class KafkaSinkBuilder<IN> {
     }
 
     private void sanityCheck() {
-        checkNotNull(
-                kafkaProducerConfig.getProperty(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG),
-                "bootstrapServers");
         if (deliveryGuarantee == DeliveryGuarantee.EXACTLY_ONCE) {
             checkState(
                     transactionalIdPrefix != null,

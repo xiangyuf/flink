@@ -69,7 +69,6 @@ import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOp
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FIELDS_PREFIX;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.KEY_FORMAT;
-import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_BOOTSTRAP_SERVERS;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.PROPS_GROUP_ID;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.SCAN_BOUNDED_MODE;
 import static org.apache.flink.streaming.connectors.kafka.table.KafkaConnectorOptions.SCAN_BOUNDED_SPECIFIC_OFFSETS;
@@ -124,7 +123,6 @@ public class KafkaDynamicTableFactory
     @Override
     public Set<ConfigOption<?>> requiredOptions() {
         final Set<ConfigOption<?>> options = new HashSet<>();
-        options.add(PROPS_BOOTSTRAP_SERVERS);
         return options;
     }
 
@@ -158,7 +156,6 @@ public class KafkaDynamicTableFactory
     @Override
     public Set<ConfigOption<?>> forwardOptions() {
         return Stream.of(
-                        PROPS_BOOTSTRAP_SERVERS,
                         PROPS_GROUP_ID,
                         TOPIC,
                         TOPIC_PATTERN,

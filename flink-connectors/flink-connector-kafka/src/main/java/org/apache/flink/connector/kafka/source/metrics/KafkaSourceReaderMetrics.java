@@ -28,7 +28,7 @@ import org.apache.flink.metrics.groups.SourceReaderMetricGroup;
 import org.apache.flink.runtime.metrics.MetricNames;
 import org.apache.flink.runtime.metrics.groups.TaskIOMetricGroup;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.BytedKafkaConsumer;
 import org.apache.kafka.common.Metric;
 import org.apache.kafka.common.MetricName;
 import org.apache.kafka.common.TopicPartition;
@@ -123,7 +123,7 @@ public class KafkaSourceReaderMetrics {
      * @param kafkaConsumer Kafka consumer used by partition split reader.
      */
     @SuppressWarnings("Convert2MethodRef")
-    public void registerKafkaConsumerMetrics(KafkaConsumer<?, ?> kafkaConsumer) {
+    public void registerKafkaConsumerMetrics(BytedKafkaConsumer<?, ?> kafkaConsumer) {
         final Map<MetricName, ? extends Metric> kafkaConsumerMetrics = kafkaConsumer.metrics();
         if (kafkaConsumerMetrics == null) {
             LOG.warn("Consumer implementation does not support metrics");
@@ -185,7 +185,7 @@ public class KafkaSourceReaderMetrics {
      *
      * @param consumer Kafka consumer
      */
-    public void registerNumBytesIn(KafkaConsumer<?, ?> consumer) {
+    public void registerNumBytesIn(BytedKafkaConsumer<?, ?> consumer) {
         try {
             Predicate<Map.Entry<MetricName, ? extends Metric>> filter =
                     (entry) ->
@@ -213,7 +213,7 @@ public class KafkaSourceReaderMetrics {
      * @param consumer Kafka consumer
      * @param tp Topic partition
      */
-    public void maybeAddRecordsLagMetric(KafkaConsumer<?, ?> consumer, TopicPartition tp) {
+    public void maybeAddRecordsLagMetric(BytedKafkaConsumer<?, ?> consumer, TopicPartition tp) {
         // Lazily register pendingRecords
         if (recordsLagMetrics == null) {
             this.recordsLagMetrics = new ConcurrentHashMap<>();

@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.kafka.source.enumerator.subscriber;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ class PartitionSetSubscriber implements KafkaSubscriber {
     }
 
     @Override
-    public Set<TopicPartition> getSubscribedTopicPartitions(AdminClient adminClient) {
+    public Set<TopicPartition> getSubscribedTopicPartitions(BytedKafkaAdmin adminClient) {
         final Set<String> topicNames =
                 subscribedPartitions.stream()
                         .map(TopicPartition::topic)

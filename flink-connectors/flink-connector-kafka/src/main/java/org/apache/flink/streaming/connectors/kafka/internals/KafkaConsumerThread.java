@@ -24,8 +24,8 @@ import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.streaming.connectors.kafka.internals.metrics.KafkaMetricWrapper;
 
+import org.apache.kafka.clients.consumer.BytedKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.Metric;
@@ -48,9 +48,9 @@ import java.util.concurrent.atomic.AtomicReference;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
 /**
- * The thread the runs the {@link KafkaConsumer}, connecting to the brokers and polling records. The
- * thread pushes the data into a {@link Handover} to be picked up by the fetcher that will
- * deserialize and emit the records.
+ * The thread the runs the {@link BytedKafkaConsumer}, connecting to the brokers and polling
+ * records. The thread pushes the data into a {@link Handover} to be picked up by the fetcher that
+ * will deserialize and emit the records.
  *
  * <p><b>IMPORTANT:</b> This thread must not be interrupted when attempting to shut it down. The
  * Kafka consumer code was found to not always handle interrupts well, and to even deadlock in
@@ -97,7 +97,7 @@ public class KafkaConsumerThread<T> extends Thread {
     private final MetricGroup consumerMetricGroup;
 
     /** Reference to the Kafka consumer, once it is created. */
-    private volatile KafkaConsumer<byte[], byte[]> consumer;
+    private volatile BytedKafkaConsumer<byte[], byte[]> consumer;
 
     /** This lock is used to isolate the consumer for partition reassignment. */
     private final Object consumerReassignmentLock;
@@ -391,7 +391,7 @@ public class KafkaConsumerThread<T> extends Thread {
         // the consumer needs to be isolated from external wakeup calls in setOffsetsToCommit() and
         // shutdown()
         // until the reassignment is complete.
-        final KafkaConsumer<byte[], byte[]> consumerTmp;
+        final BytedKafkaConsumer<byte[], byte[]> consumerTmp;
         synchronized (consumerReassignmentLock) {
             consumerTmp = this.consumer;
             this.consumer = null;
@@ -503,8 +503,8 @@ public class KafkaConsumerThread<T> extends Thread {
     }
 
     @VisibleForTesting
-    KafkaConsumer<byte[], byte[]> getConsumer(Properties kafkaProperties) {
-        return new KafkaConsumer<>(kafkaProperties);
+    BytedKafkaConsumer<byte[], byte[]> getConsumer(Properties kafkaProperties) {
+        return new BytedKafkaConsumer<>(kafkaProperties);
     }
 
     private void retryOnceOnWakeup(Runnable consumerCall, String description) {

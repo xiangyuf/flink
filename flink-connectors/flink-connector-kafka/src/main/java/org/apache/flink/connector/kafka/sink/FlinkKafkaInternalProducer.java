@@ -17,7 +17,7 @@
 
 package org.apache.flink.connector.kafka.sink;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.internals.TransactionManager;
 import org.apache.kafka.clients.producer.internals.TransactionalRequestResult;
@@ -37,9 +37,10 @@ import java.util.Properties;
 import static org.apache.flink.util.Preconditions.checkState;
 
 /**
- * A {@link KafkaProducer} that exposes private fields to allow resume producing from a given state.
+ * A {@link BytedKafkaProducer} that exposes private fields to allow resume producing from a given
+ * state.
  */
-class FlinkKafkaInternalProducer<K, V> extends KafkaProducer<K, V> {
+class FlinkKafkaInternalProducer<K, V> extends BytedKafkaProducer<K, V> {
 
     private static final Logger LOG = LoggerFactory.getLogger(FlinkKafkaInternalProducer.class);
     private static final String TRANSACTION_MANAGER_FIELD_NAME = "transactionManager";
@@ -242,7 +243,7 @@ class FlinkKafkaInternalProducer<K, V> extends KafkaProducer<K, V> {
     }
 
     private Object getField(String fieldName) {
-        return getField(this, KafkaProducer.class, fieldName);
+        return getField(this, BytedKafkaProducer.class, fieldName);
     }
 
     /**
@@ -270,7 +271,7 @@ class FlinkKafkaInternalProducer<K, V> extends KafkaProducer<K, V> {
     /**
      * Instead of obtaining producerId and epoch from the transaction coordinator, re-use previously
      * obtained ones, so that we can resume transaction after a restart. Implementation of this
-     * method is based on {@link KafkaProducer#initTransactions}.
+     * method is based on {@link BytedKafkaProducer#initTransactions}.
      * https://github.com/apache/kafka/commit/5d2422258cb975a137a42a4e08f03573c49a387e#diff-f4ef1afd8792cd2a2e9069cd7ddea630
      */
     public void resumeTransaction(long producerId, short epoch) {

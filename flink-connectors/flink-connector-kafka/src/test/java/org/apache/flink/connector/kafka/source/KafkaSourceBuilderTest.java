@@ -24,7 +24,7 @@ import org.apache.flink.connector.kafka.source.reader.deserializer.KafkaRecordDe
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.util.TestLoggerExtension;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.serialization.StringDeserializer;
@@ -202,7 +202,7 @@ public class KafkaSourceBuilderTest {
     private static class ExampleCustomSubscriber implements KafkaSubscriber {
 
         @Override
-        public Set<TopicPartition> getSubscribedTopicPartitions(AdminClient adminClient) {
+        public Set<TopicPartition> getSubscribedTopicPartitions(BytedKafkaAdmin adminClient) {
             return Collections.singleton(new TopicPartition("topic", 0));
         }
     }

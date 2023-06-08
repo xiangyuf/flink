@@ -31,10 +31,10 @@ import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
+import org.apache.kafka.clients.consumer.BytedKafkaConsumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.consumer.OffsetCommitCallback;
 import org.apache.kafka.common.TopicPartition;
@@ -66,7 +66,7 @@ public class KafkaPartitionSplitReader
     private static final Logger LOG = LoggerFactory.getLogger(KafkaPartitionSplitReader.class);
     private static final long POLL_TIMEOUT = 10000L;
 
-    private final KafkaConsumer<byte[], byte[]> consumer;
+    private final BytedKafkaConsumer<byte[], byte[]> consumer;
     private final Map<TopicPartition, Long> stoppingOffsets;
     private final String groupId;
     private final int subtaskId;
@@ -85,7 +85,7 @@ public class KafkaPartitionSplitReader
         Properties consumerProps = new Properties();
         consumerProps.putAll(props);
         consumerProps.setProperty(ConsumerConfig.CLIENT_ID_CONFIG, createConsumerClientId(props));
-        this.consumer = new KafkaConsumer<>(consumerProps);
+        this.consumer = new BytedKafkaConsumer<>(consumerProps);
         this.stoppingOffsets = new HashMap<>();
         this.groupId = consumerProps.getProperty(ConsumerConfig.GROUP_ID_CONFIG);
 
@@ -250,7 +250,7 @@ public class KafkaPartitionSplitReader
     }
 
     @VisibleForTesting
-    KafkaConsumer<byte[], byte[]> consumer() {
+    BytedKafkaConsumer<byte[], byte[]> consumer() {
         return consumer;
     }
 
@@ -421,7 +421,7 @@ public class KafkaPartitionSplitReader
     private void maybeRegisterKafkaConsumerMetrics(
             Properties props,
             KafkaSourceReaderMetrics kafkaSourceReaderMetrics,
-            KafkaConsumer<?, ?> consumer) {
+            BytedKafkaConsumer<?, ?> consumer) {
         final Boolean needToRegister =
                 KafkaSourceOptions.getOption(
                         props,
@@ -438,7 +438,7 @@ public class KafkaPartitionSplitReader
      * <p>This helper function handles a race condition as below:
      *
      * <ol>
-     *   <li>Fetcher thread finishes a {@link KafkaConsumer#poll(Duration)} call
+     *   <li>Fetcher thread finishes a {@link BytedKafkaConsumer#poll(Duration)} call
      *   <li>Task thread assigns new splits so invokes {@link #wakeUp()}, then the wakeup is
      *       recorded and held by the consumer
      *   <li>Later fetcher thread invokes {@link #handleSplitsChanges(SplitsChange)}, and

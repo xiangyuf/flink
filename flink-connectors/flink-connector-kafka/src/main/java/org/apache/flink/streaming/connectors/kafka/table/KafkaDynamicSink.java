@@ -45,7 +45,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.utils.DataTypeUtils;
 
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.header.Header;
 
 import javax.annotation.Nullable;
@@ -201,8 +200,6 @@ public class KafkaDynamicSink implements DynamicTableSink, SupportsWritingMetada
         final KafkaSink<RowData> kafkaSink =
                 sinkBuilder
                         .setDeliveryGuarantee(deliveryGuarantee)
-                        .setBootstrapServers(
-                                properties.get(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG).toString())
                         .setKafkaProducerConfig(properties)
                         .setRecordSerializer(
                                 new DynamicKafkaRecordSerializationSchema(

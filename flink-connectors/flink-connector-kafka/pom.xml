@@ -36,6 +36,7 @@ under the License.
 
 	<properties>
 		<kafka.version>3.2.3</kafka.version>
+		<kafka.byted.version>2.5.0-bd-0.3.4.16</kafka.byted.version>
 	</properties>
 
 	<dependencies>
@@ -74,7 +75,17 @@ under the License.
 		<dependency>
 			<groupId>org.apache.kafka</groupId>
 			<artifactId>kafka-clients</artifactId>
-			<version>${kafka.version}</version>
+			<version>${kafka.byted.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<!-- Tests -->

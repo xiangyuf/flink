@@ -26,6 +26,7 @@ import org.apache.flink.util.DockerImageVersions;
 
 import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
@@ -192,14 +193,14 @@ public abstract class KafkaTableTestBase extends AbstractTestBase {
     }
 
     private Map<String, TopicDescription> describeExternalTopics() {
-        try (final AdminClient adminClient = AdminClient.create(getStandardProps())) {
+        try (final BytedKafkaAdmin adminClient = new BytedKafkaAdmin(getStandardProps())) {
             final List<String> topics =
                     adminClient.listTopics().listings().get().stream()
                             .filter(listing -> !listing.isInternal())
                             .map(TopicListing::name)
                             .collect(Collectors.toList());
 
-            return adminClient.describeTopics(topics).allTopicNames().get();
+            return adminClient.describeTopics(topics).all().get();
         } catch (Exception e) {
             throw new RuntimeException("Failed to list Kafka topics", e);
         }

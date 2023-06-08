@@ -89,7 +89,7 @@ import static org.apache.flink.util.Preconditions.checkState;
 @PublicEvolving
 public class KafkaSourceBuilder<OUT> {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSourceBuilder.class);
-    private static final String[] REQUIRED_CONFIGS = {ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG};
+    private static final String[] REQUIRED_CONFIGS = {};
     // The subscriber specifies the partitions to subscribe to.
     private KafkaSubscriber subscriber;
     // Users can specify the starting / stopping offset initializer.

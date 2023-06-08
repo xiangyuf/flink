@@ -30,14 +30,15 @@ import org.apache.flink.connector.kafka.source.enumerator.subscriber.KafkaSubscr
 import org.apache.flink.connector.kafka.source.split.KafkaPartitionSplit;
 import org.apache.flink.util.FlinkRuntimeException;
 
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.KafkaAdminClient;
+import org.apache.kafka.clients.CommonClientConfigs;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.ListConsumerGroupOffsetsOptions;
 import org.apache.kafka.clients.admin.ListOffsetsResult;
 import org.apache.kafka.clients.admin.OffsetSpec;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.OffsetAndTimestamp;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +84,7 @@ public class KafkaSourceEnumerator
     private final String consumerGroupId;
 
     // Lazily instantiated or mutable fields.
-    private AdminClient adminClient;
+    private BytedKafkaAdmin adminClient;
 
     // This flag will be marked as true if periodically partition discovery is disabled AND the
     // initializing partition discovery has finished.
@@ -399,7 +400,7 @@ public class KafkaSourceEnumerator
         return new PartitionChange(fetchedPartitions, removedPartitions);
     }
 
-    private AdminClient getKafkaAdminClient() {
+    private BytedKafkaAdmin getKafkaAdminClient() {
         Properties adminClientProps = new Properties();
         deepCopyProperties(properties, adminClientProps);
         // set client id prefix
@@ -407,7 +408,22 @@ public class KafkaSourceEnumerator
                 adminClientProps.getProperty(KafkaSourceOptions.CLIENT_ID_PREFIX.key());
         adminClientProps.setProperty(
                 ConsumerConfig.CLIENT_ID_CONFIG, clientIdPrefix + "-enumerator-admin-client");
-        return AdminClient.create(adminClientProps);
+
+        // BytedKafkaAdmin has to pass below parameters for now.
+        // Waiting for the next kafka client version to fix this.
+        adminClientProps.put(CommonClientConfigs.ENABLE_ZTI_TOKEN, true);
+        adminClientProps.setProperty("key.serializer", StringSerializer.class.getName());
+        adminClientProps.setProperty("value.serializer", StringSerializer.class.getName());
+
+        for (Object obj : adminClientProps.keySet()) {
+            LOG.info(
+                    "Admin client properties: Key:"
+                            + obj.toString()
+                            + " Value:"
+                            + adminClientProps.get(obj).toString());
+        }
+
+        return new BytedKafkaAdmin(adminClientProps);
     }
 
     private OffsetsInitializer.PartitionOffsetsRetriever getOffsetsRetriever() {
@@ -492,10 +508,10 @@ public class KafkaSourceEnumerator
     @VisibleForTesting
     public static class PartitionOffsetsRetrieverImpl
             implements OffsetsInitializer.PartitionOffsetsRetriever, AutoCloseable {
-        private final AdminClient adminClient;
+        private final BytedKafkaAdmin adminClient;
         private final String groupId;
 
-        public PartitionOffsetsRetrieverImpl(AdminClient adminClient, String groupId) {
+        public PartitionOffsetsRetrieverImpl(BytedKafkaAdmin adminClient, String groupId) {
             this.adminClient = adminClient;
             this.groupId = groupId;
         }
@@ -539,7 +555,7 @@ public class KafkaSourceEnumerator
          * the beginning offset, end offset as well as the offset matching a timestamp in
          * partitions.
          *
-         * @see KafkaAdminClient#listOffsets(Map)
+         * @see BytedKafkaAdmin#listOffsets(Map)
          * @param topicPartitionOffsets The mapping from partition to the OffsetSpec to look up.
          * @return The list offsets result.
          */

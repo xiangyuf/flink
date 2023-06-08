@@ -67,9 +67,7 @@ under the License.
 						<configuration>
 							<artifactSet>
 								<includes>
-									<include>org.apache.flink:flink-connector-base</include>
-									<include>org.apache.flink:flink-connector-kafka</include>
-									<include>org.apache.kafka:*</include>
+									<include>*:*</include>
 								</includes>
 							</artifactSet>
 							<filters>
@@ -85,11 +83,150 @@ under the License.
 										<exclude>common/**</exclude>
 									</excludes>
 								</filter>
+								<filter>
+									<artifact>*</artifact>
+									<excludes>
+										<exclude>log4j.properties</exclude>
+										<exclude>log4j-test.properties</exclude>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
 							</filters>
 							<relocations>
 								<relocation>
 									<pattern>org.apache.kafka</pattern>
 									<shadedPattern>org.apache.flink.kafka.shaded.org.apache.kafka</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.google.common</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.google.common</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.bytedance</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.bytedance</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.codahale.metrics</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.codahale.metrics</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.apache.commons</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.apache.commons</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>okhttp3</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.okhttp3</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.springframework</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.springframework</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.fasterxml.jackson</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.fasterxml.jackson</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>okio</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.okio</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>kotlin</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.kotlin</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>net.jpountz</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.net.jpountz</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.byted.infsec</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.byted.infsec</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.bouncycastle</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.bouncycastle</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.auth0.jwt</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.auth0.jwt</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.apache.thrift</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.apache.thrift</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.apache.http</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.apache.http</shadedPattern>
+								</relocation>
+								<relocation>
+									<!-- com.github.luben is a native library that can't be relocated-->
+									<pattern>com.github.benmanes</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.github.benmanes</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.wealoha.thrift</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.wealoha.thrift</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.sun</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.sun</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.json.simple</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.json.simple</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.apache.flink.connector.catalog</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.apache.flink.connector.catalog</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.byted.security</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.byted.security</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.orbitz.consul</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.orbitz.consul</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.squareup.retrofit2</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.squareup.retrofit2</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-net</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-net</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-validator</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-validator</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-beanutils</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-beanutils</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-digester</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-digester</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-logging</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-logging</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>org.zeroturnaround</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.org.zeroturnaround</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>com.googlecode.java-ipv6</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.com.googlecode.java-ipv6</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>commons-io</pattern>
+									<shadedPattern>org.apache.flink.kafka.shaded.commons-io</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>META-INF/native/liborg_byted_security_shaded</pattern>
+									<shadedPattern>META-INF/native/liborg_apache_flink_kafka_shaded_org_byted_security_shaded</shadedPattern>
 								</relocation>
 							</relocations>
 						</configuration>

@@ -18,7 +18,7 @@
 
 package org.apache.flink.connector.kafka.source.enumerator.subscriber;
 
-import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.BytedKafkaAdmin;
 import org.apache.kafka.clients.admin.TopicDescription;
 
 import java.util.Map;
@@ -29,7 +29,7 @@ class KafkaSubscriberUtils {
 
     private KafkaSubscriberUtils() {}
 
-    static Map<String, TopicDescription> getAllTopicMetadata(AdminClient adminClient) {
+    static Map<String, TopicDescription> getAllTopicMetadata(BytedKafkaAdmin adminClient) {
         try {
             Set<String> allTopicNames = adminClient.listTopics().names().get();
             return getTopicMetadata(adminClient, allTopicNames);
@@ -39,9 +39,9 @@ class KafkaSubscriberUtils {
     }
 
     static Map<String, TopicDescription> getTopicMetadata(
-            AdminClient adminClient, Set<String> topicNames) {
+            BytedKafkaAdmin adminClient, Set<String> topicNames) {
         try {
-            return adminClient.describeTopics(topicNames).allTopicNames().get();
+            return adminClient.describeTopics(topicNames).all().get();
         } catch (Exception e) {
             throw new RuntimeException(
                     String.format("Failed to get metadata for topics %s.", topicNames), e);
