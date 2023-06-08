@@ -420,6 +420,10 @@ if [ -z "$HBASE_CONF_DIR" ]; then
     fi
 fi
 
+if [ -n "${HADOOP_HOME}" ] && [ -f "$HADOOP_HOME/bin/hadoop" ] && [ -z "$HADOOP_CLASSPATH" ]; then
+    export HADOOP_CLASSPATH=`$HADOOP_HOME/bin/hadoop classpath`
+fi
+
 INTERNAL_HADOOP_CLASSPATHS="${HADOOP_CLASSPATH}:${HADOOP_CONF_DIR}:${YARN_CONF_DIR}"
 
 if [ -n "${HBASE_CONF_DIR}" ]; then

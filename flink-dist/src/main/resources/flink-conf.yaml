@@ -134,6 +134,10 @@ rest.retry.delay: 10000
 web.cancel.enable: false
 web.submit.enable: false
 
+#remove after Arcee support HADOOP_HOME
+containerized.master.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
+containerized.taskmanager.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
+
 #==============================================================================
 # Metrics Report
 #==============================================================================
