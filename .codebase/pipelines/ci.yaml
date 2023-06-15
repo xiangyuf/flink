@@ -6,7 +6,7 @@ trigger:
       - "!flink-dist/src/main/resources/flink-conf*.yaml"
 jobs:
   build:
-    image: hub.byted.org/compile/flink_bet_maven_scm_jdk11:bd193dea72ddee0ef6bad6bf6d4b90cc
+    image: hub.byted.org/compile/flink_bet_maven_scm_jdk11:41504398c4a4cf0116cfa2c7b2bbf408
     runs-on:
       spec: m1.4xlarge
     steps:
