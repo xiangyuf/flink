@@ -132,6 +132,14 @@ public final class ValueLiteralExpression implements ResolvedExpression {
         return Optional.ofNullable((T) convertedValue);
     }
 
+    /** Get value as string. Return null for null value. */
+    public String getValueAsString() {
+        if (isNull()) {
+            return null;
+        }
+        return value.toString();
+    }
+
     private @Nullable LocalDate convertToLocalDate(Object value, Class<?> valueClass) {
         if (valueClass == java.sql.Date.class) {
             return ((Date) value).toLocalDate();

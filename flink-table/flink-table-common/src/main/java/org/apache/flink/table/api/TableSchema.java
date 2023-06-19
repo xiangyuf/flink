@@ -478,6 +478,31 @@ public class TableSchema {
         return new Builder();
     }
 
+    /**
+     * Get pruned column list.
+     *
+     * @param fieldIndexes selected column index array
+     * @return column name array of the selected columns.
+     */
+    public String[] getPrunedColumnList(int[] fieldIndexes) {
+        if (fieldIndexes == null) {
+            return new String[0];
+        }
+        String[] names = new String[fieldIndexes.length];
+        for (int i = 0; i < fieldIndexes.length; i++) {
+            int index = fieldIndexes[i];
+            names[i] =
+                    getFieldName(index)
+                            .orElseThrow(
+                                    () ->
+                                            new RuntimeException(
+                                                    String.format(
+                                                            "column index %s out of range [0, %s].",
+                                                            index, columns.size() - 1)));
+        }
+        return names;
+    }
+
     // ~ Tools ------------------------------------------------------------------
 
     /**

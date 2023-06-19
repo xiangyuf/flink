@@ -31,7 +31,7 @@ import org.apache.flink.table.operations.{ModifyOperation, Operation}
 import org.apache.flink.table.planner.plan.`trait`._
 import org.apache.flink.table.planner.plan.ExecNodeGraphInternalPlan
 import org.apache.flink.table.planner.plan.nodes.exec.ExecNodeGraph
-import org.apache.flink.table.planner.plan.nodes.exec.processor.ExecNodeGraphProcessor
+import org.apache.flink.table.planner.plan.nodes.exec.processor.{ExecNodeGraphProcessor, ValidateProcessor}
 import org.apache.flink.table.planner.plan.nodes.exec.serde.JsonSerdeUtil
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecNode
 import org.apache.flink.table.planner.plan.nodes.exec.utils.ExecNodePlanDumper
@@ -76,7 +76,8 @@ class StreamPlanner(
 
   override protected def getOptimizer: Optimizer = new StreamCommonSubGraphBasedOptimizer(this)
 
-  override protected def getExecNodeGraphProcessors: Seq[ExecNodeGraphProcessor] = Seq()
+  override protected def getExecNodeGraphProcessors: Seq[ExecNodeGraphProcessor] =
+    Seq(new ValidateProcessor())
 
   override protected def translateToPlan(execGraph: ExecNodeGraph): util.List[Transformation[_]] = {
     beforeTranslation()

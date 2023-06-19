@@ -116,6 +116,8 @@ under the License.
 	</modules>
 
 	<properties>
+		<http.client.version>4.5.3</http.client.version>
+		<jackson.version>2.10.1</jackson.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<flink.hadoop.version>2.10.2</flink.hadoop.version>

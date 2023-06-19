@@ -122,4 +122,7 @@ public interface ExecNode<T> extends ExecNodeTranslator<T> {
      * properties might be impacted by this (e.g. UID generation for transformations).
      */
     void setCompiled(boolean isCompiled);
+
+    /** Validate before execution. */
+    default void validateBeforeExecution() {}
 }

@@ -66,6 +66,7 @@ import org.apache.flink.table.catalog.hive.client.HiveMetastoreClientWrapper;
 import org.apache.flink.table.catalog.hive.client.HiveShim;
 import org.apache.flink.table.catalog.hive.client.HiveShimLoader;
 import org.apache.flink.table.catalog.hive.factories.HiveCatalogFactoryOptions;
+import org.apache.flink.table.catalog.hive.util.HivePermissionUtils;
 import org.apache.flink.table.catalog.hive.util.HiveReflectionUtils;
 import org.apache.flink.table.catalog.hive.util.HiveTableUtil;
 import org.apache.flink.table.connector.ChangelogMode;
@@ -78,6 +79,7 @@ import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.utils.TableSchemaUtils;
+import org.apache.flink.table.validate.Validatable;
 import org.apache.flink.types.Row;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
@@ -94,6 +96,7 @@ import org.apache.hadoop.hive.ql.io.HiveOutputFormat;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.orc.TypeDescription;
 import org.apache.thrift.TException;
+import org.byted.security.ztijwthelper.LegacyIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,12 +117,14 @@ import static org.apache.flink.connector.file.table.FileSystemConnectorOptions.S
 import static org.apache.flink.connector.file.table.FileSystemConnectorOptions.SINK_ROLLING_POLICY_INACTIVITY_INTERVAL;
 import static org.apache.flink.connector.file.table.FileSystemConnectorOptions.SINK_ROLLING_POLICY_ROLLOVER_INTERVAL;
 import static org.apache.flink.connector.file.table.stream.compact.CompactOperator.convertToUncompacted;
+import static org.apache.flink.table.catalog.hive.util.HivePermissionUtils.PermissionType.ALL;
 import static org.apache.flink.table.catalog.hive.util.HiveTableUtil.checkAcidTable;
 import static org.apache.flink.table.planner.delegation.hive.HiveParserConstants.IS_INSERT_DIRECTORY;
 import static org.apache.flink.table.planner.delegation.hive.HiveParserConstants.IS_TO_LOCAL_DIRECTORY;
 
 /** Table sink to write to Hive tables. */
-public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, SupportsOverwrite {
+public class HiveTableSink
+        implements DynamicTableSink, SupportsPartitioning, SupportsOverwrite, Validatable {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveTableSink.class);
 
@@ -138,6 +143,7 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
     private LinkedHashMap<String, String> staticPartitionSpec = new LinkedHashMap<>();
     private boolean overwrite = false;
     private boolean dynamicGrouping = false;
+    private final String geminiServerUrl;
     private final boolean autoGatherStatistic;
     private final int gatherStatsThreadNum;
 
@@ -158,7 +164,11 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
                 jobConf,
                 identifier,
                 table,
-                configuredSinkParallelism);
+                configuredSinkParallelism,
+                HivePermissionUtils.isPermissionCheckDisabled(flinkConf),
+                flinkConf
+                        .getOptional(HiveOptions.TABLE_EXEC_HIVE_PERMISSION_CHECK_GEMINI_SERVER_URL)
+                        .orElse(null));
     }
 
     private HiveTableSink(
@@ -170,7 +180,9 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
             JobConf jobConf,
             ObjectIdentifier identifier,
             CatalogTable table,
-            @Nullable Integer configuredSinkParallelism) {
+            @Nullable Integer configuredSinkParallelism,
+            boolean disablePermissionCheck,
+            String geminiServerUrl) {
         this.fallbackMappedReader = fallbackMappedReader;
         this.fallbackMappedWriter = fallbackMappedWriter;
         this.dynamicGroupingEnabled = dynamicGroupingEnabled;
@@ -186,6 +198,18 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
         hiveShim = HiveShimLoader.loadHiveShim(hiveVersion);
         tableSchema = TableSchemaUtils.getPhysicalSchema(table.getSchema());
         this.configuredSinkParallelism = configuredSinkParallelism;
+        if (disablePermissionCheck) {
+            this.geminiServerUrl = null;
+        } else {
+            this.geminiServerUrl =
+                    Preconditions.checkNotNull(
+                            geminiServerUrl,
+                            String.format(
+                                    "%s must be set when %s is true.",
+                                    HiveOptions.TABLE_EXEC_HIVE_PERMISSION_CHECK_GEMINI_SERVER_URL
+                                            .key(),
+                                    HiveOptions.TABLE_EXEC_HIVE_PERMISSION_CHECK_ENABLED.key()));
+        }
         validateAutoGatherStatistic(autoGatherStatistic, catalogTable);
     }
 
@@ -200,6 +224,33 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
                 return consume(providerContext, dataStream, context.isBounded(), converter);
             }
         };
+    }
+
+    @Override
+    public void validate() {
+        if (geminiServerUrl == null) {
+            LOG.warn("Hive permission check is disabled, will not check hive permission.");
+            return;
+        }
+
+        LegacyIdentity identity = HivePermissionUtils.getIdentityFromToken();
+        String user = identity.User;
+        String psm = identity.PSM;
+        validateWithUserOrPsm(user, psm);
+    }
+
+    @Override
+    public void validateWithUserOrPsm(String user, String psm) {
+        if (geminiServerUrl == null) {
+            LOG.warn("Hive permission check is disabled, will not check hive permission.");
+            return;
+        }
+
+        String dbName = identifier.getDatabaseName();
+        String tableName = identifier.getObjectName();
+        List<String> projectedFieldNames = Arrays.asList(catalogTable.getSchema().getFieldNames());
+        HivePermissionUtils.checkPermission(
+                user, psm, dbName, tableName, projectedFieldNames, ALL, true, geminiServerUrl);
     }
 
     private void validateAutoGatherStatistic(
@@ -833,7 +884,9 @@ public class HiveTableSink implements DynamicTableSink, SupportsPartitioning, Su
                         jobConf,
                         identifier,
                         catalogTable,
-                        configuredSinkParallelism);
+                        configuredSinkParallelism,
+                        geminiServerUrl == null,
+                        geminiServerUrl);
         sink.staticPartitionSpec = staticPartitionSpec;
         sink.overwrite = overwrite;
         sink.dynamicGrouping = dynamicGrouping;

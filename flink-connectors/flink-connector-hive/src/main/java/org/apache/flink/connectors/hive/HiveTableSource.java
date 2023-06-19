@@ -47,6 +47,7 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.hive.client.HiveShim;
 import org.apache.flink.table.catalog.hive.client.HiveShimLoader;
 import org.apache.flink.table.catalog.hive.factories.HiveCatalogFactoryOptions;
+import org.apache.flink.table.catalog.hive.util.HivePermissionUtils;
 import org.apache.flink.table.connector.ChangelogMode;
 import org.apache.flink.table.connector.ProviderContext;
 import org.apache.flink.table.connector.format.FileBasedStatisticsReportableInputFormat;
@@ -54,21 +55,31 @@ import org.apache.flink.table.connector.source.DataStreamScanProvider;
 import org.apache.flink.table.connector.source.DynamicTableSource;
 import org.apache.flink.table.connector.source.ScanTableSource;
 import org.apache.flink.table.connector.source.abilities.SupportsDynamicFiltering;
+import org.apache.flink.table.connector.source.abilities.SupportsFilterPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsLimitPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsPartitionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsProjectionPushDown;
 import org.apache.flink.table.connector.source.abilities.SupportsStatisticReport;
 import org.apache.flink.table.data.RowData;
 import org.apache.flink.table.data.TimestampData;
+import org.apache.flink.table.expressions.CallExpression;
+import org.apache.flink.table.expressions.Expression;
+import org.apache.flink.table.expressions.FieldReferenceExpression;
+import org.apache.flink.table.expressions.ResolvedExpression;
+import org.apache.flink.table.expressions.ValueLiteralExpression;
+import org.apache.flink.table.functions.BuiltInFunctionDefinitions;
 import org.apache.flink.table.plan.stats.TableStats;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
+import org.apache.flink.table.validate.Validatable;
+import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.hadoop.hive.metastore.api.NoSuchObjectException;
 import org.apache.hadoop.hive.metastore.api.Partition;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.thrift.TException;
+import org.byted.security.ztijwthelper.LegacyIdentity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,15 +88,19 @@ import javax.annotation.Nullable;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.flink.connector.file.table.FileSystemConnectorOptions.PARTITION_TIME_EXTRACTOR_TIMESTAMP_FORMATTER;
 import static org.apache.flink.connectors.hive.HiveOptions.STREAMING_SOURCE_CONSUME_START_OFFSET;
 import static org.apache.flink.connectors.hive.HiveOptions.STREAMING_SOURCE_ENABLE;
 import static org.apache.flink.connectors.hive.util.HivePartitionUtils.getAllPartitions;
+import static org.apache.flink.table.catalog.hive.util.HivePermissionUtils.PermissionType.SELECT;
 
 /** A TableSource implementation to read data from Hive tables. */
 public class HiveTableSource
@@ -94,10 +109,13 @@ public class HiveTableSource
                 SupportsProjectionPushDown,
                 SupportsLimitPushDown,
                 SupportsStatisticReport,
-                SupportsDynamicFiltering {
+                SupportsDynamicFiltering,
+                SupportsFilterPushDown,
+                Validatable {
 
     private static final Logger LOG = LoggerFactory.getLogger(HiveTableSource.class);
     private static final String HIVE_TRANSFORMATION = "hive";
+    private static final String KEY_VALUE_DELIMITER = ":";
 
     protected final JobConf jobConf;
     protected final ReadableConfig flinkConf;
@@ -112,6 +130,7 @@ public class HiveTableSource
     @Nullable protected List<String> dynamicFilterPartitionKeys = null;
     protected int[] projectedFields;
     protected Long limit = null;
+    private List<ResolvedExpression> predicates;
 
     public HiveTableSource(
             JobConf jobConf,
@@ -194,6 +213,12 @@ public class HiveTableSource
                 hiveSource,
                 WatermarkStrategy.noWatermarks(),
                 "HiveSource-" + tablePath.getFullName());
+    }
+
+    @Override
+    public Result applyFilters(List<ResolvedExpression> filters) {
+        this.predicates = filters;
+        return Result.of(Collections.emptyList(), filters);
     }
 
     protected boolean isStreamingSource() {
@@ -518,5 +543,212 @@ public class HiveTableSource
     @VisibleForTesting
     public JobConf getJobConf() {
         return jobConf;
+    }
+
+    @Override
+    public void validate() {
+        if (HivePermissionUtils.isPermissionCheckDisabled(flinkConf)) {
+            LOG.warn("Hive permission check is disabled, will not check hive permission.");
+            return;
+        }
+
+        LegacyIdentity identity = HivePermissionUtils.getIdentityFromToken();
+        String user = identity.User;
+        String psm = identity.PSM;
+        validateWithUserOrPsm(user, psm);
+    }
+
+    @Override
+    public void validateWithUserOrPsm(String user, String psm) {
+        if (HivePermissionUtils.isPermissionCheckDisabled(flinkConf)) {
+            LOG.warn("Hive permission check is disabled, will not check hive permission.");
+            return;
+        }
+
+        String database = tablePath.getDatabaseName();
+        String table = tablePath.getObjectName();
+        List<String> projectedFieldNames =
+                Arrays.asList(getTableSchema().getPrunedColumnList(projectedFields));
+        if (projectedFieldNames.isEmpty()) {
+            projectedFieldNames = Arrays.asList(getTableSchema().getFieldNames());
+        }
+
+        // partition values for row permission check, format: '{partition_name}:{partition_value}'
+        Set<String> partitionColumnValues = getColumnValueSetFromRemainingPartitions();
+        // common columns values for row permission check, format: '{column_name}:{column_value}'
+        Set<String> predicatesColumnValues = getColumnValueSetFromPredicates();
+        Set<String> allColumnsNeedToCheckPermission = new HashSet<>();
+        allColumnsNeedToCheckPermission.addAll(partitionColumnValues);
+        allColumnsNeedToCheckPermission.addAll(predicatesColumnValues);
+        allColumnsNeedToCheckPermission.addAll(projectedFieldNames);
+        String geminiServerUrl =
+                flinkConf
+                        .getOptional(HiveOptions.TABLE_EXEC_HIVE_PERMISSION_CHECK_GEMINI_SERVER_URL)
+                        .orElseThrow(
+                                () ->
+                                        new FlinkRuntimeException(
+                                                String.format(
+                                                        "%s must be set when %s is true.",
+                                                        HiveOptions
+                                                                .TABLE_EXEC_HIVE_PERMISSION_CHECK_GEMINI_SERVER_URL
+                                                                .key(),
+                                                        HiveOptions
+                                                                .TABLE_EXEC_HIVE_PERMISSION_CHECK_ENABLED
+                                                                .key())));
+        HivePermissionUtils.checkPermission(
+                user,
+                psm,
+                database,
+                table,
+                new ArrayList<>(allColumnsNeedToCheckPermission),
+                SELECT,
+                true,
+                geminiServerUrl);
+    }
+
+    /** Get column value set from equal expressions. */
+    private Set<String> getColumnValueSetFromPredicates() {
+        if (predicates == null) {
+            // TODO: Support column value set
+            return Collections.emptySet();
+        }
+
+        Set<String> columnValueSetFromEqualExpressions = parseEqualExpressionColumnValues();
+        Set<String> columnValueSetFromOrExpressions = parseOrExpressionColumnValues();
+        Set<String> columnValueSetFromInExpressions = parseInExpressionColumnValues();
+        Set<String> allColumnValues = new HashSet<>();
+        allColumnValues.addAll(columnValueSetFromEqualExpressions);
+        allColumnValues.addAll(columnValueSetFromOrExpressions);
+        allColumnValues.addAll(columnValueSetFromInExpressions);
+
+        return allColumnValues;
+    }
+
+    /**
+     * Parse column value set of 'EQUALS' expressions. (e.g. where a = 1 and b = 2)
+     *
+     * @return return the set of column value in form '{column_name}:{column_value}'.
+     */
+    private Set<String> parseEqualExpressionColumnValues() {
+        return predicates.stream()
+                .map(HiveTableSource::parseColumnValueFromEqualsExpression)
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Parse column value set of 'IN' expressions. (e.g. where id in (1,2,3,4))
+     *
+     * @return return the set of column value in form '{column_name}:{column_value}'.
+     */
+    private Set<String> parseInExpressionColumnValues() {
+        Set<String> columnValues = new HashSet<>();
+        for (Expression expression : predicates) {
+            if (expression instanceof CallExpression) {
+                CallExpression callExpression = (CallExpression) expression;
+                List<ResolvedExpression> args = callExpression.getResolvedChildren();
+                String fieldName = "";
+                List<String> valueLiteralList = new ArrayList<>();
+                for (ResolvedExpression resolvedExpression : args) {
+                    if (resolvedExpression instanceof FieldReferenceExpression) {
+                        fieldName = ((FieldReferenceExpression) resolvedExpression).getName();
+                    } else if (resolvedExpression instanceof ValueLiteralExpression) {
+                        valueLiteralList.add(
+                                ((ValueLiteralExpression) resolvedExpression).getValueAsString());
+                    }
+                }
+
+                if (isInExpression(expression) && !fieldName.isEmpty()) {
+                    final String finalFieldName = fieldName;
+                    Set<String> columnValueTempSet =
+                            valueLiteralList.stream()
+                                    .map(value -> finalFieldName + KEY_VALUE_DELIMITER + value)
+                                    .collect(Collectors.toSet());
+                    columnValues.addAll(columnValueTempSet);
+                }
+            }
+        }
+        return columnValues;
+    }
+
+    /**
+     * Parse column value set of 'OR' expressions. As 'IN' expression of 2 values (e.g. "id in
+     * (1,2)") will be transferred to 'OR' expressions.
+     *
+     * @return return the set of column value in form '{column_name}:{column_value}'.
+     */
+    private Set<String> parseOrExpressionColumnValues() {
+        Set<String> columnValues = new HashSet<>();
+        for (Expression expression : predicates) {
+            if (isOrExpression(expression)) {
+                CallExpression callExpression = (CallExpression) expression;
+                List<ResolvedExpression> args = callExpression.getResolvedChildren();
+                Optional<String> leftEquals = parseColumnValueFromEqualsExpression(args.get(0));
+                Optional<String> rightEquals = parseColumnValueFromEqualsExpression(args.get(1));
+                if (leftEquals.isPresent() && rightEquals.isPresent()) {
+                    columnValues.add(leftEquals.get());
+                    columnValues.add(rightEquals.get());
+                }
+            }
+        }
+        return columnValues;
+    }
+
+    private static Optional<String> parseColumnValueFromEqualsExpression(Expression expression) {
+        if (expression instanceof CallExpression) {
+            CallExpression callExpression = (CallExpression) expression;
+            List<ResolvedExpression> args = callExpression.getResolvedChildren();
+            boolean argsAreFieldAndValueLiteral =
+                    args.size() == 2
+                            && ((args.get(0) instanceof FieldReferenceExpression
+                                            && args.get(1) instanceof ValueLiteralExpression)
+                                    || (args.get(0) instanceof ValueLiteralExpression
+                                            && args.get(1) instanceof FieldReferenceExpression));
+            boolean isFieldEqualExpression =
+                    isEqualsExpression(expression) && argsAreFieldAndValueLiteral;
+            if (isFieldEqualExpression) {
+                String fieldName;
+                String value;
+                if (args.get(0) instanceof FieldReferenceExpression) {
+                    fieldName = ((FieldReferenceExpression) args.get(0)).getName();
+                    value = ((ValueLiteralExpression) args.get(1)).getValueAsString();
+                } else {
+                    fieldName = ((FieldReferenceExpression) args.get(1)).getName();
+                    value = ((ValueLiteralExpression) args.get(0)).getValueAsString();
+                }
+                return Optional.of(fieldName + KEY_VALUE_DELIMITER + value);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private static boolean isEqualsExpression(Expression expression) {
+        return expression instanceof CallExpression
+                && ((CallExpression) expression).getFunctionDefinition()
+                        == BuiltInFunctionDefinitions.EQUALS;
+    }
+
+    private static boolean isInExpression(Expression expression) {
+        return expression instanceof CallExpression
+                && ((CallExpression) expression).getFunctionDefinition()
+                        == BuiltInFunctionDefinitions.IN;
+    }
+
+    private static boolean isOrExpression(Expression expression) {
+        return expression instanceof CallExpression
+                && ((CallExpression) expression).getFunctionDefinition()
+                        == BuiltInFunctionDefinitions.OR;
+    }
+
+    private Set<String> getColumnValueSetFromRemainingPartitions() {
+        if (remainingPartitions == null) {
+            return Collections.emptySet();
+        }
+
+        return remainingPartitions.stream()
+                .flatMap(m -> m.entrySet().stream())
+                .map(entry -> entry.getKey() + KEY_VALUE_DELIMITER + entry.getValue())
+                .collect(Collectors.toSet());
     }
 }

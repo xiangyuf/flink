@@ -46,6 +46,7 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.RowType;
 import org.apache.flink.table.types.utils.DataTypeUtils;
 import org.apache.flink.table.utils.TypeMappingUtils;
+import org.apache.flink.table.validate.Validatable;
 
 import org.apache.calcite.rex.RexNode;
 
@@ -139,6 +140,13 @@ public abstract class CommonExecLegacyTableSourceScan extends ExecNodeBase<RowDa
                 planner.getFlinkContext().getClassLoader(),
                 sourceTransform,
                 rowtimeExpression.orElse(null));
+    }
+
+    @Override
+    public void validateBeforeExecution() {
+        if (tableSource instanceof Validatable) {
+            ((Validatable) tableSource).validate();
+        }
     }
 
     protected abstract <IN> Transformation<IN> createInput(

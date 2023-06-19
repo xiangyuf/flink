@@ -49,6 +49,7 @@ import org.apache.flink.table.sinks.UpsertStreamTableSink;
 import org.apache.flink.table.types.DataType;
 import org.apache.flink.table.types.logical.LogicalType;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.validate.Validatable;
 
 import javax.annotation.Nullable;
 
@@ -158,6 +159,13 @@ public abstract class CommonExecLegacySink<T> extends ExecNodeBase<T>
                     String.format(
                             "Only Support StreamTableSink! However %s is not a StreamTableSink.",
                             tableSink.getClass().getCanonicalName()));
+        }
+    }
+
+    @Override
+    public void validateBeforeExecution() {
+        if (tableSink instanceof Validatable) {
+            ((Validatable) tableSink).validate();
         }
     }
 

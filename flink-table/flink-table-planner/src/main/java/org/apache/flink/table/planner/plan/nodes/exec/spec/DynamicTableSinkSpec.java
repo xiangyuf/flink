@@ -25,6 +25,7 @@ import org.apache.flink.table.factories.FactoryUtil;
 import org.apache.flink.table.module.Module;
 import org.apache.flink.table.planner.calcite.FlinkContext;
 import org.apache.flink.table.planner.plan.abilities.sink.SinkAbilitySpec;
+import org.apache.flink.table.validate.Validatable;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonGetter;
@@ -90,6 +91,9 @@ public class DynamicTableSinkSpec extends DynamicTableSpecBase {
             if (sinkAbilities != null) {
                 sinkAbilities.forEach(spec -> spec.apply(tableSink));
             }
+        }
+        if (tableSink instanceof Validatable) {
+            ((Validatable) tableSink).validate();
         }
         return tableSink;
     }

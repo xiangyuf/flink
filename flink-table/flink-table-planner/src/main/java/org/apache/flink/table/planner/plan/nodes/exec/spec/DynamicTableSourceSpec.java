@@ -31,6 +31,7 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory;
 import org.apache.flink.table.planner.plan.abilities.source.SourceAbilityContext;
 import org.apache.flink.table.planner.plan.abilities.source.SourceAbilitySpec;
 import org.apache.flink.table.types.logical.RowType;
+import org.apache.flink.table.validate.Validatable;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonGetter;
@@ -100,6 +101,9 @@ public class DynamicTableSourceSpec extends DynamicTableSpecBase {
                     }
                 }
             }
+        }
+        if (tableSource instanceof Validatable) {
+            ((Validatable) tableSource).validate();
         }
         return tableSource;
     }

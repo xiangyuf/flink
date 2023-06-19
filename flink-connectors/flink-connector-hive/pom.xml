@@ -35,6 +35,7 @@ under the License.
 	<packaging>jar</packaging>
 
 	<properties>
+		<zti.sdk.version>1.0.10</zti.sdk.version>
 		<hiverunner.version>4.0.0</hiverunner.version>
 		<reflections.version>0.9.8</reflections.version>
 		<derby.version>10.10.2.0</derby.version>
@@ -639,7 +640,29 @@ under the License.
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-shaded-httpclient</artifactId>
+			<version>${http.client.version}-${flink.shaded.version}</version>
+		</dependency>
 
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-shaded-bytedance-commons</artifactId>
+			<version>${flink.shaded.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.flink</groupId>
+			<artifactId>flink-shaded-jackson</artifactId>
+			<version>${flink.shaded.jackson.version}-${flink.shaded.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.byted.security</groupId>
+			<artifactId>zti-jwt-helper-java</artifactId>
+			<version>${zti.sdk.version}</version>
+		</dependency>
 		<!-- Tests -->
 
 		<dependency>
