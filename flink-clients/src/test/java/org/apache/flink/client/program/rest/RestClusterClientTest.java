@@ -42,6 +42,7 @@ import org.apache.flink.runtime.jobgraph.JobGraphTestUtils;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.jobmaster.JobResult;
 import org.apache.flink.runtime.messages.Acknowledge;
+import org.apache.flink.runtime.messages.FlinkJobNotFoundException;
 import org.apache.flink.runtime.messages.webmonitor.JobDetails;
 import org.apache.flink.runtime.messages.webmonitor.JobStatusInfo;
 import org.apache.flink.runtime.messages.webmonitor.MultipleJobsDetails;
@@ -121,6 +122,7 @@ import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.io.TempDir;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -1109,6 +1111,32 @@ class RestClusterClientTest {
         }
     }
 
+    @Test
+    void testSendCoordinationRequestException() throws Exception {
+        final TestClientCoordinationHandler handler =
+                new TestClientCoordinationHandler(new FlinkJobNotFoundException(jobId));
+        try (TestRestServerEndpoint restServerEndpoint = createRestServerEndpoint(handler)) {
+            try (RestClusterClient<?> restClusterClient =
+                    createRestClusterClient(restServerEndpoint.getServerAddress().getPort())) {
+                String payload = "testing payload";
+                TestCoordinationRequest<String> request = new TestCoordinationRequest<>(payload);
+
+                assertThatThrownBy(
+                                () ->
+                                        restClusterClient
+                                                .sendCoordinationRequest(
+                                                        jobId, new OperatorID(), request)
+                                                .get())
+                        .matches(
+                                e ->
+                                        ExceptionUtils.findThrowableWithMessage(
+                                                        e,
+                                                        FlinkJobNotFoundException.class.getName())
+                                                .isPresent());
+            }
+        }
+    }
+
     /**
      * The SUSPENDED job status should never be returned by the client thus client retries until it
      * either receives a different job status or the cluster is not reachable.
@@ -1139,9 +1167,15 @@ class RestClusterClientTest {
                     ClientCoordinationRequestBody,
                     ClientCoordinationResponseBody,
                     ClientCoordinationMessageParameters> {
+        @Nullable private final FlinkJobNotFoundException exception;
 
         private TestClientCoordinationHandler() {
+            this(null);
+        }
+
+        private TestClientCoordinationHandler(@Nullable FlinkJobNotFoundException exception) {
             super(ClientCoordinationHeaders.getInstance());
+            this.exception = exception;
         }
 
         @Override
@@ -1151,6 +1185,9 @@ class RestClusterClientTest {
                 @Nonnull DispatcherGateway gateway)
                 throws RestHandlerException {
             try {
+                if (exception != null) {
+                    throw exception;
+                }
                 TestCoordinationRequest req =
                         (TestCoordinationRequest)
                                 request.getRequestBody()
