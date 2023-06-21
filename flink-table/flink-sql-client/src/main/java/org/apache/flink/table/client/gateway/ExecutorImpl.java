@@ -228,7 +228,7 @@ public class ExecutorImpl implements Executor {
                     .get();
         } catch (Exception e) {
             throw new SqlExecutionException(
-                    String.format("Failed to open session to %s", gatewayAddress), e);
+                    String.format("Failed to open session to %s", gatewayUrl), e);
         }
     }
 
@@ -510,8 +510,8 @@ public class ExecutorImpl implements Executor {
         List<SqlGatewayRestAPIVersion> gatewayVersions =
                 getResponse(
                                 restClient.sendRequest(
-                                        gatewayAddress.getHostName(),
-                                        gatewayAddress.getPort(),
+                                        gatewayUrl.getHost(),
+                                        gatewayUrl.getPort(),
                                         GetApiVersionHeaders.getInstance(),
                                         EmptyMessageParameters.getInstance(),
                                         EmptyRequestBody.getInstance(),
