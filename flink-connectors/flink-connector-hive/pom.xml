@@ -1244,6 +1244,8 @@ under the License.
 									<include>org.apache.parquet:parquet-encoding</include>
 									<include>org.apache.parquet:parquet-format-structures</include>
 									<include>org.apache.parquet:parquet-jackson</include>
+									<include>org.apache.flink:flink-shaded-httpclient</include>
+									<include>org.apache.flink:flink-shaded-bytedance-commons</include>
 								</includes>
 							</artifactSet>
 							<relocations>

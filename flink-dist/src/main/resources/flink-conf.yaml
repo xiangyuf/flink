@@ -89,6 +89,10 @@ kubernetes.arcee.restart-policy.max-retries: 5
 kubernetes.arcee.restart-policy.interval-second: 5
 kubernetes.arcee.restart-policy.type: OnFailure
 
+# Configurations for hive permission check.
+table.exec.hive.permission-check.enabled: true
+table.exec.hive.permission-check.gemini-server-url: http://gemini.byted.org/api/query/default/verifyUsersPrivilege
+
 # Arcee will mount hadoop in host to pod and set the hadoop related environments
 kubernetes.decorator.hadoop-conf-mount.enabled: false
 #==============================================================================
