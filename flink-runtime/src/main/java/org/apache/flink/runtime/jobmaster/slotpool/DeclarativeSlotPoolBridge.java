@@ -437,6 +437,13 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
     }
 
     @Override
+    public FreeSlotInfoTracker getFreeSlotInfoTracker() {
+        assertRunningInMainThread();
+
+        return getDeclarativeSlotPool().getFreeSlotInfoTracker();
+    }
+
+    @Override
     public void disableBatchSlotRequestTimeoutCheck() {
         isBatchSlotRequestTimeoutCheckDisabled = true;
     }
