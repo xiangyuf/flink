@@ -40,6 +40,7 @@ public class SqlNodeConverters {
         // register all the converters here
         register(new SqlCreateCatalogConverter());
         register(new SqlQueryConverter());
+        register(new SqlShowProcedureConverter());
     }
 
     /**
