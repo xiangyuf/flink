@@ -582,7 +582,7 @@ public class RocksDBStateBackend extends AbstractManagedMemoryStateBackend
 
     @VisibleForTesting
     RocksDBResourceContainer createOptionsAndResourceContainer() {
-        return rocksDBStateBackend.createOptionsAndResourceContainer();
+        return rocksDBStateBackend.createOptionsAndResourceContainer(null);
     }
 
     @Override

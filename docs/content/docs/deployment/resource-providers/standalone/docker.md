@@ -414,7 +414,6 @@ services:
   ```
   
   and reference it (e.g via the `build`) command in the Dockerfile.
-  and reference it (e.g via the `build`) command in the Dockerfile. 
   SQL Commands like `ADD JAR` will not work for JARs located on the host machine as they only work with the local filesystem, which in this case is Docker's overlay filesystem. 
 
 ## Using Flink Python on Docker
@@ -428,6 +427,11 @@ FROM flink:{{< version >}}
 FROM flink:latest
 {{< /unstable >}}
 
+# install python3 and pip3
+RUN apt-get update -y && \
+apt-get install -y python3 python3-pip python3-dev && rm -rf /var/lib/apt/lists/*
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
 # install PyFlink
 {{< stable >}}
 RUN pip3 install apache-flink=={{< version >}}
@@ -438,16 +442,8 @@ RUN pip3 install /apache-flink-libraries*.tar.gz && pip3 install /apache-flink*.
 {{< /unstable >}}
 ```
 
-<span class="label label-info">Note</span> For Debian 10 and below, Python 3 could also be installed
-alternatively as following:
-```Dockerfile
-RUN apt-get update -y && \
-apt-get install -y python3.7 python3-pip python3.7-dev && rm -rf /var/lib/apt/lists/*
-RUN ln -s /usr/bin/python3 /usr/bin/python
-```
-
 {{< unstable >}}
-<span class="label label-info">Note</span> PyFlink packages could be built-in according to [development guide]({{< ref "docs/flinkDev/building" >}}#build-pyflink)
+<span class="label label-info">Note</span> PyFlink packages could be built according to [development guide]({{< ref "docs/flinkDev/building" >}}#build-pyflink)
 {{< /unstable >}}
 
 Build the image named as **pyflink:latest**:

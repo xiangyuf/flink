@@ -183,7 +183,7 @@ under the License.
 		<minikdc.version>3.2.4</minikdc.version>
 		<hive.version>2.3.9</hive.version>
 		<orc.version>1.5.6</orc.version>
-		<japicmp.referenceVersion>1.16.0</japicmp.referenceVersion>
+		<japicmp.referenceVersion>1.17.0</japicmp.referenceVersion>
 		<japicmp.outputDir>tools/japicmp-output</japicmp.outputDir>
 		<spotless.version>2.27.1</spotless.version>
 		<spotless.scalafmt.version>3.4.3</spotless.scalafmt.version>
@@ -1958,7 +1958,7 @@ under the License.
 			<plugin>
 				<groupId>org.cyclonedx</groupId>
 				<artifactId>cyclonedx-maven-plugin</artifactId>
-				<version>2.7.3</version>
+				<version>2.7.7</version>
 				<executions>
 					<execution>
 						<phase>package</phase>

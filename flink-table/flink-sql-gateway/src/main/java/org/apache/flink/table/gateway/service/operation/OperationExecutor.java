@@ -67,6 +67,7 @@ import org.apache.flink.table.gateway.service.result.ResultFetcher;
 import org.apache.flink.table.gateway.service.utils.SqlExecutionException;
 import org.apache.flink.table.module.ModuleManager;
 import org.apache.flink.table.operations.BeginStatementSetOperation;
+import org.apache.flink.table.operations.DeleteFromFilterOperation;
 import org.apache.flink.table.operations.EndStatementSetOperation;
 import org.apache.flink.table.operations.LoadModuleOperation;
 import org.apache.flink.table.operations.ModifyOperation;
@@ -90,7 +91,6 @@ import org.apache.flink.util.CollectionUtil;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
-import org.apache.flink.util.TemporaryClassLoaderContext;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -182,23 +182,17 @@ public class OperationExecutor {
 
     public ResultFetcher executeStatement(OperationHandle handle, String statement) {
         // Instantiate the TableEnvironment lazily
-        // TODO: remove the usage of the context classloader until {@link
-        // HiveParserUtils}#getFunctionInfo use ResourceManager explicitly.
-        try (TemporaryClassLoaderContext ignored =
-                TemporaryClassLoaderContext.of(
-                        sessionContext.getSessionState().resourceManager.getUserClassLoader())) {
-            TableEnvironmentInternal tableEnv = getTableEnvironment();
-            List<Operation> parsedOperations = tableEnv.getParser().parse(statement);
-            if (parsedOperations.size() > 1) {
-                throw new UnsupportedOperationException(
-                        "Unsupported SQL statement! Execute statement only accepts a single SQL statement or "
-                                + "multiple 'INSERT INTO' statements wrapped in a 'STATEMENT SET' block.");
-            }
-            Operation op = parsedOperations.get(0);
-            return sessionContext.isStatementSetState()
-                    ? executeOperationInStatementSetState(tableEnv, handle, op)
-                    : executeOperation(tableEnv, handle, op);
+        TableEnvironmentInternal tableEnv = getTableEnvironment();
+        List<Operation> parsedOperations = tableEnv.getParser().parse(statement);
+        if (parsedOperations.size() > 1) {
+            throw new UnsupportedOperationException(
+                    "Unsupported SQL statement! Execute statement only accepts a single SQL statement or "
+                            + "multiple 'INSERT INTO' statements wrapped in a 'STATEMENT SET' block.");
         }
+        Operation op = parsedOperations.get(0);
+        return sessionContext.isStatementSetState()
+                ? executeOperationInStatementSetState(tableEnv, handle, op)
+                : executeOperation(tableEnv, handle, op);
     }
 
     public String getCurrentCatalog() {
@@ -513,6 +507,12 @@ public class OperationExecutor {
             OperationHandle handle,
             List<ModifyOperation> modifyOperations) {
         TableResultInternal result = tableEnv.executeInternal(modifyOperations);
+        // DeleteFromFilterOperation doesn't have a JobClient
+        if (modifyOperations.size() == 1
+                && modifyOperations.get(0) instanceof DeleteFromFilterOperation) {
+            return ResultFetcher.fromTableResult(handle, result, false);
+        }
+
         JobID jobID =
                 result.getJobClient()
                         .orElseThrow(

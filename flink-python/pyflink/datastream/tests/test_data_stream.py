@@ -676,25 +676,26 @@ class DataStreamTests(object):
                 )
 
             def process_element1(self, value, ctx: 'KeyedCoProcessFunction.Context'):
-                yield value[1]
+                yield ctx.get_current_key(), value[1]
                 self.reducing_state.add(1)
                 yield tag, self.reducing_state.get()
 
             def process_element2(self, value, ctx: 'KeyedCoProcessFunction.Context'):
-                yield value[0]
+                yield ctx.get_current_key(), value[0]
                 self.reducing_state.add(1)
                 yield tag, self.reducing_state.get()
 
         ds3 = ds1.key_by(lambda e: e[0])\
             .connect(ds2.key_by(lambda e: e[1]))\
-            .process(MyKeyedCoProcessFunction(), output_type=Types.INT())
+            .process(MyKeyedCoProcessFunction(),
+                     output_type=Types.TUPLE([Types.STRING(), Types.INT()]))
         main_sink = DataStreamTestSinkFunction()
         ds3.add_sink(main_sink)
         side_sink = DataStreamTestSinkFunction()
         ds3.get_side_output(tag).add_sink(side_sink)
 
         self.env.execute("test_keyed_co_process_side_output")
-        main_expected = ['1', '2', '3', '4', '5', '6', '7', '8']
+        main_expected = ['(a,1)', '(b,2)', '(a,3)', '(b,4)', '(b,5)', '(a,6)', '(b,7)', '(a,8)']
         self.assert_equals_sorted(main_expected, main_sink.get_results())
         side_expected = ['1', '1', '2', '2', '3', '3', '4', '4']
         self.assert_equals_sorted(side_expected, side_sink.get_results())
@@ -1545,20 +1546,28 @@ class CommonDataStreamTests(PyFlinkTestCase):
         test_data = ['pyflink', 'datastream', 'execute', 'collect']
         ds = self.env.from_collection(test_data)
 
+        # test collect with limit
         expected = test_data[:3]
         actual = []
         for result in ds.execute_and_collect(limit=3):
             actual.append(result)
         self.assertEqual(expected, actual)
 
-        expected = test_data
-        ds = self.env.from_collection(collection=test_data, type_info=Types.STRING())
-        with ds.execute_and_collect() as results:
+        # test collect KeyedStream
+        test_data = [('pyflink', 1), ('datastream', 2), ('pyflink', 1), ('collect', 2)]
+        expected = [Row(f0='pyflink', f1=('pyflink', 1)),
+                    Row(f0='datastream', f1=('datastream', 2)),
+                    Row(f0='pyflink', f1=('pyflink', 1)),
+                    Row(f0='collect', f1=('collect', 2))]
+        ds = self.env.from_collection(collection=test_data,
+                                      type_info=Types.TUPLE([Types.STRING(), Types.INT()]))
+        with ds.key_by(lambda i: i[0], Types.STRING()).execute_and_collect() as results:
             actual = []
             for result in results:
                 actual.append(result)
             self.assertEqual(expected, actual)
 
+        # test all kinds of data types
         test_data = [(1, None, 1, True, 32767, -2147483648, 1.23, 1.98932,
                       bytearray(b'flink'), 'pyflink',
                       datetime.date(2014, 9, 13),
@@ -1585,6 +1594,7 @@ class CommonDataStreamTests(PyFlinkTestCase):
             actual = [result for result in results]
             self.assert_equals_sorted(expected, actual)
 
+        # test primitive array
         test_data = [[1, 2, 3], [4, 5]]
         expected = test_data
         ds = self.env.from_collection(test_data, type_info=Types.PRIMITIVE_ARRAY(Types.INT()))
@@ -1597,6 +1607,7 @@ class CommonDataStreamTests(PyFlinkTestCase):
             ([None, ], [0.0, 0.0])
         ]
 
+        # test object array
         ds = self.env.from_collection(
             test_data,
             type_info=Types.TUPLE(
