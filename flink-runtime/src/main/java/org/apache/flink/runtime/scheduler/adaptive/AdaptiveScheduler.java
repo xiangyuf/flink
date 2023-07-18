@@ -731,7 +731,7 @@ public class AdaptiveScheduler
     @Override
     public boolean hasDesiredResources(ResourceCounter desiredResources) {
         final Collection<? extends SlotInfo> allSlots =
-                declarativeSlotPool.getFreeSlotsInformation();
+                declarativeSlotPool.getFreeSlotInfoTracker().getFreeSlotsInformation();
         ResourceCounter outstandingResources = desiredResources;
 
         final Iterator<? extends SlotInfo> slotIterator = allSlots.iterator();
@@ -761,7 +761,9 @@ public class AdaptiveScheduler
             throws NoResourceAvailableException {
 
         return slotAllocator
-                .determineParallelism(jobInformation, declarativeSlotPool.getFreeSlotsInformation())
+                .determineParallelism(
+                        jobInformation,
+                        declarativeSlotPool.getFreeSlotInfoTracker().getFreeSlotsInformation())
                 .orElseThrow(
                         () ->
                                 new NoResourceAvailableException(
@@ -1040,7 +1042,8 @@ public class AdaptiveScheduler
 
     @Override
     public boolean canScaleUp(ExecutionGraph executionGraph) {
-        int availableSlots = declarativeSlotPool.getFreeSlotsInformation().size();
+        int availableSlots =
+                declarativeSlotPool.getFreeSlotInfoTracker().getFreeSlotsInformation().size();
 
         if (availableSlots > 0) {
             final Optional<? extends VertexParallelism> potentialNewParallelism =
