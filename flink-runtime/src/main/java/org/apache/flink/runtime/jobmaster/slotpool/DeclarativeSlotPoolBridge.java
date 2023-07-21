@@ -420,7 +420,7 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
                 getDeclarativeSlotPool().getAllSlotsInformation();
         final Set<AllocationID> freeSlots =
                 getDeclarativeSlotPool().getFreeSlotsInformation().stream()
-                        .map(SlotInfoWithUtilization::getAllocationId)
+                        .map(SlotInfo::getAllocationId)
                         .collect(Collectors.toSet());
 
         return allSlotsInformation.stream()
@@ -430,7 +430,7 @@ public class DeclarativeSlotPoolBridge extends DeclarativeSlotPoolService implem
 
     @Override
     @Nonnull
-    public Collection<SlotInfoWithUtilization> getAvailableSlotsInformation() {
+    public Collection<SlotInfo> getAvailableSlotsInformation() {
         assertRunningInMainThread();
 
         return getDeclarativeSlotPool().getFreeSlotsInformation();
