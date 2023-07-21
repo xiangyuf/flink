@@ -35,7 +35,11 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.PartitionNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableAlreadyExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.catalog.listener.AlterDatabaseEvent;
+import org.apache.flink.table.catalog.listener.CatalogContext;
 import org.apache.flink.table.catalog.listener.CatalogModificationListener;
+import org.apache.flink.table.catalog.listener.CreateDatabaseEvent;
+import org.apache.flink.table.catalog.listener.DropDatabaseEvent;
 import org.apache.flink.table.delegation.Planner;
 import org.apache.flink.table.expressions.resolver.ExpressionResolver.ExpressionResolverBuilder;
 import org.apache.flink.util.Preconditions;
@@ -1029,6 +1033,14 @@ public final class CatalogManager {
             throws DatabaseAlreadyExistException, CatalogException {
         Catalog catalog = getCatalogOrThrowException(catalogName);
         catalog.createDatabase(databaseName, database, ignoreIfExists);
+        catalogModificationListeners.forEach(
+                listener ->
+                        listener.onEvent(
+                                CreateDatabaseEvent.createEvent(
+                                        CatalogContext.createContext(catalogName, catalog),
+                                        databaseName,
+                                        database,
+                                        ignoreIfExists)));
     }
 
     /**
@@ -1050,6 +1062,14 @@ public final class CatalogManager {
             throws DatabaseNotExistException, DatabaseNotEmptyException, CatalogException {
         Catalog catalog = getCatalogOrError(catalogName);
         catalog.dropDatabase(databaseName, ignoreIfNotExists, cascade);
+        catalogModificationListeners.forEach(
+                listener ->
+                        listener.onEvent(
+                                DropDatabaseEvent.createEvent(
+                                        CatalogContext.createContext(catalogName, catalog),
+                                        databaseName,
+                                        ignoreIfNotExists,
+                                        cascade)));
     }
 
     /**
@@ -1071,5 +1091,13 @@ public final class CatalogManager {
             throws DatabaseNotExistException, CatalogException {
         Catalog catalog = getCatalogOrError(catalogName);
         catalog.alterDatabase(databaseName, newDatabase, ignoreIfNotExists);
+        catalogModificationListeners.forEach(
+                listener ->
+                        listener.onEvent(
+                                AlterDatabaseEvent.createEvent(
+                                        CatalogContext.createContext(catalogName, catalog),
+                                        databaseName,
+                                        newDatabase,
+                                        ignoreIfNotExists)));
     }
 }
