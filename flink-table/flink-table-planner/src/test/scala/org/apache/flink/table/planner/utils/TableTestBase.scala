@@ -32,7 +32,7 @@ import org.apache.flink.table.api.bridge.java.{StreamTableEnvironment => JavaStr
 import org.apache.flink.table.api.bridge.scala.{StreamTableEnvironment => ScalaStreamTableEnv}
 import org.apache.flink.table.api.config.ExecutionConfigOptions
 import org.apache.flink.table.api.internal.{StatementSetImpl, TableEnvironmentImpl, TableEnvironmentInternal, TableImpl}
-import org.apache.flink.table.catalog.{CatalogManager, FunctionCatalog, GenericInMemoryCatalog, ObjectIdentifier}
+import org.apache.flink.table.catalog.{CatalogManager, CatalogStoreHolder, FunctionCatalog, GenericInMemoryCatalog, GenericInMemoryCatalogStore, ObjectIdentifier}
 import org.apache.flink.table.data.RowData
 import org.apache.flink.table.delegation.{Executor, ExecutorFactory}
 import org.apache.flink.table.descriptors.ConnectorDescriptorValidator.CONNECTOR_TYPE
@@ -1601,6 +1601,13 @@ object TestingTableEnvironment {
             new GenericInMemoryCatalog(
               settings.getBuiltInCatalogName,
               settings.getBuiltInDatabaseName))
+          .catalogStoreHolder(
+            CatalogStoreHolder
+              .newBuilder()
+              .catalogStore(new GenericInMemoryCatalogStore)
+              .config(tableConfig)
+              .classloader(userClassLoader)
+              .build())
           .build
     }
 
