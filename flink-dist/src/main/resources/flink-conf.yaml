@@ -63,7 +63,7 @@ restart-strategy.failure-rate.delay: 20 s
 #==============================================================================
 # Kubernetes
 #==============================================================================
-env.java.home: /opt/tiger/jdk/openjdk11
+env.java.home: /usr/local/byteopenjdk/jdk-11
 containerized.master.env.FLINK_HOME: /opt/tiger/flink_deploy
 containerized.taskmanager.env.FLINK_HOME: /opt/tiger/flink_deploy
 kubernetes.entry.path: /opt/tiger/flink_deploy/bin/docker-entrypoint.sh
