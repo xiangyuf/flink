@@ -1149,7 +1149,7 @@ public final class CatalogManager {
     public void dropDatabase(
             String catalogName, String databaseName, boolean ignoreIfNotExists, boolean cascade)
             throws DatabaseNotExistException, DatabaseNotEmptyException, CatalogException {
-        Catalog catalog = getCatalogOrError(catalogName);
+        Catalog catalog = getCatalogOrThrowException(catalogName);
         catalog.dropDatabase(databaseName, ignoreIfNotExists, cascade);
         catalogModificationListeners.forEach(
                 listener ->
@@ -1178,7 +1178,7 @@ public final class CatalogManager {
             CatalogDatabase newDatabase,
             boolean ignoreIfNotExists)
             throws DatabaseNotExistException, CatalogException {
-        Catalog catalog = getCatalogOrError(catalogName);
+        Catalog catalog = getCatalogOrThrowException(catalogName);
         catalog.alterDatabase(databaseName, newDatabase, ignoreIfNotExists);
         catalogModificationListeners.forEach(
                 listener ->
