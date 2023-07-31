@@ -29,6 +29,7 @@ mvn clean package -U -Dfast -DskipTests -Dflink.hadoop.version=3.2.1 -Psql-jars 
 mkdir -p output
 src_dist_out=flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT
 cp -r ${src_dist_out}/* output/
+rm -rf output/opt/python
 # common jar conflict
 bash tools/common-jar-check/common_jar_check.sh "output/"
 
