@@ -64,6 +64,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -225,6 +229,26 @@ public class KubernetesClusterDescriptor implements ClusterDescriptor<String> {
             final List<File> pipelineJars =
                     KubernetesUtils.checkJarFileForApplicationMode(flinkConfig);
             Preconditions.checkArgument(pipelineJars.size() == 1, "Should only have one jar");
+        } else {
+            List<String> userClassPath =
+                    flinkConfig
+                            .getOptional(PipelineOptions.CLASSPATHS)
+                            .orElse(Collections.emptyList());
+            try {
+                // Add connector jars to "pipeline.classpaths" temporally to make sure python can
+                // create kafka source.
+                // Todo @yuan.huang: this is hard-coded. Adding connector jars to user classpath
+                //  should be done by the flink client creator such as GTS by using option "-C
+                //  xxx.jar".
+                URL kafkaConnector =
+                        new URL(
+                                "file://%FLINK_HOME%/connectors/flink-sql-connector-kafka-1.17-byted-SNAPSHOT.jar");
+                List<String> classpathWithKafka = new ArrayList<>(userClassPath);
+                classpathWithKafka.add(kafkaConnector.toString());
+                flinkConfig.set(PipelineOptions.CLASSPATHS, classpathWithKafka);
+            } catch (MalformedURLException e) {
+                LOG.error("adding kafka connector to user classpath failed", e);
+            }
         }
 
         final ClusterClientProvider<String> clusterClientProvider =

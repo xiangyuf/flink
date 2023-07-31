@@ -21,6 +21,7 @@ graft deps/bin
 graft deps/lib
 recursive-include deps/opt *
 recursive-include deps/plugins *
+recursive-include deps/connectors *
 graft deps/licenses
 include README.md
 include LICENSE

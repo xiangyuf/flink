@@ -79,6 +79,7 @@ CONF_TEMP_PATH = os.path.join(TEMP_PATH, "conf")
 LICENSES_TEMP_PATH = os.path.join(TEMP_PATH, "licenses")
 PLUGINS_TEMP_PATH = os.path.join(TEMP_PATH, "plugins")
 SCRIPTS_TEMP_PATH = os.path.join(TEMP_PATH, "bin")
+CONNECTORS_TEMP_PATH = os.path.join(TEMP_PATH, "connectors")
 
 LICENSE_FILE_TEMP_PATH = os.path.join(this_directory, "LICENSE")
 NOTICE_FILE_TEMP_PATH = os.path.join(this_directory, "NOTICE")
@@ -115,6 +116,7 @@ run sdist.
 
         LIB_PATH = os.path.join(FLINK_HOME, "lib")
         OPT_PATH = os.path.join(FLINK_HOME, "opt")
+        CONNECTORS_PATH = os.path.join(FLINK_HOME, "connectors")
         OPT_PYTHON_JAR_NAME = os.path.basename(
             find_file_path(os.path.join(OPT_PATH, "flink-python*.jar")))
         OPT_SQL_CLIENT_JAR_NAME = os.path.basename(
@@ -144,6 +146,7 @@ run sdist.
                        os.path.join(OPT_TEMP_PATH, OPT_PYTHON_JAR_NAME))
             os.symlink(os.path.join(OPT_PATH, OPT_SQL_CLIENT_JAR_NAME),
                        os.path.join(OPT_TEMP_PATH, OPT_SQL_CLIENT_JAR_NAME))
+            os.symlink(CONNECTORS_PATH, CONNECTORS_TEMP_PATH)
             os.symlink(PLUGINS_PATH, PLUGINS_TEMP_PATH)
             os.symlink(LICENSE_FILE_PATH, LICENSE_FILE_TEMP_PATH)
             os.symlink(README_FILE_PATH, README_FILE_TEMP_PATH)
@@ -154,6 +157,7 @@ run sdist.
                  os.path.join(OPT_TEMP_PATH, OPT_PYTHON_JAR_NAME))
             copy(os.path.join(OPT_PATH, OPT_SQL_CLIENT_JAR_NAME),
                  os.path.join(OPT_TEMP_PATH, OPT_SQL_CLIENT_JAR_NAME))
+            copytree(CONNECTORS_PATH, CONNECTORS_TEMP_PATH)
             copytree(PLUGINS_PATH, PLUGINS_TEMP_PATH)
             copy(LICENSE_FILE_PATH, LICENSE_FILE_TEMP_PATH)
             copy(README_FILE_PATH, README_FILE_TEMP_PATH)
@@ -185,12 +189,14 @@ run sdist.
                 'pyflink.bin',
                 'pyflink.lib',
                 'pyflink.opt',
+                'pyflink.connectors',
                 'pyflink.plugins']
 
     PACKAGE_DIR = {
         'pyflink.bin': TEMP_PATH + '/bin',
         'pyflink.lib': TEMP_PATH + '/lib',
         'pyflink.opt': TEMP_PATH + '/opt',
+        'pyflink.connectors': TEMP_PATH + '/connectors',
         'pyflink.plugins': TEMP_PATH + '/plugins'}
 
     PACKAGE_DATA = {
@@ -198,6 +204,7 @@ run sdist.
         'pyflink.bin': ['*.jar'],
         'pyflink.lib': ['*.jar'],
         'pyflink.opt': ['*.*', '*/*'],
+        'pyflink.connectors': ['*'],
         'pyflink.plugins': ['*', '*/*']}
 
     if exist_licenses and platform.system() != "Windows":

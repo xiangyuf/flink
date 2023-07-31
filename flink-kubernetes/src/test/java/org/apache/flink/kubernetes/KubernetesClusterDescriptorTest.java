@@ -46,6 +46,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.apache.flink.kubernetes.utils.Constants.ENV_FLINK_POD_IP_ADDRESS;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -239,6 +240,22 @@ class KubernetesClusterDescriptorTest extends KubernetesClientTestBase {
         final int port = flinkConfig.get(RestOptions.PORT);
         assertThat(clusterClient.getWebInterfaceURL())
                 .isEqualTo(String.format("http://%s:%d", address, port));
+    }
+
+    @Test
+    void testDeployPythonApplicationClusterWithKafka() throws Exception {
+        flinkConfig.set(
+                PipelineOptions.JARS, Collections.singletonList("local:///path/of/user.jar"));
+        flinkConfig.set(DeploymentOptions.TARGET, KubernetesDeploymentTarget.APPLICATION.getName());
+        String[] pythonArgs = {"--python", "wordcount.py"};
+        ApplicationConfiguration pythonApplicationConfiguration =
+                new ApplicationConfiguration(pythonArgs, null);
+        descriptor.deployApplicationCluster(clusterSpecification, pythonApplicationConfiguration);
+        List<String> pythonUserClasspath = flinkConfig.get(PipelineOptions.CLASSPATHS);
+        assertThat(pythonUserClasspath)
+                .isEqualTo(
+                        Collections.singletonList(
+                                "file://%FLINK_HOME%/connectors/flink-sql-connector-kafka-1.17-byted-SNAPSHOT.jar"));
     }
 
     private ClusterClientProvider<String> deploySessionCluster() throws ClusterDeploymentException {

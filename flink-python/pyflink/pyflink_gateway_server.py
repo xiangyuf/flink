@@ -104,6 +104,12 @@ def prepare_environment_variables(env):
         flink_opt_directory = os.path.join(real_flink_home, "opt")
     env['FLINK_OPT_DIR'] = flink_opt_directory
 
+    if 'FLINK_CONNECTORS' in env:
+        flink_connectors_directory = os.path.realpath(env['FLINK_CONNECTORS'])
+    else:
+        flink_connectors_directory = os.path.join(real_flink_home, "connectors")
+    env['FLINK_CONNECTORS'] = flink_connectors_directory
+
     if 'FLINK_PLUGINS_DIR' in env:
         flink_plugins_directory = os.path.realpath(env['FLINK_PLUGINS_DIR'])
     else:
@@ -172,13 +178,16 @@ def construct_flink_classpath(env):
     flink_home = _find_flink_home()
     flink_lib_directory = env['FLINK_LIB_DIR']
     flink_opt_directory = env['FLINK_OPT_DIR']
+    flink_connectors_directory = env['FLINK_CONNECTORS']
 
     if on_windows():
         # The command length is limited on Windows. To avoid the problem we should shorten the
         # command length as much as possible.
         lib_jars = os.path.join(flink_lib_directory, "*")
+        connectors_jars = os.path.join(flink_connectors_directory, "*")
     else:
         lib_jars = os.pathsep.join(glob.glob(os.path.join(flink_lib_directory, "*.jar")))
+        connectors_jars = os.pathsep.join(glob.glob(os.path.join(flink_connectors_directory, "*.jar")))
 
     flink_python_jars = glob.glob(os.path.join(flink_opt_directory, "flink-python*.jar"))
     if len(flink_python_jars) < 1:
@@ -187,7 +196,7 @@ def construct_flink_classpath(env):
         return lib_jars
     flink_python_jar = flink_python_jars[0]
 
-    return os.pathsep.join([lib_jars, flink_python_jar])
+    return os.pathsep.join([lib_jars, flink_python_jar, connectors_jars])
 
 
 def construct_hadoop_classpath(env):
