@@ -106,7 +106,7 @@ heartbeat.timeout: 180000 # default 50000 ms
 # Use Foxtrot-LQ to test
 high-availability: zookeeper
 high-availability.zookeeper.quorum: fdbd:dc03:ff:f2:0:248:236:172:2181,fdbd:dc03:ff:f2:0:248:248:176:2181,fdbd:dc03:ff:f2:0:248:234:180:2181,fdbd:dc03:ff:f2:0:248:243:170:2181,fdbd:dc03:ff:f2:0:248:243:148:2181
-high-availability.storageDir: file:///opt/tiger
+high-availability.storageDir: hdfs://haruna/flink_lq/Koryn-LQ/1.17/ha/
 high-availability.zookeeper.path.root: /cn/Koryn-LQ/flink
 
 #==============================================================================
@@ -114,7 +114,7 @@ high-availability.zookeeper.path.root: /cn/Koryn-LQ/flink
 #==============================================================================
 
 state.backend: rocksdb
-state.checkpoints.dir: file:///tmp
+state.checkpoints.dir: hdfs://haruna/home/byte_flink_checkpoint_writer/1.17/flink/fs_checkpoint_dir/
 state.backend.incremental: true
 state.checkpoints.num-retained: 3
 state.backend.rocksdb.checkpoint.transfer.thread.num: 4
