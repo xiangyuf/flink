@@ -22,13 +22,16 @@ rm -rf output
 
 mvn clean package -U -Dfast -DskipTests -Dflink.hadoop.version=3.2.1 -Psql-jars | grep -v "Progress"
 
-# copy flink-1.17 to output
-mkdir -p output
-cp -r flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/* output/
+# Copy paimon catalog config to output
+cp -r flink-table/flink-sql-gateway/catalog flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/
 
 # Copy all connectors to lib directory for streaming warehouse, then we can startup
 # sql-gateway and flink session cluster with all supported connectors such as kafka and paimon.
-cp -r output/connectors/*.jar output/lib/
+cp -r flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/connectors/* flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/lib/
+
+# copy flink-1.17 to output
+mkdir -p output
+cp -r flink-dist/target/flink-1.17-byted-SNAPSHOT-bin/flink-1.17-byted-SNAPSHOT/* output/
 
 # common jar conflict
 bash tools/common-jar-check/common_jar_check.sh "output/"
