@@ -399,11 +399,13 @@ public final class CatalogManager implements AutoCloseable {
         // Get catalog from the CatalogStore.
         Optional<CatalogDescriptor> optionalDescriptor =
                 catalogStoreHolder.catalogStore().getCatalog(catalogName);
-        if (optionalDescriptor.isPresent()) {
-            return Optional.of(initCatalog(catalogName, optionalDescriptor.get()));
-        }
-
-        return Optional.empty();
+        return optionalDescriptor.map(
+                descriptor -> {
+                    Catalog catalog = initCatalog(catalogName, descriptor);
+                    catalog.open();
+                    catalogs.put(catalogName, catalog);
+                    return catalog;
+                });
     }
 
     public Catalog getCatalogOrThrowException(String catalogName) {
@@ -436,13 +438,15 @@ public final class CatalogManager implements AutoCloseable {
                 !StringUtils.isNullOrWhitespaceOnly(catalogName),
                 "Catalog name cannot be null or empty.");
 
-        Catalog potentialCurrentCatalog = catalogs.get(catalogName);
-        if (potentialCurrentCatalog == null) {
-            throw new CatalogException(
-                    format("A catalog with name [%s] does not exist.", catalogName));
-        }
-
-        if (!currentCatalogName.equals(catalogName)) {
+        Catalog potentialCurrentCatalog =
+                getCatalog(catalogName)
+                        .orElseThrow(
+                                () ->
+                                        new CatalogException(
+                                                format(
+                                                        "A catalog with name [%s] does not exist.",
+                                                        catalogName)));
+        if (!catalogName.equals(currentCatalogName)) {
             currentCatalogName = catalogName;
             currentDatabaseName = potentialCurrentCatalog.getDefaultDatabase();
 
@@ -477,7 +481,7 @@ public final class CatalogManager implements AutoCloseable {
                 !StringUtils.isNullOrWhitespaceOnly(databaseName),
                 "The database name cannot be null or empty.");
 
-        if (!catalogs.get(currentCatalogName).databaseExists(databaseName)) {
+        if (!getCatalogOrThrowException(currentCatalogName).databaseExists(databaseName)) {
             throw new CatalogException(
                     format(
                             "A database with name [%s] does not exist in the catalog: [%s].",
@@ -512,7 +516,7 @@ public final class CatalogManager implements AutoCloseable {
      */
     public String getBuiltInDatabaseName() {
         // The default database of the built-in catalog is also the built-in database.
-        return catalogs.get(getBuiltInCatalogName()).getDefaultDatabase();
+        return getCatalogOrThrowException(getBuiltInCatalogName()).getDefaultDatabase();
     }
 
     /**
@@ -557,11 +561,13 @@ public final class CatalogManager implements AutoCloseable {
      */
     public Optional<CatalogPartition> getPartition(
             ObjectIdentifier tableIdentifier, CatalogPartitionSpec partitionSpec) {
-        Catalog catalog = catalogs.get(tableIdentifier.getCatalogName());
-        if (catalog != null) {
+        Optional<Catalog> catalogOptional = getCatalog(tableIdentifier.getCatalogName());
+        if (catalogOptional.isPresent()) {
             try {
                 return Optional.of(
-                        catalog.getPartition(tableIdentifier.toObjectPath(), partitionSpec));
+                        catalogOptional
+                                .get()
+                                .getPartition(tableIdentifier.toObjectPath(), partitionSpec));
             } catch (PartitionNotExistException ignored) {
             }
         }
@@ -569,9 +575,10 @@ public final class CatalogManager implements AutoCloseable {
     }
 
     private Optional<ContextResolvedTable> getPermanentTable(ObjectIdentifier objectIdentifier) {
-        Catalog currentCatalog = catalogs.get(objectIdentifier.getCatalogName());
+        Optional<Catalog> catalogOptional = getCatalog(objectIdentifier.getCatalogName());
         ObjectPath objectPath = objectIdentifier.toObjectPath();
-        if (currentCatalog != null) {
+        if (catalogOptional.isPresent()) {
+            Catalog currentCatalog = catalogOptional.get();
             try {
                 final CatalogBaseTable table = currentCatalog.getTable(objectPath);
                 final ResolvedCatalogBaseTable<?> resolvedTable = resolveCatalogBaseTable(table);
@@ -586,11 +593,11 @@ public final class CatalogManager implements AutoCloseable {
     }
 
     private Optional<CatalogBaseTable> getUnresolvedTable(ObjectIdentifier objectIdentifier) {
-        Catalog currentCatalog = catalogs.get(objectIdentifier.getCatalogName());
+        Optional<Catalog> currentCatalog = getCatalog(objectIdentifier.getCatalogName());
         ObjectPath objectPath = objectIdentifier.toObjectPath();
-        if (currentCatalog != null) {
+        if (currentCatalog.isPresent()) {
             try {
-                final CatalogBaseTable table = currentCatalog.getTable(objectPath);
+                final CatalogBaseTable table = currentCatalog.get().getTable(objectPath);
                 return Optional.of(table);
             } catch (TableNotExistException e) {
                 // Ignore.
@@ -630,7 +637,7 @@ public final class CatalogManager implements AutoCloseable {
      * @return names of all registered tables
      */
     public Set<String> listTables(String catalogName, String databaseName) {
-        Catalog catalog = catalogs.get(catalogName);
+        Catalog catalog = getCatalogOrThrowException(catalogName);
         if (catalog == null) {
             throw new ValidationException(String.format("Catalog %s does not exist", catalogName));
         }
@@ -699,7 +706,7 @@ public final class CatalogManager implements AutoCloseable {
      * @return names of registered views
      */
     public Set<String> listViews(String catalogName, String databaseName) {
-        Catalog catalog = catalogs.get(catalogName);
+        Catalog catalog = getCatalogOrThrowException(catalogName);
         if (catalog == null) {
             throw new ValidationException(String.format("Catalog %s does not exist", catalogName));
         }
@@ -749,7 +756,7 @@ public final class CatalogManager implements AutoCloseable {
      */
     public Set<String> listSchemas(String catalogName) {
         return Stream.concat(
-                        Optional.ofNullable(catalogs.get(catalogName)).map(Catalog::listDatabases)
+                        getCatalog(catalogName).map(Catalog::listDatabases)
                                 .orElse(Collections.emptyList()).stream(),
                         temporaryTables.keySet().stream()
                                 .filter(i -> i.getCatalogName().equals(catalogName))
@@ -971,7 +978,7 @@ public final class CatalogManager implements AutoCloseable {
             getTemporaryOperationListener(objectIdentifier)
                     .ifPresent(l -> l.onDropTemporaryTable(objectIdentifier.toObjectPath()));
 
-            Catalog catalog = catalogs.get(objectIdentifier.getCatalogName());
+            Catalog catalog = getCatalog(objectIdentifier.getCatalogName()).orElse(null);
             ResolvedCatalogBaseTable<?> resolvedTable = resolveCatalogBaseTable(catalogBaseTable);
             managedTableListener.notifyTableDrop(
                     catalog, objectIdentifier, resolvedTable, true, ignoreIfNotExists);
