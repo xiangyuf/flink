@@ -24,8 +24,8 @@ import org.apache.commons.compress.compressors.zstandard.ZstdCompressorInputStre
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 
 /** Factory for ZStandard decompressors. */
 @Internal
@@ -45,6 +45,6 @@ public class ZStandardInputStreamFactory
 
     @Override
     public Collection<String> getCommonFileExtensions() {
-        return Collections.singleton("zst");
+        return Arrays.asList("zst", "zstd");
     }
 }
