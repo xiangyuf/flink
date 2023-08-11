@@ -193,13 +193,15 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
         // 1. Generate tag list.
         Map<String, String> tagsMap = new HashMap<>();
         final Map<String, String> allVariables = group.getAllVariables();
-        allVariables.keySet().removeAll(noNeededScope);
         boolean isTaskOperatorLevelMetric = isTaskOperatorLevelMetric(allVariables);
         for (Map.Entry<String, String> entry : allVariables.entrySet()) {
-            // origin tag key is like <host>. So we need remove <>.
-            tagsMap.put(
-                    entry.getKey().replaceAll("<|>", ""),
-                    CHARACTER_FILTER.filterCharacters(entry.getValue()));
+            // remove id tags.
+            if (!noNeededScope.contains(entry.getKey())) {
+                // origin tag key is like <host>. So we need remove <>.
+                tagsMap.put(
+                        entry.getKey().replaceAll("<|>", ""),
+                        CHARACTER_FILTER.filterCharacters(entry.getValue()));
+            }
         }
         tagsMap.putAll(fixedTags);
         tagsMap.put("jobname", this.jobName);

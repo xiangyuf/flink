@@ -80,6 +80,8 @@ non-global:
         numLateRecordsDropped,
       # latency
         latency,
+      # lag
+        pendingRecords,
       # kafka offset
         currentOffsets,
         commit-rate,
