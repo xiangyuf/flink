@@ -121,6 +121,18 @@ under the License.
 			<fileMode>0644</fileMode>
 		</file>
 
+		<!-- Because metric2.0 uses SPI (Service Provider Interface) to load the metric client,
+		in version 1.17 of Flink, Flink uses a plugin mechanism to load the metric reporter,
+		which also utilizes the SPI model. This has caused the metric client to be unable to load
+		properly. Therefore, we will temporarily place this jar file into the lib directory and
+		wait for the metric team to identify and solve the issue before we remove it. -->
+		<file>
+			<source>../flink-metrics/flink-metric-opentsdb/target/flink-metrics-opentsdb-${project.version}.jar</source>
+			<outputDirectory>lib/</outputDirectory>
+			<destName>flink-metrics-opentsdb-${project.version}.jar</destName>
+			<fileMode>0644</fileMode>
+		</file>
+
 		<!-- copy the config file -->
 		<file>
 			<source>src/main/resources/flink-conf.yaml</source>

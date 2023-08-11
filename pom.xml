@@ -137,6 +137,9 @@ under the License.
 		<flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m</flink.surefire.baseArgLine>
 		<flink.shaded.version>16.1-byted-SNAPSHOT</flink.shaded.version>
 		<flink.shaded.jackson.version>2.13.4</flink.shaded.jackson.version>
+		<metrics.version>3.1.5</metrics.version>
+		<metrics4j.version>1.0.53</metrics4j.version>
+		<metrics2.version>1.0.18</metrics2.version>
 		<target.java.version>1.8</target.java.version>
 		<slf4j.version>1.7.36</slf4j.version>
 		<log4j.version>2.17.1</log4j.version>
