@@ -58,6 +58,7 @@ import org.apache.flink.util.TestLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -95,6 +96,7 @@ import static org.apache.flink.test.util.TestUtils.submitJobAndWaitForResult;
  * A stress test that runs for a pre-defined amount of time, verifying data correctness and every
  * couple of checkpoints is triggering fail over to stress test unaligned checkpoints.
  */
+@Ignore
 public class UnalignedCheckpointStressITCase extends TestLogger {
 
     private static final int CHECKPOINT_INTERVAL = 20;

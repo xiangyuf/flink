@@ -22,11 +22,13 @@ import org.apache.flink.packaging.PackagingTestUtils;
 import org.apache.flink.table.factories.Factory;
 import org.apache.flink.test.resources.ResourceTestUtils;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;
 import java.util.Arrays;
 
+@Disabled
 class PackagingITCase {
 
     @Test

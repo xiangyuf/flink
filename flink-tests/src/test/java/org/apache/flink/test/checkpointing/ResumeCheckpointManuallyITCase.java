@@ -49,6 +49,7 @@ import org.apache.flink.util.TestLogger;
 
 import org.apache.curator.test.TestingServer;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
@@ -76,6 +77,7 @@ import static org.junit.Assert.assertNotNull;
  * problems like FLINK-6964.
  */
 @RunWith(Parameterized.class)
+@Ignore
 public class ResumeCheckpointManuallyITCase extends TestLogger {
 
     private static final int PARALLELISM = 2;

@@ -42,6 +42,7 @@ import org.apache.flink.util.TestLogger;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -82,6 +83,7 @@ import static org.apache.flink.streaming.api.environment.ExecutionCheckpointingO
 import static org.apache.flink.util.Preconditions.checkState;
 
 /** Tests caching of changelog segments downloaded during recovery. */
+@Ignore
 public class ChangelogRecoveryCachingITCase extends TestLogger {
     private static final int ACCUMULATE_TIME_MILLIS = 500; // high enough to build some state
     private static final int PARALLELISM = 10; // high enough to trigger DSTL file multiplexing

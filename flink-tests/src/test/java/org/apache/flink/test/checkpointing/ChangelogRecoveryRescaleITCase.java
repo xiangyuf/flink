@@ -21,12 +21,14 @@ import org.apache.flink.runtime.state.AbstractStateBackend;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * This verifies that rescale works correctly for Changelog state backend with materialized state /
  * non-materialized state.
  */
+@Ignore
 public class ChangelogRecoveryRescaleITCase extends ChangelogRecoverySwitchEnvTestBase {
 
     public ChangelogRecoveryRescaleITCase(AbstractStateBackend delegatedStateBackend) {

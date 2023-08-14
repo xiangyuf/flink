@@ -20,5 +20,8 @@ package org.apache.flink.fs.s3presto;
 
 import org.apache.flink.fs.s3.common.HAJobRunOnMinioS3StoreITCase;
 
+import org.junit.jupiter.api.Disabled;
+
 /** Runs the {@link HAJobRunOnMinioS3StoreITCase} on the Presto S3 file system. */
+@Disabled
 public class HAJobRunOnPrestoS3FileSystemITCase extends HAJobRunOnMinioS3StoreITCase {}

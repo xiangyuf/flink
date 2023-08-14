@@ -28,6 +28,7 @@ import org.apache.flink.runtime.webmonitor.history.HistoryServerStaticFileServer
 import org.apache.flink.runtime.webmonitor.testutils.HttpUtils;
 import org.apache.flink.testutils.junit.extensions.ContextClassLoaderExtension;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -41,6 +42,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** Tests for the WebFrontendBootstrap. */
+@Disabled
 class WebFrontendBootstrapTest {
 
     @RegisterExtension

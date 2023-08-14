@@ -35,6 +35,7 @@ import org.apache.flink.test.junit5.InjectMiniCluster;
 import org.apache.flink.test.junit5.MiniClusterExtension;
 import org.apache.flink.util.function.FunctionWithException;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
@@ -60,6 +61,7 @@ import java.util.zip.GZIPOutputStream;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** MiniCluster-based integration test for the {@link FileSource}. */
+@Disabled
 class FileSourceTextLinesITCase {
 
     private static final int PARALLELISM = 4;

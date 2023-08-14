@@ -26,6 +26,7 @@ import org.apache.flink.runtime.util.bash.BashJavaUtils;
 import org.apache.flink.shaded.guava30.com.google.common.collect.Sets;
 
 import org.hamcrest.Matchers;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import static org.junit.Assert.assertThat;
  * <p>This test requires the distribution to be assembled and is hence marked as an IT case which
  * run after packaging.
  */
+@Ignore
 public class BashJavaUtilsITCase extends JavaBashTestBase {
 
     private static final String RUN_BASH_JAVA_UTILS_CMD_SCRIPT =

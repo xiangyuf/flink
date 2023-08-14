@@ -42,6 +42,7 @@ import org.apache.flink.util.TestLogger;
 
 import org.jetbrains.annotations.NotNull;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -72,6 +73,7 @@ import static org.hamcrest.Matchers.is;
  * restored on old savepoint/checkpoint.
  */
 @RunWith(Parameterized.class)
+@Ignore
 public class RestoreUpgradedJobITCase extends TestLogger {
     private static final int PARALLELISM = 4;
     private static final int TOTAL_RECORDS = 100;

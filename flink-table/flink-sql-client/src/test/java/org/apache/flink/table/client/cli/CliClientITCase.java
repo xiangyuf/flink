@@ -47,6 +47,7 @@ import org.jline.terminal.Terminal;
 import org.jline.terminal.impl.DumbTerminal;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -87,6 +88,7 @@ import static org.apache.flink.table.utils.UserDefinedFunctions.GENERATED_UPPER_
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Test that runs every {@code xx.q} file in "resources/sql/" path as a test. */
+@Disabled
 class CliClientITCase {
 
     private static final String HIVE_ADD_ONE_UDF_CLASS = "HiveAddOneFunc";

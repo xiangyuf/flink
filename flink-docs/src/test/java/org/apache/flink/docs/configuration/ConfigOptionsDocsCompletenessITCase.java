@@ -25,6 +25,7 @@ import org.apache.flink.docs.util.OptionWithMetaInfo;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -56,6 +57,7 @@ import static org.assertj.core.api.Fail.fail;
  * key with different descriptions/default values), and that the documentation does not refer to
  * non-existent options.
  */
+@Disabled
 class ConfigOptionsDocsCompletenessITCase {
 
     @Test

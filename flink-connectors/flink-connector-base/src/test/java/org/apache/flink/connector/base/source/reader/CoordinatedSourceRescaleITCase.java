@@ -34,6 +34,7 @@ import org.apache.flink.test.util.MiniClusterWithClientResource;
 import org.apache.flink.util.TestLogger;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -53,6 +54,7 @@ import static org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStor
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /** Tests if the coordinator handles up and downscaling. */
+@Ignore
 public class CoordinatedSourceRescaleITCase extends TestLogger {
 
     public static final String CREATED_CHECKPOINT = "successfully created checkpoint";

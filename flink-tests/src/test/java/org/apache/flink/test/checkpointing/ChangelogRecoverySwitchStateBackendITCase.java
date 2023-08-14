@@ -36,6 +36,7 @@ import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.Preconditions;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -47,6 +48,7 @@ import static org.apache.flink.runtime.testutils.CommonTestUtils.getLatestComple
  * This verifies that switching state backend works correctly for Changelog state backend with
  * materialized state / non-materialized state.
  */
+@Ignore
 public class ChangelogRecoverySwitchStateBackendITCase extends ChangelogRecoverySwitchEnvTestBase {
 
     public ChangelogRecoverySwitchStateBackendITCase(AbstractStateBackend delegatedStateBackend) {

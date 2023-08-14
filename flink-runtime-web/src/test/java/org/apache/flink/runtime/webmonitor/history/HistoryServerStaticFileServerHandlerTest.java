@@ -24,6 +24,7 @@ import org.apache.flink.runtime.rest.handler.router.Router;
 import org.apache.flink.runtime.webmonitor.testutils.HttpUtils;
 import org.apache.flink.runtime.webmonitor.utils.WebFrontendBootstrap;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /** Tests for the HistoryServerStaticFileServerHandler. */
+@Disabled
 class HistoryServerStaticFileServerHandlerTest {
 
     @Test

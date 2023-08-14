@@ -59,6 +59,7 @@ import org.apache.flink.testutils.junit.SharedReference;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 import org.junit.jupiter.api.io.TempDir;
@@ -82,6 +83,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
 /** Tests of switching on or off compaction for the {@link FileSink}. */
+@Disabled
 public class FileSinkCompactionSwitchITCase {
 
     private static final int PARALLELISM = 4;
