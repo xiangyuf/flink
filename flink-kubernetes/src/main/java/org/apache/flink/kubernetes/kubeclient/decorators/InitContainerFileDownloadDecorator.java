@@ -18,11 +18,11 @@
 
 package org.apache.flink.kubernetes.kubeclient.decorators;
 
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
 import org.apache.flink.kubernetes.kubeclient.parameters.AbstractKubernetesParameters;
-import org.apache.flink.kubernetes.utils.Constants;
 import org.apache.flink.util.StringUtils;
 
 import io.fabric8.kubernetes.api.model.Container;
@@ -34,6 +34,9 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -42,8 +45,12 @@ import java.util.stream.Collectors;
  */
 public class InitContainerFileDownloadDecorator extends AbstractFileDownloadDecorator {
 
-    public InitContainerFileDownloadDecorator(AbstractKubernetesParameters kubernetesParameters) {
-        super(kubernetesParameters);
+    public InitContainerFileDownloadDecorator(
+            AbstractKubernetesParameters kubernetesParameters,
+            ConfigOption<String> mountPath,
+            ConfigOption<List<String>> filesDownloaded,
+            ConfigOption<Map<String, String>> nameMap) {
+        super(kubernetesParameters, mountPath, filesDownloaded, nameMap);
     }
 
     @Override
@@ -66,21 +73,22 @@ public class InitContainerFileDownloadDecorator extends AbstractFileDownloadDeco
         if (StringUtils.isNullOrWhitespaceOnly(fileDownloadVolumeSize)) {
             emptyDirVolume =
                     new VolumeBuilder()
-                            .withName(Constants.FILE_DOWNLOAD_VOLUME)
+                            .withName(this.filesDownloaderVolumeName)
                             .withNewEmptyDir()
                             .endEmptyDir()
                             .build();
         } else {
             emptyDirVolume =
                     new VolumeBuilder()
-                            .withName(Constants.FILE_DOWNLOAD_VOLUME)
+                            .withName(this.filesDownloaderVolumeName)
                             .withNewEmptyDir()
                             .withNewSizeLimit(fileDownloadVolumeSize)
                             .endEmptyDir()
                             .build();
         }
         // init container to download remote files
-        final Container initContainer = createInitContainer(basicMainContainer);
+        final Container initContainer =
+                createInitContainer(basicMainContainer, this.remoteFiles, this.fileMountedPath);
         final Pod basicPod =
                 new PodBuilder(flinkPod.getPodWithoutMainContainer())
                         .editOrNewSpec()
@@ -94,18 +102,17 @@ public class InitContainerFileDownloadDecorator extends AbstractFileDownloadDeco
                 .build();
     }
 
-    private Container createInitContainer(Container basicMainContainer) {
+    private Container createInitContainer(
+            Container basicMainContainer, Collection<URI> filesShouldDownload, String mountPath) {
         String remoteFiles =
-                this.remoteFiles.stream().map(URI::toString).collect(Collectors.joining(";"));
+                filesShouldDownload.stream().map(URI::toString).collect(Collectors.joining(";"));
         // By default, use command `bin/flink download [source file list] [target directory]`
         String downloadTemplate =
                 kubernetesParameters
                         .getFlinkConfiguration()
                         .getString(PipelineOptions.DOWNLOAD_TEMPLATE);
         String downloadCommand =
-                downloadTemplate
-                        .replace("%files%", remoteFiles)
-                        .replace("%target%", fileMountedPath);
+                downloadTemplate.replace("%files%", remoteFiles).replace("%target%", mountPath);
         return new ContainerBuilder(basicMainContainer)
                 .withName("downloader")
                 .withArgs(Arrays.asList("/bin/bash", "-c", downloadCommand))
@@ -115,7 +122,7 @@ public class InitContainerFileDownloadDecorator extends AbstractFileDownloadDeco
     private Container decorateMainContainer(Container mainContainer) {
         return new ContainerBuilder(mainContainer)
                 .addNewVolumeMount()
-                .withName(Constants.FILE_DOWNLOAD_VOLUME)
+                .withName(this.filesDownloaderVolumeName)
                 .withMountPath(fileMountedPath)
                 .endVolumeMount()
                 .build();

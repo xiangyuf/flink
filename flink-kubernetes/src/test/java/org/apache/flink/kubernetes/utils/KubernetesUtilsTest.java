@@ -261,30 +261,63 @@ class KubernetesUtilsTest extends KubernetesTestBase {
                         "hdfs:///path/of/file1.jar",
                         "hdfs:///path/file2.jar",
                         "hdfs:///path/file3.jar"));
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, "hdfs:///upload");
+        config.set(
+                PipelineOptions.EXTERNAL_DEPENDENCIES, Arrays.asList("hdfs:///path/of/file2.jar"));
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                "hdfs:///upload",
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                "hdfs:///upload/.dependencies",
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         Assertions.assertEquals(
                 4,
                 config.get(PipelineOptions.EXTERNAL_RESOURCES).size(),
                 "all remote files need to be added in external-resource list");
+        Assertions.assertEquals(
+                1,
+                config.get(PipelineOptions.EXTERNAL_DEPENDENCIES).size(),
+                "all remote dependencies files need to be added in external-dependencies list");
     }
 
     @Test
     public void testUploadDiskFilesContainsDiskFile() throws IOException {
         final Configuration config = new Configuration();
         File uploadDir = new File(jarFolder, "upload");
+        File uploadDependenciesDir = new File(uploadDir, ".dependencies");
         File resourceFolder = new File(jarFolder, "resource");
         uploadDir.mkdir();
+        uploadDependenciesDir.mkdirs();
         resourceFolder.mkdir();
         KubernetesTestUtils.createTemporyFile("some data", resourceFolder, "user.jar");
         KubernetesTestUtils.createTemporyFile("some data", resourceFolder, "file1.jar");
+        KubernetesTestUtils.createTemporyFile("some data", resourceFolder, "file2.jar");
 
         String userJar = new File(resourceFolder, "user.jar").toString();
         String file1 = new File(resourceFolder, "file1.jar").toString();
+        String file2 = new File(resourceFolder, "file2.jar").toString();
         config.setString(PipelineOptions.JARS.key(), userJar);
         config.set(
                 PipelineOptions.EXTERNAL_RESOURCES,
                 Arrays.asList(file1, "hdfs:///path/file2.jar", "hdfs:///path/file3.jar"));
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, uploadDir.getPath());
+        config.set(
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                Arrays.asList(file2, "hdfs:///path/of/file1.jar", "hdfs:///path/of/file2.jar"));
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                uploadDir.getPath(),
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                uploadDependenciesDir.getPath(),
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         Assertions.assertEquals(
                 4,
                 config.get(PipelineOptions.EXTERNAL_RESOURCES).size(),
@@ -295,20 +328,39 @@ class KubernetesUtilsTest extends KubernetesTestBase {
         Assertions.assertFalse(
                 config.get(PipelineOptions.EXTERNAL_RESOURCES).contains(file1),
                 "disk file should be uploaded");
+        Assertions.assertEquals(
+                3,
+                config.get(PipelineOptions.EXTERNAL_DEPENDENCIES).size(),
+                "all remote files need to be added in external-dependencies list");
+        Assertions.assertFalse(
+                config.get(PipelineOptions.EXTERNAL_DEPENDENCIES).contains(file2),
+                "disk dependencies file should be uploaded");
     }
 
     @Test
     public void testUploadDiskFilesOnlyContainsUserJarInDisk() throws IOException {
         final Configuration config = new Configuration();
         File uploadDir = new File(jarFolder, "upload");
+        File uploadDependenciesDir = new File(uploadDir, ".dependencies");
         File resourceFolder = new File(jarFolder, "resource");
         uploadDir.mkdir();
+        uploadDependenciesDir.mkdirs();
         resourceFolder.mkdir();
         KubernetesTestUtils.createTemporyFile("some data", resourceFolder, "user.jar");
         String userJar = new File(resourceFolder, "user.jar").toString();
 
         config.setString(PipelineOptions.JARS.key(), userJar);
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, uploadDir.getPath());
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                uploadDir.getPath(),
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                uploadDependenciesDir.getPath(),
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         Assertions.assertEquals(
                 1,
                 config.get(PipelineOptions.EXTERNAL_RESOURCES).size(),
@@ -323,7 +375,17 @@ class KubernetesUtilsTest extends KubernetesTestBase {
         final Configuration config = new Configuration();
 
         config.setString(PipelineOptions.JARS.key(), "hdfs:///path/of/user.jar");
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, "hdfs:///upload");
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                "hdfs:///upload",
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                "hdfs:///upload/.dependencies",
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         Assertions.assertEquals(
                 1,
                 config.get(PipelineOptions.EXTERNAL_RESOURCES).size(),
@@ -334,25 +396,59 @@ class KubernetesUtilsTest extends KubernetesTestBase {
     public void testUploadFolder() throws IOException {
         final Configuration config = new Configuration();
         File uploadDir = new File(jarFolder, "upload");
+        File uploadDependenciesDir = new File(uploadDir, ".dependencies");
         File resourceFolder = new File(jarFolder, "resource");
         uploadDir.mkdir();
+        uploadDependenciesDir.mkdirs();
         resourceFolder.mkdir();
         config.setString(PipelineOptions.JARS.key(), "hdfs:///path/of/user.jar");
 
-        // test the path with file schema
+        // test the path with file scheme
         config.setString(
                 PipelineOptions.EXTERNAL_RESOURCES.key(),
                 new File("file://" + resourceFolder.getPath()).getPath());
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, uploadDir.getPath());
+        config.setString(
+                PipelineOptions.EXTERNAL_DEPENDENCIES.key(),
+                new File("file://" + resourceFolder.getPath()).getPath());
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                uploadDir.getPath(),
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                uploadDependenciesDir.getPath(),
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         // should ignore uploading a folder
         assertThat(config.get(PipelineOptions.EXTERNAL_RESOURCES))
                 .isEqualTo(Collections.singletonList("hdfs:///path/of/user.jar"));
-        // test the path without indicating schema
+        Assertions.assertEquals(
+                0,
+                config.get(PipelineOptions.EXTERNAL_DEPENDENCIES).size(),
+                "folder should be ignored when uploading");
+        // test the path without indicating scheme
         config.setString(PipelineOptions.EXTERNAL_RESOURCES.key(), resourceFolder.getPath());
-        KubernetesUtils.uploadLocalDiskFilesToRemote(config, uploadDir.getPath());
+        config.setString(PipelineOptions.EXTERNAL_DEPENDENCIES.key(), resourceFolder.getPath());
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_RESOURCES,
+                uploadDir.getPath(),
+                PipelineOptions.EXTERNAL_RESOURCES,
+                PipelineOptions.JARS);
+        KubernetesUtils.uploadLocalDiskFilesToRemote(
+                config,
+                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                uploadDependenciesDir.getPath(),
+                PipelineOptions.EXTERNAL_DEPENDENCIES);
         // should ignore uploading a folder
         assertThat(config.get(PipelineOptions.EXTERNAL_RESOURCES))
                 .isEqualTo(Collections.singletonList("hdfs:///path/of/user.jar"));
+        Assertions.assertEquals(
+                0,
+                config.get(PipelineOptions.EXTERNAL_DEPENDENCIES).size(),
+                "folder should be ignored when uploading");
     }
 
     @Test

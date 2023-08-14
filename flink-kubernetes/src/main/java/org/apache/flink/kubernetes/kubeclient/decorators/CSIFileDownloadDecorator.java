@@ -18,6 +18,7 @@
 
 package org.apache.flink.kubernetes.kubeclient.decorators;
 
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
 import org.apache.flink.kubernetes.kubeclient.parameters.AbstractKubernetesParameters;
 import org.apache.flink.kubernetes.utils.Constants;
@@ -34,7 +35,9 @@ import io.fabric8.kubernetes.api.model.VolumeBuilder;
 
 import java.net.URI;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -44,8 +47,12 @@ import java.util.stream.Collectors;
  */
 public class CSIFileDownloadDecorator extends AbstractFileDownloadDecorator {
 
-    public CSIFileDownloadDecorator(AbstractKubernetesParameters kubernetesParameters) {
-        super(kubernetesParameters);
+    public CSIFileDownloadDecorator(
+            AbstractKubernetesParameters kubernetesParameters,
+            ConfigOption<String> mountPath,
+            ConfigOption<List<String>> fileDownloaded,
+            ConfigOption<Map<String, String>> nameMap) {
+        super(kubernetesParameters, mountPath, fileDownloaded, nameMap);
     }
 
     @Override
@@ -61,13 +68,14 @@ public class CSIFileDownloadDecorator extends AbstractFileDownloadDecorator {
         // csi type volume
         final Volume csiVolume =
                 new VolumeBuilder()
-                        .withName(Constants.FILE_DOWNLOAD_VOLUME)
+                        .withName(this.filesDownloaderVolumeName)
                         .withNewCsi()
                         .withDriver(kubernetesParameters.getCsiDriverName())
                         .withNewNodePublishSecretRef()
                         .withName(kubernetesParameters.getSecretName())
                         .endNodePublishSecretRef()
-                        .withVolumeAttributes(getCsiVolumeAttributes(0))
+                        .withVolumeAttributes(
+                                getCsiVolumeAttributes(remoteFiles, pathToFileName, 0))
                         .endCsi()
                         .build();
         final Pod basicPod =
@@ -94,7 +102,7 @@ public class CSIFileDownloadDecorator extends AbstractFileDownloadDecorator {
                         .build();
         return new ContainerBuilder(mainContainer)
                 .addNewVolumeMount()
-                .withName(Constants.FILE_DOWNLOAD_VOLUME)
+                .withName(this.filesDownloaderVolumeName)
                 .withMountPath(fileMountedPath)
                 .endVolumeMount()
                 .withResources(resourceRequirements)
@@ -111,25 +119,28 @@ public class CSIFileDownloadDecorator extends AbstractFileDownloadDecorator {
      * timestamp) to identify the file version, for timestamp of a file, set it to zero if you can
      * guarantee the path will never be overridden so one path always represent one version.
      *
+     * @param remoteFilesURI remote files URI that need to be downloaded.
+     * @param fileLocalMap remote file path to local relative path map.
      * @param fileTimestamp the file timestamp for all remote files. Using same timestamp means they
      *     all belong to the same version. 0 means all file in this path belongs to the same
      *     version.
      * @return the created csi volume attribute map
      */
-    public Map<String, String> getCsiVolumeAttributes(long fileTimestamp) {
+    public Map<String, String> getCsiVolumeAttributes(
+            Set<URI> remoteFilesURI, Map<String, String> fileLocalMap, long fileTimestamp) {
         Map<String, String> volumeAttributes = new HashMap<>();
         volumeAttributes.put("volumeType", "Data");
         volumeAttributes.put("ssdAffinity", "Prefer");
         String resourceList =
                 "{"
-                        + remoteFiles.stream()
+                        + remoteFilesURI.stream()
                                 .map(LocalResource::new)
                                 .map(
                                         localResource ->
                                                 String.format(
                                                         "\"%s\": %s",
                                                         localResource.getFileDownloadPath(
-                                                                pathToFileName),
+                                                                fileLocalMap),
                                                         localResource.toJsonString(fileTimestamp)))
                                 .collect(Collectors.joining(", "))
                         + "}";

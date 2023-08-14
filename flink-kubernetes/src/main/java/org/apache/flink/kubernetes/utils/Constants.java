@@ -118,7 +118,9 @@ public class Constants {
 
     public static final String ENV_TM_JVM_MEM_OPTS = "FLINK_TM_JVM_MEM_OPTS";
 
+    public static final String DEFAULT_DOWNLOAD_VOLUME = "default-download-volume";
     public static final String FILE_DOWNLOAD_VOLUME = "file-download-volume";
+    public static final String DEPENDENCIES_DOWNLOAD_VOLUME = "dependencies-download-volume";
     public static final String JAR_FILE_EXTENSION = ".jar";
 
     // constants for arcee

@@ -96,7 +96,6 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.apache.flink.kubernetes.utils.Constants.CHECKPOINT_ID_KEY_PREFIX;
 import static org.apache.flink.kubernetes.utils.Constants.COMPLETED_CHECKPOINT_FILE_SUFFIX;
@@ -673,25 +672,33 @@ public class KubernetesUtils {
     }
 
     /**
-     * Upload local disk files in JARS and RESOURCES to remote storage system. <\p> This method will
-     * rewrite the JARS and RESOURCES URIs into the configuration. For the files that need to upload
-     * ("file" scheme), it will save the remote URI. For the files that has been already in remote
-     * storage or in the image, it will save the original URI.
+     * Upload local disk under the {@code filesOptions} to remote storage system. <\p> This method
+     * will rewrite the {@code resetFileOption} URIs into the configuration. For the files that need
+     * to upload ("file" scheme), it will save the remote URI. For the files that has been already
+     * in remote storage or in the image, it will save the original URI.
      *
      * @param flinkConfig
+     * @param resetFileOption option that need to be rewritten.
+     * @param targetDirPath target upload path.
+     * @param filesOptions files that need to be uploaded under these options.
      */
     public static void uploadLocalDiskFilesToRemote(
-            Configuration flinkConfig, String targetDirPath) {
+            Configuration flinkConfig,
+            ConfigOption<List<String>> resetFileOption,
+            String targetDirPath,
+            ConfigOption<List<String>>... filesOptions) {
         // we don't support uploading a folder because some downloader (e.g. CSI driver) don't
         // support it.
-        removeFolderInExternalFiles(flinkConfig);
+        for (ConfigOption<List<String>> filesOption : filesOptions) {
+            removeFolderInExternalFiles(flinkConfig, filesOption);
+        }
         // count number of files that need to upload
         long numOfDiskFiles =
-                Stream.concat(
-                                flinkConfig.getOptional(PipelineOptions.JARS)
-                                        .orElse(Collections.emptyList()).stream(),
-                                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
-                                        .orElse(Collections.emptyList()).stream())
+                Arrays.stream(filesOptions)
+                        .flatMap(
+                                option ->
+                                        flinkConfig.getOptional(option)
+                                                .orElse(Collections.emptyList()).stream())
                         .filter(
                                 uri -> {
                                     final URI jarURI;
@@ -707,7 +714,7 @@ public class KubernetesUtils {
                         .count();
         AtomicReference<Path> targetDirOptional = new AtomicReference<>(null);
         if (numOfDiskFiles > 0) {
-            // If there are any file to be uploaded, we should ensure the target dir is existing
+            // If there is any file to be uploaded, we should ensure the target dir is existing
             targetDirOptional.set(new Path(targetDirPath));
             Path targetDir = targetDirOptional.get();
             try {
@@ -720,67 +727,56 @@ public class KubernetesUtils {
                 return;
             }
         }
-        // upload user jar
+        // upload files
         List<String> toBeDownloadedFiles = new ArrayList<>();
-        List<String> jars =
-                flinkConfig.get(PipelineOptions.JARS).stream()
-                        .map(
-                                FunctionUtils.uncheckedFunction(
-                                        uri -> {
-                                            final URI jarURI = PackagedProgramUtils.resolveURI(uri);
-                                            if (jarURI.getScheme()
-                                                    .equals(ConfigConstants.FILE_SCHEME)) {
-                                                // upload to target dir
-                                                String uploadedPath =
-                                                        copyFileToTargetRemoteDir(
-                                                                jarURI, targetDirOptional.get());
-                                                toBeDownloadedFiles.add(uploadedPath);
-                                                return uploadedPath;
-                                            } else if (jarURI.getScheme()
-                                                    .equals(ConfigConstants.LOCAL_SCHEME)) {
-                                                // return the path directly if it is a local file
-                                                // path (located inside the image)
-                                                return jarURI.toString();
-                                            } else {
-                                                // if it is a remote file path, add it into
-                                                // download-file list and return this path directly
-                                                toBeDownloadedFiles.add(jarURI.toString());
-                                                return jarURI.toString();
-                                            }
-                                        }))
-                        .collect(Collectors.toList());
-        // replace path of user jar by the uploaded path
-        flinkConfig.set(PipelineOptions.JARS, jars);
-        // upload resources
-        List<String> resources =
-                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
-                        .orElse(Collections.emptyList()).stream()
-                        .map(
-                                FunctionUtils.uncheckedFunction(
-                                        uri -> {
-                                            final URI jarURI = PackagedProgramUtils.resolveURI(uri);
-                                            if (jarURI.getScheme()
-                                                    .equals(ConfigConstants.FILE_SCHEME)) {
-                                                return copyFileToTargetRemoteDir(
-                                                        jarURI, targetDirOptional.get());
-                                            } else {
-                                                // return directly if it is a local (located inside
-                                                // the image) or remote file path
-                                                return jarURI.toString();
-                                            }
-                                        }))
-                        .collect(Collectors.toList());
-        // add remote files in "JARS" to "EXTERNAL_RESOURCES", FileDownloadDecorator will setup to
-        // download these files.
-        resources.addAll(toBeDownloadedFiles);
-        // replace path of resources by the uploaded path
-        flinkConfig.set(PipelineOptions.EXTERNAL_RESOURCES, resources);
+        for (ConfigOption<List<String>> filesOption : filesOptions) {
+            List<String> filesPath =
+                    flinkConfig.get(filesOption).stream()
+                            .map(
+                                    FunctionUtils.uncheckedFunction(
+                                            uri -> {
+                                                final URI jarURI =
+                                                        PackagedProgramUtils.resolveURI(uri);
+                                                if (jarURI.getScheme()
+                                                        .equals(ConfigConstants.FILE_SCHEME)) {
+                                                    // upload to target dir
+                                                    String uploadedPath =
+                                                            copyFileToTargetRemoteDir(
+                                                                    jarURI,
+                                                                    targetDirOptional.get());
+                                                    toBeDownloadedFiles.add(uploadedPath);
+                                                    return uploadedPath;
+                                                } else if (filesOption.equals(PipelineOptions.JARS)
+                                                        && jarURI.getScheme()
+                                                                .equals(
+                                                                        ConfigConstants
+                                                                                .LOCAL_SCHEME)) {
+                                                    // return the path directly if it is a local
+                                                    // file in jars
+                                                    // path (located inside the image)
+                                                    return jarURI.toString();
+                                                } else {
+                                                    // if it is a remote file path, add it into
+                                                    // download-file list and return this path
+                                                    // directly
+                                                    toBeDownloadedFiles.add(jarURI.toString());
+                                                    return jarURI.toString();
+                                                }
+                                            }))
+                            .collect(Collectors.toList());
+            // replace path of user jar by the uploaded path
+            if (filesOption.equals(PipelineOptions.JARS)) {
+                flinkConfig.set(filesOption, filesPath);
+            }
+        }
+        // replace path of resetFileOption by the uploaded path
+        flinkConfig.set(resetFileOption, toBeDownloadedFiles);
     }
 
-    private static void removeFolderInExternalFiles(Configuration flinkConfig) {
+    private static void removeFolderInExternalFiles(
+            Configuration flinkConfig, ConfigOption<List<String>> filesOption) {
         List<String> filesWithoutFolder =
-                flinkConfig.getOptional(PipelineOptions.EXTERNAL_RESOURCES)
-                        .orElse(Collections.emptyList()).stream()
+                flinkConfig.getOptional(filesOption).orElse(Collections.emptyList()).stream()
                         .filter(
                                 path -> {
                                     try {
@@ -788,20 +784,23 @@ public class KubernetesUtils {
                                         if (uri.getScheme().equals(ConfigConstants.FILE_SCHEME)
                                                 && new File(uri.getPath()).isDirectory()) {
                                             LOG.warn(
-                                                    "Remove folder in external resources: {}", uri);
+                                                    "Remove folder under key {}: {}",
+                                                    filesOption.key(),
+                                                    uri);
                                             return false;
                                         }
                                         return true;
                                     } catch (URISyntaxException e) {
                                         LOG.error(
-                                                "can not resolve uri from this path:{}, ignore it",
+                                                "can not resolve uri from this path: {}, under the key: {}, ignore it",
                                                 path,
+                                                filesOption.key(),
                                                 e);
                                         return false;
                                     }
                                 })
                         .collect(Collectors.toList());
-        flinkConfig.set(PipelineOptions.EXTERNAL_RESOURCES, filesWithoutFolder);
+        flinkConfig.set(filesOption, filesWithoutFolder);
     }
 
     /**
@@ -921,6 +920,16 @@ public class KubernetesUtils {
         annotations.putAll(
                 ConfigurationUtils.getPrefixedKeyValuePairs(annotationPrefix, configuration));
         return annotations;
+    }
+
+    public static String getFilesDownloaderVolumeName(ConfigOption<List<String>> filesOption) {
+        if (filesOption.equals(PipelineOptions.EXTERNAL_RESOURCES)) {
+            return Constants.FILE_DOWNLOAD_VOLUME;
+        } else if (filesOption.equals(PipelineOptions.EXTERNAL_DEPENDENCIES)) {
+            return Constants.DEPENDENCIES_DOWNLOAD_VOLUME;
+        } else {
+            return Constants.DEFAULT_DOWNLOAD_VOLUME;
+        }
     }
 
     private KubernetesUtils() {}

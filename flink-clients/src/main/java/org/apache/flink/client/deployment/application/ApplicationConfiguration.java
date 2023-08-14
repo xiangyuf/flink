@@ -55,6 +55,16 @@ public class ApplicationConfiguration {
                                     + "will be the same as original name by default. Flink will rename file if there are multiple"
                                     + " files with same name. This parameter is for internal usage only.");
 
+    public static final ConfigOption<Map<String, String>> EXTERNAL_DEPENDENCIES_NAME_MAPPING =
+            ConfigOptions.key("$internal.external-dependencies.download-name-mapping")
+                    .mapType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "A map to store the downloaded dependencies file name for each remote dependencies used by PyFlink. "
+                                    + "The key is the remote dependencies files uri and the value is the file name of saving path. "
+                                    + "The downloaded file name will be the same as original name by default. "
+                                    + "Flink will rename file if there are multiple files with same name. "
+                                    + "This parameter is for internal usage only.");
     private final String[] programArguments;
 
     @Nullable private final String applicationClassName;

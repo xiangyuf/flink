@@ -18,7 +18,9 @@
 
 package org.apache.flink.kubernetes.kubeclient.factory;
 
+import org.apache.flink.client.deployment.application.ApplicationConfiguration;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
 import org.apache.flink.kubernetes.kubeclient.decorators.AbstractFileDownloadDecorator;
 import org.apache.flink.kubernetes.kubeclient.decorators.CmdTaskManagerDecorator;
@@ -35,6 +37,8 @@ import org.apache.flink.util.Preconditions;
 
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -45,6 +49,8 @@ import static org.apache.flink.kubernetes.configuration.KubernetesConfigOptions.
 
 /** Utility class for constructing the TaskManager Pod on the JobManager. */
 public class KubernetesTaskManagerFactory {
+
+    private static final Logger LOG = LoggerFactory.getLogger(KubernetesTaskManagerFactory.class);
 
     public static KubernetesPod buildTaskManagerKubernetesPod(
             FlinkPod podTemplate, KubernetesTaskManagerParameters kubernetesTaskManagerParameters) {
@@ -66,8 +72,20 @@ public class KubernetesTaskManagerFactory {
             stepDecorators.add(new KerberosMountDecorator(kubernetesTaskManagerParameters));
         }
 
-        stepDecorators.add(new FlinkConfMountDecorator(kubernetesTaskManagerParameters));
-        stepDecorators.add(AbstractFileDownloadDecorator.create(kubernetesTaskManagerParameters));
+        stepDecorators.addAll(
+                Arrays.asList(
+                        new FlinkConfMountDecorator(kubernetesTaskManagerParameters),
+                        AbstractFileDownloadDecorator.create(
+                                kubernetesTaskManagerParameters,
+                                PipelineOptions.FILE_MOUNTED_PATH,
+                                PipelineOptions.EXTERNAL_RESOURCES,
+                                ApplicationConfiguration.EXTERNAL_RESOURCES_NAME_MAPPING),
+                        // Download PyFlink dependencies
+                        AbstractFileDownloadDecorator.create(
+                                kubernetesTaskManagerParameters,
+                                PipelineOptions.DEPENDENCIES_MOUNTED_PATH,
+                                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                                ApplicationConfiguration.EXTERNAL_DEPENDENCIES_NAME_MAPPING)));
 
         for (KubernetesStepDecorator stepDecorator : stepDecorators) {
             flinkPod = stepDecorator.decorateFlinkPod(flinkPod);

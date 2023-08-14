@@ -81,6 +81,20 @@ public class PipelineOptions {
                                     + "In k8s application mode, these files will need to be downloaded to JM/TM container."
                                     + "In session mode, files will be added into pipeline.jars and then be uploaded to JM blob server");
 
+    /**
+     * For k8s application mode, use this key to indicate PyFlink Python third-part dependencies,
+     * which should be uploaded to remote storage and downloaded to JM/TM containers. For example,
+     * pipeline.external-dependencies -> hdfs:///path/of/file1;hdfs:///path/of/file2
+     */
+    public static final ConfigOption<List<String>> EXTERNAL_DEPENDENCIES =
+            key("pipeline.external-dependencies")
+                    .stringType()
+                    .asList()
+                    .noDefaultValue()
+                    .withDescription(
+                            "A list of PyFlink Python third-part dependencies separated by semicolon. "
+                                    + "In k8s application mode, these files will need to be downloaded to JM/TM container.");
+
     public static final ConfigOption<String> DOWNLOAD_TEMPLATE =
             key("pipeline.download-template")
                     .stringType()
@@ -94,6 +108,13 @@ public class PipelineOptions {
             key("pipeline.file-mounted-path")
                     .stringType()
                     .defaultValue("/opt/tiger/workdir")
+                    .withDescription(
+                            "For k8s application mode, Flink will download remote files to this path in container");
+
+    public static final ConfigOption<String> DEPENDENCIES_MOUNTED_PATH =
+            key("pipeline.dependencies-mounted-path")
+                    .stringType()
+                    .defaultValue("/opt/tiger/venv")
                     .withDescription(
                             "For k8s application mode, Flink will download remote files to this path in container");
 

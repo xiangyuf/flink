@@ -18,7 +18,9 @@
 
 package org.apache.flink.kubernetes.kubeclient.factory;
 
+import org.apache.flink.client.deployment.application.ApplicationConfiguration;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.kubernetes.entrypoint.KubernetesApplicationClusterEntrypoint;
 import org.apache.flink.kubernetes.kubeclient.FlinkPod;
 import org.apache.flink.kubernetes.kubeclient.KubernetesJobManagerSpecification;
@@ -99,7 +101,17 @@ public class KubernetesJobManagerFactory {
         stepDecorators.addAll(
                 Arrays.asList(
                         new FlinkConfMountDecorator(kubernetesJobManagerParameters),
-                        AbstractFileDownloadDecorator.create(kubernetesJobManagerParameters),
+                        AbstractFileDownloadDecorator.create(
+                                kubernetesJobManagerParameters,
+                                PipelineOptions.FILE_MOUNTED_PATH,
+                                PipelineOptions.EXTERNAL_RESOURCES,
+                                ApplicationConfiguration.EXTERNAL_RESOURCES_NAME_MAPPING),
+                        // Download PyFlink dependencies
+                        AbstractFileDownloadDecorator.create(
+                                kubernetesJobManagerParameters,
+                                PipelineOptions.DEPENDENCIES_MOUNTED_PATH,
+                                PipelineOptions.EXTERNAL_DEPENDENCIES,
+                                ApplicationConfiguration.EXTERNAL_DEPENDENCIES_NAME_MAPPING),
                         new PodTemplateMountDecorator(kubernetesJobManagerParameters)));
 
         for (KubernetesStepDecorator stepDecorator : stepDecorators) {

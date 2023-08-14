@@ -21,10 +21,12 @@ package org.apache.flink.kubernetes.kubeclient.decorators;
 import org.apache.flink.client.deployment.application.ApplicationConfiguration;
 import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.configuration.ConfigConstants;
+import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
 import org.apache.flink.kubernetes.kubeclient.parameters.AbstractKubernetesParameters;
+import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import org.apache.flink.util.function.FunctionUtils;
 
 import java.io.File;
@@ -49,30 +51,36 @@ public abstract class AbstractFileDownloadDecorator extends AbstractKubernetesSt
     protected final AbstractKubernetesParameters kubernetesParameters;
     protected final Set<URI> remoteFiles = new LinkedHashSet<>();
     protected final Map<String, String> pathToFileName;
+    protected final String filesDownloaderVolumeName;
 
-    public AbstractFileDownloadDecorator(AbstractKubernetesParameters kubernetesParameters) {
+    public AbstractFileDownloadDecorator(
+            AbstractKubernetesParameters kubernetesParameters,
+            ConfigOption<String> mountPath,
+            ConfigOption<List<String>> filesDownloaded,
+            ConfigOption<Map<String, String>> nameMap) {
         this.kubernetesParameters = checkNotNull(kubernetesParameters);
-        this.fileMountedPath =
-                kubernetesParameters
-                        .getFlinkConfiguration()
-                        .getString(PipelineOptions.FILE_MOUNTED_PATH);
+        this.fileMountedPath = kubernetesParameters.getFlinkConfiguration().getString(mountPath);
         List<URI> uris =
-                getRemoteFilesForApplicationMode(kubernetesParameters.getFlinkConfiguration());
+                getRemoteFilesForApplicationMode(
+                        filesDownloaded, kubernetesParameters.getFlinkConfiguration());
         this.remoteFiles.addAll(uris);
         pathToFileName = renameFileIfRequired(remoteFiles);
         checkState(
                 new HashSet<>(pathToFileName.values()).size() == pathToFileName.size(),
-                "exists multiple files with same name");
-        this.kubernetesParameters
-                .getFlinkConfiguration()
-                .set(ApplicationConfiguration.EXTERNAL_RESOURCES_NAME_MAPPING, pathToFileName);
+                String.format(
+                        "exists multiple files with same name under option: %s",
+                        filesDownloaded.key()));
+        this.kubernetesParameters.getFlinkConfiguration().set(nameMap, pathToFileName);
+        this.filesDownloaderVolumeName =
+                KubernetesUtils.getFilesDownloaderVolumeName(filesDownloaded);
     }
 
-    private static List<URI> getRemoteFilesForApplicationMode(Configuration configuration) {
-        if (!configuration.contains(PipelineOptions.EXTERNAL_RESOURCES)) {
+    private static List<URI> getRemoteFilesForApplicationMode(
+            ConfigOption<List<String>> option, Configuration configuration) {
+        if (!configuration.contains(option)) {
             return Collections.emptyList();
         }
-        return configuration.get(PipelineOptions.EXTERNAL_RESOURCES).stream()
+        return configuration.get(option).stream()
                 .map(FunctionUtils.uncheckedFunction(PackagedProgramUtils::resolveURI))
                 .filter(
                         uri ->
@@ -122,17 +130,22 @@ public abstract class AbstractFileDownloadDecorator extends AbstractKubernetesSt
     }
 
     public static AbstractFileDownloadDecorator create(
-            AbstractKubernetesParameters kubernetesParameters) {
+            AbstractKubernetesParameters kubernetesParameters,
+            ConfigOption<String> mountPath,
+            ConfigOption<List<String>> filesDownloaded,
+            ConfigOption<Map<String, String>> nameMap) {
         KubernetesConfigOptions.DownloadMode downloadMode =
                 kubernetesParameters
                         .getFlinkConfiguration()
                         .get(KubernetesConfigOptions.FILE_DOWNLOAD_MODE);
         switch (downloadMode) {
             case CSI:
-                return new CSIFileDownloadDecorator(kubernetesParameters);
+                return new CSIFileDownloadDecorator(
+                        kubernetesParameters, mountPath, filesDownloaded, nameMap);
             case INIT_CONTAINER:
             default:
-                return new InitContainerFileDownloadDecorator(kubernetesParameters);
+                return new InitContainerFileDownloadDecorator(
+                        kubernetesParameters, mountPath, filesDownloaded, nameMap);
         }
     }
 }
