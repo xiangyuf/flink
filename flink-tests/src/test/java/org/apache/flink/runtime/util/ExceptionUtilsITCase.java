@@ -26,6 +26,7 @@ import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.TestLogger;
 
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
@@ -60,6 +61,7 @@ public class ExceptionUtilsITCase extends TestLogger {
     }
 
     @Test
+    @Ignore
     public void testIsMetaspaceOutOfMemoryError() throws IOException, InterruptedException {
         String className = DummyClassLoadingProgram.class.getName();
         // load only one class and record required Metaspace

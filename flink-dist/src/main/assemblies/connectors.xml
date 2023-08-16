@@ -45,7 +45,7 @@ under the License.
 			<source>../flink-connectors/flink-sql-connector-paimon/target/flink-sql-connector-paimon-${project.version}.jar</source>
 			<outputDirectory>connectors/</outputDirectory>
 			<destName>flink-sql-connector-paimon-${project.version}.jar</destName>
-			<fileMode>06444</fileMode>
+			<fileMode>0644</fileMode>
 		</file>
     </files>
 </assembly>

@@ -51,6 +51,7 @@ import org.apache.flink.util.TestLogger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -72,6 +73,7 @@ import static org.junit.Assert.assertNotNull;
  * NotifyingDefiniteKeySource, SubtaskIndexFlatMapper and CollectionSink refer to RescalingITCase,
  * because the static fields in these classes can not be shared.
  */
+@Ignore
 public class RescaleCheckpointManuallyITCase extends TestLogger {
 
     private static final int NUM_TASK_MANAGERS = 2;

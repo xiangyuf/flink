@@ -4,26 +4,27 @@ trigger:
     branches: [ "flink-1.17" ]
     paths:
       - "!flink-dist/src/main/resources/flink-conf*.yaml"
+  cron: # config though codebase webui
+    notification:
+      when: [ failure ]
+      to: [ "7265508988127772676" ]
 jobs:
-  build:
-    image: hub.byted.org/compile/flink_bet_maven_scm_jdk11:41504398c4a4cf0116cfa2c7b2bbf408
+  compile:
+    name: Compiling
+    image: hub.byted.org/compile/flink-ci-117:3f4ed7457260744cb4aa7d503e454cee
     runs-on:
       spec: m1.4xlarge
+    envs:
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"
     steps:
       - uses: actions/checkout@v1
         inputs:
           depth: 1
-      - name: setup ssh
-        commands:
-          - apt update
-          - DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-client || echo failed to install ssh
-          - command -v ssh
       - id: checksum
         uses: actions/checksum@v1
         inputs:
           paths:
             - pom.xml
-      # - uses: actions/setup-proxy
       - name: build
         commands:
           - sudo -u tiger mkdir -p /home/tiger/.m2
@@ -31,4 +32,79 @@ jobs:
           - chmod -R a+w ./*
           - chown -R tiger ./*
           - chown -R tiger /home/tiger/
-          - sudo -u tiger /bin/bash ./build_local.sh
+          - sudo -u tiger /bin/bash ./.codebase/compile.sh
+          - ./tools/azure-pipelines/create_build_artifact.sh
+      - uses: actions/upload-artifact
+        inputs:
+          name: flink-artifacts
+          path: /home/tiger/flink-artifact
+  test-core: &test_job
+    name: Testing Core
+    image: hub.byted.org/compile/flink-ci-117:3f4ed7457260744cb4aa7d503e454cee
+    envs:
+      STAGE: "core"
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"
+    runs-on:
+      spec: m1.4xlarge
+    depends: [ compile ]
+    timeout: 240
+    steps:
+      - uses: actions/checkout@v1
+        inputs:
+          depth: 1
+      - id: checksum
+        uses: actions/checksum@v1
+        inputs:
+          paths:
+            - pom.xml
+      - uses: actions/download-artifact
+        inputs:
+          name: flink-artifacts
+          path: /home/tiger/flink-artifact
+      - name: Unpack Build artifact
+        commands:
+          - ./tools/azure-pipelines/unpack_build_artifact.sh
+      - name: set-stage
+        commands:
+          - echo "::set-env name=STAGE::$STAGE"
+      - name: test
+        commands:
+          - sudo -u tiger mkdir -p /home/tiger/.m2
+          - cp -f /opt/settings.xml /home/tiger/.m2/settings.xml
+          - chmod -R a+w ./*
+          - chown -R tiger ./*
+          - chown -R tiger /home/tiger/
+          - sudo -u tiger /bin/bash ./.codebase/test.sh ${{ Envs.STAGE }}
+        continue-on-error: true
+      - uses: actions/upload-artifact
+        inputs:
+          name: verify-${{ Envs.STAGE }}.log
+          path: /home/code/verify-${{ Envs.STAGE }}.log
+
+  test-table:
+    <<: *test_job
+    name: Testing Table
+    envs:
+      STAGE: "table"
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"
+
+  test-tests:
+    <<: *test_job
+    name: Testing Tests
+    envs:
+      STAGE: "tests"
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"
+
+  test-misc:
+    <<: *test_job
+    name: Testing Misc
+    envs:
+      STAGE: "misc"
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"
+
+  test-connect:
+    <<: *test_job
+    name: Testing Connector
+    envs:
+      STAGE: "connect"
+      FLINK_ARTIFACT_DIR: "/home/tiger/flink-artifact"

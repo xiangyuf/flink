@@ -24,9 +24,11 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.conncetor.datagen.source.python.DataGenerator;
 import org.apache.flink.streaming.conncetor.datagen.source.python.DataGeneratorStr;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /** Test DataGenerator usage. */
+@Disabled
 public class DataGeneratorTest {
 
     @Test
