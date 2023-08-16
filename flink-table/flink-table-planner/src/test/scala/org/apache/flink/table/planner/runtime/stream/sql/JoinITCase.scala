@@ -1442,7 +1442,6 @@ class JoinITCase(state: StateBackendMode) extends StreamingWithStateTestBase(sta
   }
 
   @Test
-  @Ignore
   def testJoinWithFilterPushDown(): Unit = {
     checkResult(
       """
