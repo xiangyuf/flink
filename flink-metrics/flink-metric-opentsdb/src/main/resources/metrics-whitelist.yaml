@@ -82,6 +82,12 @@ non-global:
         latency,
       # lag
         pendingRecords,
+        currentFetchEventTimeLag,
+      # sink
+        numRecordsOut,
+        numBytesOut,
+        numRecordsSend,
+        numBytesSend,
       # kafka offset
         currentOffsets,
         commit-rate,
