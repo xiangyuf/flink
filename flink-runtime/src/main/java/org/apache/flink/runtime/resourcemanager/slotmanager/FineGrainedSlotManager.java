@@ -116,7 +116,7 @@ public class FineGrainedSlotManager implements SlotManager {
     /** Callbacks for resource not enough. */
     @Nullable private ResourceEventListener resourceEventListener;
 
-    @Nullable private ScheduledFuture<?> taskManagerReleasableCheck;
+    @Nullable private ScheduledFuture<?> clusterReconciliationCheck;
 
     @Nullable private CompletableFuture<Void> requirementsCheckFuture;
 
@@ -163,7 +163,7 @@ public class FineGrainedSlotManager implements SlotManager {
         resourceAllocator = null;
         resourceEventListener = null;
         mainThreadExecutor = null;
-        taskManagerReleasableCheck = null;
+        clusterReconciliationCheck = null;
         requirementsCheckFuture = null;
 
         started = false;
@@ -221,9 +221,9 @@ public class FineGrainedSlotManager implements SlotManager {
         started = true;
 
         if (resourceAllocator.isSupported()) {
-            taskManagerReleasableCheck =
+            clusterReconciliationCheck =
                     scheduledExecutor.scheduleWithFixedDelay(
-                            () -> mainThreadExecutor.execute(this::tryReleaseUnusedTaskManagers),
+                            () -> mainThreadExecutor.execute(this::checkClusterReconciliation),
                             0L,
                             taskManagerTimeout.toMilliseconds(),
                             TimeUnit.MILLISECONDS);
@@ -251,9 +251,9 @@ public class FineGrainedSlotManager implements SlotManager {
         slotManagerMetricGroup.close();
 
         // stop the timeout checks for the TaskManagers
-        if (taskManagerReleasableCheck != null) {
-            taskManagerReleasableCheck.cancel(false);
-            taskManagerReleasableCheck = null;
+        if (clusterReconciliationCheck != null) {
+            clusterReconciliationCheck.cancel(false);
+            clusterReconciliationCheck = null;
         }
 
         slotStatusSyncer.close();
@@ -290,7 +290,7 @@ public class FineGrainedSlotManager implements SlotManager {
         resourceTracker.notifyResourceRequirements(jobId, Collections.emptyList());
         if (resourceAllocator.isSupported()) {
             taskManagerTracker.clearPendingAllocationsOfJob(jobId);
-            checkTaskManagerReleasable();
+            checkResourcesNeedReconcile();
             declareNeededResourcesWithDelay();
         }
     }
@@ -622,7 +622,7 @@ public class FineGrainedSlotManager implements SlotManager {
             if (resourceAllocator.isSupported()
                     && !taskManagerTracker.getPendingTaskManagers().isEmpty()) {
                 taskManagerTracker.replaceAllPendingAllocations(Collections.emptyMap());
-                checkTaskManagerReleasable();
+                checkResourcesNeedReconcile();
                 declareNeededResourcesWithDelay();
             }
             return;
@@ -677,7 +677,7 @@ public class FineGrainedSlotManager implements SlotManager {
         }
 
         if (resourceAllocator.isSupported()) {
-            checkTaskManagerReleasable();
+            checkResourcesNeedReconcile();
             declareNeededResourcesWithDelay();
         }
     }
@@ -785,29 +785,32 @@ public class FineGrainedSlotManager implements SlotManager {
     // Internal periodic check methods
     // ---------------------------------------------------------------------------------------------
 
-    private void tryReleaseUnusedTaskManagers() {
-        if (checkTaskManagerReleasable()) {
+    private void checkClusterReconciliation() {
+        if (checkResourcesNeedReconcile()) {
             // only declare on needed.
             declareNeededResourcesWithDelay();
         }
     }
 
-    private boolean checkTaskManagerReleasable() {
-        ResourceReleaseResult releaseResult =
-                resourceAllocationStrategy.tryReleaseUnusedResources(taskManagerTracker);
+    private boolean checkResourcesNeedReconcile() {
+        ResourceReconcileResult reconcileResult =
+                resourceAllocationStrategy.tryReconcileClusterResources(taskManagerTracker);
 
-        releaseResult.getPendingTaskManagersToRelease().stream()
+        reconcileResult.getPendingTaskManagersToRelease().stream()
                 .map(PendingTaskManager::getPendingTaskManagerId)
                 .forEach(taskManagerTracker::removePendingTaskManager);
 
-        for (TaskManagerInfo taskManagerToRelease : releaseResult.getTaskManagersToRelease()) {
+        for (TaskManagerInfo taskManagerToRelease : reconcileResult.getTaskManagersToRelease()) {
             if (waitResultConsumedBeforeRelease) {
                 releaseIdleTaskExecutorIfPossible(taskManagerToRelease);
             } else {
                 releaseIdleTaskExecutor(taskManagerToRelease.getInstanceId());
             }
         }
-        return releaseResult.needRelease();
+
+        reconcileResult.getPendingTaskManagersToAllocate().forEach(this::allocateResource);
+
+        return reconcileResult.needReconcile();
     }
 
     private void releaseIdleTaskExecutorIfPossible(TaskManagerInfo taskManagerInfo) {
