@@ -470,6 +470,19 @@ SqlShowViews SqlShowViews() :
 }
 
 /**
+* Parse a "Show Materialized Views" metadata query command.
+*/
+SqlShowMaterializedViews SqlShowMaterializedViews() : {
+    SqlParserPos pos;
+}
+{
+    <SHOW> <MATERIALIZED> <VIEWS> { pos = getPos(); }
+   {
+        return new SqlShowMaterializedViews(pos);
+   }
+}
+
+/**
 * SHOW TABLES FROM [catalog.] database sql call.
 */
 SqlShowTables SqlShowTables() :
@@ -562,6 +575,13 @@ SqlShowCreate SqlShowCreate() :
         sqlIdentifier = CompoundIdentifier()
         {
             return new SqlShowCreateView(pos, sqlIdentifier);
+        }
+    |
+        <MATERIALIZED> <VIEW>
+        { pos = getPos(); }
+        sqlIdentifier = CompoundIdentifier()
+        {
+            return new SqlShowCreateMaterializedView(pos, sqlIdentifier);
         }
     )
 }
@@ -1168,9 +1188,14 @@ SqlCreate SqlCreateTable(Span s, boolean replace, boolean isTemporary) :
     SqlNodeList propertyList = SqlNodeList.EMPTY;
     SqlNodeList partitionColumns = SqlNodeList.EMPTY;
     SqlParserPos pos = startPos;
+    boolean isMaterializedView = false;
 }
 {
-    <TABLE>
+    (
+        <TABLE>
+        |
+        <MATERIALIZED> <VIEW> {isMaterializedView = true;}
+    )
 
     ifNotExists = IfNotExistsOpt()
 
@@ -1231,7 +1256,8 @@ SqlCreate SqlCreateTable(Span s, boolean replace, boolean isTemporary) :
                 comment,
                 asQuery,
                 isTemporary,
-                ifNotExists);
+                ifNotExists,
+                isMaterializedView);
         }
     ]
     {
@@ -1493,6 +1519,19 @@ SqlAlterView SqlAlterView() :
         return new SqlAlterViewAs(startPos.plus(getPos()), viewName, newQuery);
       }
   )
+}
+
+SqlDrop SqlDropMaterializedView(Span s, boolean replace, boolean isTemporary) : {
+    SqlIdentifier viewName = null;
+    boolean ifExists = false;
+}
+{
+    <MATERIALIZED> <VIEW>
+    ifExists = IfExistsOpt()
+    viewName = CompoundIdentifier()
+    {
+        return new SqlDropMaterializedView(s.pos(), viewName, ifExists);
+    }
 }
 
 /**
@@ -1860,6 +1899,8 @@ SqlDrop SqlDropExtended(Span s, boolean replace) :
         drop = SqlDropTable(s, replace, isTemporary)
         |
         drop = SqlDropView(s, replace, isTemporary)
+        |
+        drop = SqlDropMaterializedView(s, replace, isTemporary)
         |
         drop = SqlDropDatabase(s, replace)
         |

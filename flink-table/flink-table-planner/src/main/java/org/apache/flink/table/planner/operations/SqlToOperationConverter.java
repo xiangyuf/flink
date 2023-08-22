@@ -50,6 +50,7 @@ import org.apache.flink.sql.parser.ddl.SqlCreateView;
 import org.apache.flink.sql.parser.ddl.SqlDropCatalog;
 import org.apache.flink.sql.parser.ddl.SqlDropDatabase;
 import org.apache.flink.sql.parser.ddl.SqlDropFunction;
+import org.apache.flink.sql.parser.ddl.SqlDropMaterializedView;
 import org.apache.flink.sql.parser.ddl.SqlDropPartitions;
 import org.apache.flink.sql.parser.ddl.SqlDropTable;
 import org.apache.flink.sql.parser.ddl.SqlDropView;
@@ -75,6 +76,7 @@ import org.apache.flink.sql.parser.dql.SqlRichDescribeTable;
 import org.apache.flink.sql.parser.dql.SqlRichExplain;
 import org.apache.flink.sql.parser.dql.SqlShowCatalogs;
 import org.apache.flink.sql.parser.dql.SqlShowColumns;
+import org.apache.flink.sql.parser.dql.SqlShowCreateMaterializedView;
 import org.apache.flink.sql.parser.dql.SqlShowCreateTable;
 import org.apache.flink.sql.parser.dql.SqlShowCreateView;
 import org.apache.flink.sql.parser.dql.SqlShowCurrentCatalog;
@@ -83,6 +85,7 @@ import org.apache.flink.sql.parser.dql.SqlShowDatabases;
 import org.apache.flink.sql.parser.dql.SqlShowFunctions;
 import org.apache.flink.sql.parser.dql.SqlShowJars;
 import org.apache.flink.sql.parser.dql.SqlShowJobs;
+import org.apache.flink.sql.parser.dql.SqlShowMaterializedViews;
 import org.apache.flink.sql.parser.dql.SqlShowModules;
 import org.apache.flink.sql.parser.dql.SqlShowPartitions;
 import org.apache.flink.sql.parser.dql.SqlShowTables;
@@ -141,6 +144,7 @@ import org.apache.flink.table.operations.Operation;
 import org.apache.flink.table.operations.QueryOperation;
 import org.apache.flink.table.operations.ShowCatalogsOperation;
 import org.apache.flink.table.operations.ShowColumnsOperation;
+import org.apache.flink.table.operations.ShowCreateMaterializedViewOperation;
 import org.apache.flink.table.operations.ShowCreateTableOperation;
 import org.apache.flink.table.operations.ShowCreateViewOperation;
 import org.apache.flink.table.operations.ShowCurrentCatalogOperation;
@@ -148,6 +152,7 @@ import org.apache.flink.table.operations.ShowCurrentDatabaseOperation;
 import org.apache.flink.table.operations.ShowDatabasesOperation;
 import org.apache.flink.table.operations.ShowFunctionsOperation;
 import org.apache.flink.table.operations.ShowFunctionsOperation.FunctionScope;
+import org.apache.flink.table.operations.ShowMaterializedViewsOperation;
 import org.apache.flink.table.operations.ShowModulesOperation;
 import org.apache.flink.table.operations.ShowPartitionsOperation;
 import org.apache.flink.table.operations.ShowTablesOperation;
@@ -186,6 +191,7 @@ import org.apache.flink.table.operations.ddl.CreateViewOperation;
 import org.apache.flink.table.operations.ddl.DropCatalogFunctionOperation;
 import org.apache.flink.table.operations.ddl.DropCatalogOperation;
 import org.apache.flink.table.operations.ddl.DropDatabaseOperation;
+import org.apache.flink.table.operations.ddl.DropMaterializedViewOperation;
 import org.apache.flink.table.operations.ddl.DropPartitionsOperation;
 import org.apache.flink.table.operations.ddl.DropTableOperation;
 import org.apache.flink.table.operations.ddl.DropTempSystemFunctionOperation;
@@ -344,6 +350,16 @@ public class SqlToOperationConverter {
             return Optional.of(converter.convertAlterView((SqlAlterView) validated));
         } else if (validated instanceof SqlShowViews) {
             return Optional.of(converter.convertShowViews((SqlShowViews) validated));
+        } else if (validated instanceof SqlDropMaterializedView) {
+            return Optional.of(
+                    converter.convertDropMaterializedView((SqlDropMaterializedView) validated));
+        } else if (validated instanceof SqlShowCreateMaterializedView) {
+            return Optional.of(
+                    converter.convertShowCreateMaterializedView(
+                            (SqlShowCreateMaterializedView) validated));
+        } else if (validated instanceof SqlShowMaterializedViews) {
+            return Optional.of(
+                    converter.convertShowMaterializedViews((SqlShowMaterializedViews) validated));
         } else if (validated instanceof SqlCreateFunction) {
             return Optional.of(converter.convertCreateFunction((SqlCreateFunction) validated));
         } else if (validated instanceof SqlDropFunction) {
@@ -1199,6 +1215,30 @@ public class SqlToOperationConverter {
     /** Convert SHOW VIEWS statement. */
     private Operation convertShowViews(SqlShowViews sqlShowViews) {
         return new ShowViewsOperation();
+    }
+
+    /** Convert DROP MATERIALIZED VIEW statement. */
+    private Operation convertDropMaterializedView(SqlDropMaterializedView sqlDropMaterializedView) {
+        UnresolvedIdentifier unresolvedIdentifier =
+                UnresolvedIdentifier.of(sqlDropMaterializedView.fullViewName());
+        ObjectIdentifier identifier = catalogManager.qualifyIdentifier(unresolvedIdentifier);
+
+        return new DropMaterializedViewOperation(identifier, sqlDropMaterializedView.getIfExists());
+    }
+
+    /** Convert SHOW CREATE MATERIALIZED VIEW statement. */
+    private Operation convertShowCreateMaterializedView(
+            SqlShowCreateMaterializedView sqlShowCreateMaterializedView) {
+        UnresolvedIdentifier unresolvedIdentifier =
+                UnresolvedIdentifier.of(sqlShowCreateMaterializedView.getFullViewName());
+        ObjectIdentifier identifier = catalogManager.qualifyIdentifier(unresolvedIdentifier);
+        return new ShowCreateMaterializedViewOperation(identifier);
+    }
+
+    /** Convert SHOW MATERIALIZED VIEWS statement. */
+    private Operation convertShowMaterializedViews(
+            SqlShowMaterializedViews sqlShowMaterializedViews) {
+        return new ShowMaterializedViewsOperation();
     }
 
     /** Convert RICH EXPLAIN statement. */

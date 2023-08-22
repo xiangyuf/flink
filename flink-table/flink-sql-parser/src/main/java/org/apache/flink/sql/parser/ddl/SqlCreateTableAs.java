@@ -73,6 +73,8 @@ public class SqlCreateTableAs extends SqlCreateTable {
 
     private final SqlNode asQuery;
 
+    private final boolean isMaterializedView;
+
     public SqlCreateTableAs(
             SqlParserPos pos,
             SqlIdentifier tableName,
@@ -84,7 +86,8 @@ public class SqlCreateTableAs extends SqlCreateTable {
             @Nullable SqlCharStringLiteral comment,
             SqlNode asQuery,
             boolean isTemporary,
-            boolean ifNotExists) {
+            boolean ifNotExists,
+            boolean isMaterializedView) {
         super(
                 OPERATOR,
                 pos,
@@ -98,7 +101,10 @@ public class SqlCreateTableAs extends SqlCreateTable {
                 isTemporary,
                 ifNotExists);
         this.asQuery =
-                requireNonNull(asQuery, "As clause is required for CREATE TABLE AS SELECT DDL");
+                requireNonNull(
+                        asQuery,
+                        "As clause is required for CREATE TABLE/MATERIALIZED VIEW AS SELECT DDL");
+        this.isMaterializedView = isMaterializedView;
     }
 
     @Override
@@ -149,6 +155,18 @@ public class SqlCreateTableAs extends SqlCreateTable {
 
     public SqlNode getAsQuery() {
         return asQuery;
+    }
+
+    public boolean isMaterializedView() {
+        return isMaterializedView;
+    }
+
+    @Override
+    protected String getKindName() {
+        if (isMaterializedView) {
+            return "MATERIALIZED VIEW";
+        }
+        return super.getKindName();
     }
 
     @Override

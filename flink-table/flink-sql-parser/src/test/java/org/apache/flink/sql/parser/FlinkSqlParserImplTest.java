@@ -1881,6 +1881,61 @@ class FlinkSqlParserImplTest extends SqlParserTest {
     }
 
     @Test
+    void testCreateMaterializedView() {
+        final String sql1 = "create materialized view v as select col1 from tbl";
+        final String expected1 =
+                "CREATE MATERIALIZED VIEW `V`\n" + "AS\n" + "SELECT `COL1`\n" + "FROM `TBL`";
+        sql(sql1).ok(expected1);
+
+        final String sql2 =
+                "create materialized view if not exists catalog1.db1.v(c1 varchar primary key, c2 int primary key) "
+                        + "comment 'this is a materialized view' "
+                        + "partitioned by (c1) "
+                        + "with('k1'='v1', 'k2'='v2') "
+                        + "as select col1, col2 from tbl";
+        final String expected2 =
+                "CREATE MATERIALIZED VIEW IF NOT EXISTS `CATALOG1`.`DB1`.`V` (\n"
+                        + "  `C1` VARCHAR PRIMARY KEY,\n"
+                        + "  `C2` INTEGER PRIMARY KEY\n"
+                        + ")\n"
+                        + "COMMENT 'this is a materialized view'\n"
+                        + "PARTITIONED BY (`C1`)\n"
+                        + "WITH (\n"
+                        + "  'k1' = 'v1',\n"
+                        + "  'k2' = 'v2'\n"
+                        + ")\n"
+                        + "AS\n"
+                        + "SELECT `COL1`, `COL2`\n"
+                        + "FROM `TBL`";
+
+        sql(sql2).ok(expected2);
+    }
+
+    @Test
+    void testDropMaterializedView() {
+        final String sql = "DROP MATERIALIZED VIEW IF EXISTS catalog1.db1.view_name";
+        final String expected = "DROP MATERIALIZED VIEW IF EXISTS `CATALOG1`.`DB1`.`VIEW_NAME`";
+        sql(sql).ok(expected);
+
+        final String sql1 = "DROP MATERIALIZED VIEW view_name";
+        final String expected1 = "DROP MATERIALIZED VIEW `VIEW_NAME`";
+        sql(sql1).ok(expected1);
+    }
+
+    @Test
+    void testShowCreateMaterializedView() {
+        sql("show create materialized view v1").ok("SHOW CREATE MATERIALIZED VIEW `V1`");
+        sql("show create materialized view db1.v1").ok("SHOW CREATE MATERIALIZED VIEW `DB1`.`V1`");
+        sql("show create materialized view catalog1.db1.v1")
+                .ok("SHOW CREATE MATERIALIZED VIEW `CATALOG1`.`DB1`.`V1`");
+    }
+
+    @Test
+    void testShowMaterializedViews() {
+        sql("show materialized views").ok("SHOW MATERIALIZED VIEWS");
+    }
+
+    @Test
     void testCreateFunction() {
         sql("create function catalog1.db1.function1 as 'org.apache.fink.function.function1'")
                 .ok(

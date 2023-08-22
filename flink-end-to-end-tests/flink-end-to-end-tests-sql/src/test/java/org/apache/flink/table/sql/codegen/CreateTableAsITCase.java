@@ -56,6 +56,17 @@ public class CreateTableAsITCase extends SqlITCaseBase {
                         "{\"before\":null,\"after\":{\"user_name\":\"Bob\",\"order_cnt\":2},\"op\":\"c\"}"));
     }
 
+    @Test
+    public void testCreateMaterializedView() throws Exception {
+        runAndCheckSQL(
+                "create_materialized_view_e2e.sql",
+                generateReplaceVars(),
+                2,
+                Arrays.asList(
+                        "{\"before\":null,\"after\":{\"user_name\":\"Alice\",\"order_cnt\":1},\"op\":\"c\"}",
+                        "{\"before\":null,\"after\":{\"user_name\":\"Bob\",\"order_cnt\":2},\"op\":\"c\"}"));
+    }
+
     @Override
     protected void executeSqlStatements(ClusterController clusterController, List<String> sqlLines)
             throws Exception {

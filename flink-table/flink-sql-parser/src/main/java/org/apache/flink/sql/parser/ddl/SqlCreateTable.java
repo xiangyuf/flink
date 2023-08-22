@@ -234,13 +234,17 @@ public class SqlCreateTable extends SqlCreate implements ExtendedSqlNode {
         return writer.toString();
     }
 
+    protected String getKindName() {
+        return "TABLE";
+    }
+
     @Override
     public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
         writer.keyword("CREATE");
         if (isTemporary()) {
             writer.keyword("TEMPORARY");
         }
-        writer.keyword("TABLE");
+        writer.keyword(getKindName());
         if (isIfNotExists()) {
             writer.keyword("IF NOT EXISTS");
         }
