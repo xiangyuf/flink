@@ -82,6 +82,7 @@ kubernetes.ingress.host: lq-koryn.byted.org
 kubernetes.flink.log.dir: /var/log/tiger
 kubernetes.flink.conf.dir: /opt/tiger/flink_deploy/conf
 kubernetes.jobmanager.annotations.pod.tce.kubernetes.io/mountHostPath: true
+env.stdout-err.redirect-to-file: true
 
 # Arcee configuration
 kubernetes.arcee.scheduling-config.schedule-timeout-seconds: 120
