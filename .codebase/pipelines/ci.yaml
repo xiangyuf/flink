@@ -4,10 +4,13 @@ trigger:
     branches: [ "flink-1.17" ]
     paths:
       - "!flink-dist/src/main/resources/flink-conf*.yaml"
+    notification:
+      when: [ failure ]
+      to: [ "6765347458630287630" ]
   cron: # config though codebase webui
     notification:
       when: [ failure ]
-      to: [ "7265508988127772676" ]
+      to: [ "6765347458630287630" ]
 jobs:
   compile:
     name: Compiling
