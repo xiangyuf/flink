@@ -6,11 +6,11 @@ trigger:
       - "!flink-dist/src/main/resources/flink-conf*.yaml"
     notification:
       when: [ failure ]
-      to: [ "6765347458630287630" ]
+      to: [ "6765347458630287630", "7260419857954127873" ]
   cron: # config though codebase webui
     notification:
       when: [ failure ]
-      to: [ "6765347458630287630" ]
+      to: [ "6765347458630287630", "7260419857954127873" ]
 jobs:
   compile:
     name: Compiling
