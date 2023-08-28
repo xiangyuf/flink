@@ -69,6 +69,7 @@ containerized.taskmanager.env.FLINK_HOME: /opt/tiger/flink_deploy
 kubernetes.entry.path: /opt/tiger/flink_deploy/bin/docker-entrypoint.sh
 kubernetes.jobmanager.service-account: flink
 kubernetes.namespace: flink
+jobmanager.retrieve-taskmanager-hostname: false
 kubernetes.hostnetwork.enabled: true
 kubernetes.pod-address.from-env.enabled: true
 # ingress
