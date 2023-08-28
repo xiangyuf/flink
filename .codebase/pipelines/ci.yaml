@@ -4,6 +4,11 @@ trigger:
     branches: [ "flink-1.17" ]
     paths:
       - "!flink-dist/src/main/resources/flink-conf*.yaml"
+  push:
+    types: [ branch ]
+    branches: [ "flink-1.17" ]
+    paths:
+      - "!flink-dist/src/main/resources/flink-conf*.yaml"
     notification:
       when: [ failure ]
       to: [ "6765347458630287630", "7260419857954127873" ]
