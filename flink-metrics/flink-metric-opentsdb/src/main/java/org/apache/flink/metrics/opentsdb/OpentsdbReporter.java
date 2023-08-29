@@ -258,7 +258,7 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
 
     @Override
     public void notifyOfRemovedMetric(Metric metric, String metricName, MetricGroup group) {
-        metricCollectorMap.remove(metricName);
+        metricCollectorMap.remove(metric);
     }
 
     @Override
@@ -301,5 +301,10 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
     @VisibleForTesting
     public void setWhitelistFile(String whitelistFile) {
         this.whitelistFile = whitelistFile;
+    }
+
+    @VisibleForTesting
+    public long getMetricCount() {
+        return metricCollectorMap.size();
     }
 }

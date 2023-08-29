@@ -121,4 +121,46 @@ public class OpentsdbReporterTest {
         Assert.assertEquals("logicalScope.downtime", metricEmitter.getNonGlobalMetricName());
         Assert.assertEquals(except, metricEmitter.getTags());
     }
+
+    @Test
+    public void testAddMetric() {
+        OpentsdbReporter reporter = new OpentsdbReporter();
+        reporter.loadAllMetrics();
+        reporter.open(new MetricConfig());
+        Map<String, String> variableMap = new HashMap<>();
+        variableMap.put("key", "value");
+        MetricGroup metricGroup =
+                TestMetricGroup.newBuilder()
+                        .setLogicalScopeFunction(
+                                (characterFilter, character) ->
+                                        characterFilter.filterCharacters("logicalScope"))
+                        .setVariables(variableMap)
+                        .build();
+        Counter counter = new SimpleCounter();
+        final String metricName = "Count";
+        reporter.notifyOfAddedMetric(counter, metricName, metricGroup);
+        Assert.assertEquals(reporter.getMetricCount(), 1);
+    }
+
+    @Test
+    public void testRemoveMetric() {
+        OpentsdbReporter reporter = new OpentsdbReporter();
+        reporter.loadAllMetrics();
+        reporter.open(new MetricConfig());
+        Map<String, String> variableMap = new HashMap<>();
+        variableMap.put("key", "value");
+        MetricGroup metricGroup =
+                TestMetricGroup.newBuilder()
+                        .setLogicalScopeFunction(
+                                (characterFilter, character) ->
+                                        characterFilter.filterCharacters("logicalScope"))
+                        .setVariables(variableMap)
+                        .build();
+        Counter counter = new SimpleCounter();
+        final String metricName = "Count";
+        reporter.notifyOfAddedMetric(counter, metricName, metricGroup);
+        Assert.assertEquals(reporter.getMetricCount(), 1);
+        reporter.notifyOfRemovedMetric(counter, metricName, metricGroup);
+        Assert.assertEquals(reporter.getMetricCount(), 0);
+    }
 }
