@@ -524,6 +524,16 @@ public class KubernetesConfigOptions {
                             "Whether to enable HostNetwork mode. "
                                     + "The HostNetwork allows the pod could use the node network namespace instead of the individual pod network namespace. Please note that the JobManager service account should have the permission to update Kubernetes service.");
 
+    public static final ConfigOption<Boolean> KUBERNETES_POD_ADDRESS_FROM_ENV_ENABLED =
+            key("kubernetes.pod-address.from-env.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Whether to enable the use of the pod address from environment as the exposed address. "
+                                    + "This configuration takes effect only if "
+                                    + KUBERNETES_HOSTNETWORK_ENABLED.key()
+                                    + " is enabled.");
+
     public static final ConfigOption<String> KUBERNETES_CLIENT_USER_AGENT =
             key("kubernetes.client.user-agent")
                     .stringType()

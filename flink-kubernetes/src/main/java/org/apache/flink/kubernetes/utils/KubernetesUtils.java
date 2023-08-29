@@ -118,6 +118,11 @@ public class KubernetesUtils {
     private static final String LEADER_PREFIX = "org.apache.flink.k8s.leader.";
     private static final char LEADER_INFORMATION_SEPARATOR = ',';
 
+    /** IPv6 related environment variables. */
+    public static final String ENV_BYTED_IPV6_ADDRESS = "BYTED_HOST_IPV6";
+
+    public static final String ENV_BYTED_IPV4_ADDRESS = "BYTED_HOST_IP";
+
     /**
      * Check whether the port config option is a fixed port. If not, the fallback port will be set
      * to configuration.
@@ -930,6 +935,43 @@ public class KubernetesUtils {
         } else {
             return Constants.DEFAULT_DOWNLOAD_VOLUME;
         }
+    }
+
+    /**
+     * This is a trick logic for host network in bytedance. There are some machines only have IPv6
+     * address, and some other machines have both IPv6 and IPv4 addresses. So we must use IPv6
+     * address so that TaskManagers/JobManager in different machines could communicate with each
+     * other.
+     *
+     * @param configuration the flink configuration
+     * @return the preferred IP address to expose
+     */
+    public static Optional<String> getPodExposedAddress(Configuration configuration) {
+        if (configuration.getBoolean(KubernetesConfigOptions.KUBERNETES_HOSTNETWORK_ENABLED)
+                && configuration.getBoolean(
+                        KubernetesConfigOptions.KUBERNETES_POD_ADDRESS_FROM_ENV_ENABLED)) {
+            // These environments only works in host network.
+            return getPreferredIpAddressForBytedance();
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Get preferred ip address. If an IPv6 address is available, the IPv6 address is returned
+     * first.
+     */
+    private static Optional<String> getPreferredIpAddressForBytedance() {
+        final String ipv6Address = System.getenv(ENV_BYTED_IPV6_ADDRESS);
+        if (!StringUtils.isNullOrWhitespaceOnly(ipv6Address)) {
+            return Optional.of(ipv6Address);
+        }
+
+        final String ipv4Address = System.getenv(ENV_BYTED_IPV4_ADDRESS);
+        if (!StringUtils.isNullOrWhitespaceOnly(ipv4Address)) {
+            return Optional.of(ipv4Address);
+        }
+        return Optional.empty();
     }
 
     private KubernetesUtils() {}

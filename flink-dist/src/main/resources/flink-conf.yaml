@@ -70,6 +70,7 @@ kubernetes.entry.path: /opt/tiger/flink_deploy/bin/docker-entrypoint.sh
 kubernetes.jobmanager.service-account: flink
 kubernetes.namespace: flink
 kubernetes.hostnetwork.enabled: true
+kubernetes.pod-address.from-env.enabled: true
 # ingress
 kubernetes.rest-service.exposed.type: ClusterIP
 kubernetes.ingress.annotations.nginx.ingress.kubernetes.io/proxy-body-size: "100m"

@@ -19,8 +19,10 @@
 package org.apache.flink.kubernetes.taskmanager;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.TaskManagerOptions;
 import org.apache.flink.configuration.TaskManagerOptionsInternal;
 import org.apache.flink.kubernetes.utils.Constants;
+import org.apache.flink.kubernetes.utils.KubernetesUtils;
 import org.apache.flink.runtime.entrypoint.FlinkParseException;
 import org.apache.flink.runtime.taskexecutor.TaskManagerRunner;
 import org.apache.flink.runtime.util.EnvironmentInformation;
@@ -47,10 +49,8 @@ public class KubernetesTaskExecutorRunner {
     }
 
     private static void runTaskManagerSecurely(String[] args) {
-        Configuration configuration = null;
-
         try {
-            configuration = TaskManagerRunner.loadConfiguration(args);
+            final Configuration configuration = TaskManagerRunner.loadConfiguration(args);
             final String nodeId = System.getenv().get(Constants.ENV_FLINK_POD_NODE_ID);
             Preconditions.checkState(
                     nodeId != null,
@@ -58,11 +58,17 @@ public class KubernetesTaskExecutorRunner {
                             + "which is used to identify the node where the task manager is located.",
                     Constants.ENV_FLINK_POD_NODE_ID);
             configuration.setString(TaskManagerOptionsInternal.TASK_MANAGER_NODE_ID, nodeId);
+
+            // only for host network in bytedance. we have multi network interface in same machine,
+            // It may find the wrong interface (such as the virtual bridge interface)
+            // when TaskManagerRunner#determineTaskManagerBindAddressByConnectingToResourceManager.
+            KubernetesUtils.getPodExposedAddress(configuration)
+                    .ifPresent(
+                            address -> configuration.setString(TaskManagerOptions.HOST, address));
+            TaskManagerRunner.runTaskManagerProcessSecurely(checkNotNull(configuration));
         } catch (FlinkParseException fpe) {
             LOG.error("Could not load the configuration.", fpe);
             System.exit(TaskManagerRunner.FAILURE_EXIT_CODE);
         }
-
-        TaskManagerRunner.runTaskManagerProcessSecurely(checkNotNull(configuration));
     }
 }
