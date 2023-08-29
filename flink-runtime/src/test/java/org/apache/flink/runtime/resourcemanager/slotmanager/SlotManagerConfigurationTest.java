@@ -32,6 +32,24 @@ import static org.assertj.core.api.Assertions.assertThat;
 /** Tests for {@link SlotManagerConfiguration}. */
 class SlotManagerConfigurationTest {
     @Test
+    void testComputeMinTotalCpu() throws Exception {
+        final Configuration configuration = new Configuration();
+        final int minSlotNum = 9;
+        final int numSlots = 3;
+        final double cpuCores = 10;
+        configuration.set(ResourceManagerOptions.MIN_SLOT_NUM, minSlotNum);
+        final SlotManagerConfiguration slotManagerConfiguration =
+                SlotManagerConfiguration.fromConfiguration(
+                        configuration,
+                        new WorkerResourceSpec.Builder()
+                                .setNumSlots(numSlots)
+                                .setCpuCores(cpuCores)
+                                .build());
+        assertThat(slotManagerConfiguration.getMinTotalCpu().getValue().doubleValue())
+                .isEqualTo(cpuCores * minSlotNum / numSlots);
+    }
+
+    @Test
     void testComputeMaxTotalCpu() throws Exception {
         final Configuration configuration = new Configuration();
         final int maxSlotNum = 9;
@@ -47,6 +65,29 @@ class SlotManagerConfigurationTest {
                                 .build());
         assertThat(slotManagerConfiguration.getMaxTotalCpu().getValue().doubleValue())
                 .isEqualTo(cpuCores * maxSlotNum / numSlots);
+    }
+
+    @Test
+    void testComputeMinTotalMemory() throws Exception {
+        final Configuration configuration = new Configuration();
+        final int minSlotNum = 1000;
+        final int numSlots = 10;
+        final int totalTaskManagerMB =
+                MemorySize.parse("1", MemorySize.MemoryUnit.TERA_BYTES).getMebiBytes();
+        configuration.set(ResourceManagerOptions.MIN_SLOT_NUM, minSlotNum);
+        final SlotManagerConfiguration slotManagerConfiguration =
+                SlotManagerConfiguration.fromConfiguration(
+                        configuration,
+                        new WorkerResourceSpec.Builder()
+                                .setNumSlots(numSlots)
+                                .setTaskHeapMemoryMB(totalTaskManagerMB)
+                                .build());
+        assertThat(slotManagerConfiguration.getMinTotalMem().getBytes())
+                .isEqualTo(
+                        BigDecimal.valueOf(MemorySize.ofMebiBytes(totalTaskManagerMB).getBytes())
+                                .multiply(BigDecimal.valueOf(minSlotNum))
+                                .divide(BigDecimal.valueOf(numSlots))
+                                .longValue());
     }
 
     @Test

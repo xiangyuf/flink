@@ -49,8 +49,11 @@ public class SlotManagerConfiguration {
     private final boolean evenlySpreadOutSlots;
     private final WorkerResourceSpec defaultWorkerResourceSpec;
     private final int numSlotsPerWorker;
+    private final int minSlotNum;
     private final int maxSlotNum;
+    private final CPUResource minTotalCpu;
     private final CPUResource maxTotalCpu;
+    private final MemorySize minTotalMem;
     private final MemorySize maxTotalMem;
     private final int redundantTaskManagerNum;
 
@@ -64,8 +67,11 @@ public class SlotManagerConfiguration {
             boolean evenlySpreadOutSlots,
             WorkerResourceSpec defaultWorkerResourceSpec,
             int numSlotsPerWorker,
+            int minSlotNum,
             int maxSlotNum,
+            CPUResource minTotalCpu,
             CPUResource maxTotalCpu,
+            MemorySize minTotalMem,
             MemorySize maxTotalMem,
             int redundantTaskManagerNum) {
 
@@ -80,8 +86,11 @@ public class SlotManagerConfiguration {
         Preconditions.checkState(numSlotsPerWorker > 0);
         Preconditions.checkState(maxSlotNum > 0);
         this.numSlotsPerWorker = numSlotsPerWorker;
+        this.minSlotNum = minSlotNum;
         this.maxSlotNum = maxSlotNum;
+        this.minTotalCpu = Preconditions.checkNotNull(minTotalCpu);
         this.maxTotalCpu = Preconditions.checkNotNull(maxTotalCpu);
+        this.minTotalMem = Preconditions.checkNotNull(minTotalMem);
         this.maxTotalMem = Preconditions.checkNotNull(maxTotalMem);
         Preconditions.checkState(redundantTaskManagerNum >= 0);
         this.redundantTaskManagerNum = redundantTaskManagerNum;
@@ -123,12 +132,24 @@ public class SlotManagerConfiguration {
         return numSlotsPerWorker;
     }
 
+    public int getMinSlotNum() {
+        return minSlotNum;
+    }
+
     public int getMaxSlotNum() {
         return maxSlotNum;
     }
 
+    public CPUResource getMinTotalCpu() {
+        return minTotalCpu;
+    }
+
     public CPUResource getMaxTotalCpu() {
         return maxTotalCpu;
+    }
+
+    public MemorySize getMinTotalMem() {
+        return minTotalMem;
     }
 
     public MemorySize getMaxTotalMem() {
@@ -169,6 +190,7 @@ public class SlotManagerConfiguration {
 
         int numSlotsPerWorker = configuration.getInteger(TaskManagerOptions.NUM_TASK_SLOTS);
 
+        int minSlotNum = configuration.getInteger(ResourceManagerOptions.MIN_SLOT_NUM);
         int maxSlotNum = configuration.getInteger(ResourceManagerOptions.MAX_SLOT_NUM);
 
         int redundantTaskManagerNum =
@@ -184,10 +206,30 @@ public class SlotManagerConfiguration {
                 evenlySpreadOutSlots,
                 defaultWorkerResourceSpec,
                 numSlotsPerWorker,
+                minSlotNum,
                 maxSlotNum,
+                getMinTotalCpu(configuration, defaultWorkerResourceSpec, minSlotNum),
                 getMaxTotalCpu(configuration, defaultWorkerResourceSpec, maxSlotNum),
+                getMinTotalMem(configuration, defaultWorkerResourceSpec, minSlotNum),
                 getMaxTotalMem(configuration, defaultWorkerResourceSpec, maxSlotNum),
                 redundantTaskManagerNum);
+    }
+
+    private static CPUResource getMinTotalCpu(
+            final Configuration configuration,
+            final WorkerResourceSpec defaultWorkerResourceSpec,
+            final int minSlotNum) {
+        return configuration
+                .getOptional(ResourceManagerOptions.MIN_TOTAL_CPU)
+                .map(CPUResource::new)
+                .orElseGet(
+                        () ->
+                                minSlotNum == 0
+                                        ? new CPUResource(Double.MIN_VALUE)
+                                        : defaultWorkerResourceSpec
+                                                .getCpuCores()
+                                                .multiply(minSlotNum)
+                                                .divide(defaultWorkerResourceSpec.getNumSlots()));
     }
 
     private static CPUResource getMaxTotalCpu(
@@ -204,6 +246,22 @@ public class SlotManagerConfiguration {
                                         : defaultWorkerResourceSpec
                                                 .getCpuCores()
                                                 .multiply(maxSlotNum)
+                                                .divide(defaultWorkerResourceSpec.getNumSlots()));
+    }
+
+    private static MemorySize getMinTotalMem(
+            final Configuration configuration,
+            final WorkerResourceSpec defaultWorkerResourceSpec,
+            final int minSlotNum) {
+        return configuration
+                .getOptional(ResourceManagerOptions.MIN_TOTAL_MEM)
+                .orElseGet(
+                        () ->
+                                minSlotNum == 0
+                                        ? MemorySize.ZERO
+                                        : defaultWorkerResourceSpec
+                                                .getTotalMemSize()
+                                                .multiply(minSlotNum)
                                                 .divide(defaultWorkerResourceSpec.getNumSlots()));
     }
 
