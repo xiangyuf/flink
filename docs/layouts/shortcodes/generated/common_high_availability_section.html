@@ -21,6 +21,12 @@
             <td>The ID of the Flink cluster, used to separate multiple Flink clusters from each other. Needs to be set for standalone clusters but is automatically inferred in YARN.</td>
         </tr>
         <tr>
+            <td><h5>high-availability.jobmanager.recovery-strategy</h5></td>
+            <td style="word-wrap: break-word;">RECOVER_JOBS</td>
+            <td><p>Enum</p></td>
+            <td>The recovery strategy of JobManager high availability, <code class="highlighter-rouge">RECOVER_JOBS</code> by default.<br /><ul><li><code class="highlighter-rouge">RECOVER_JOBS</code>: A new JobManager will grant the leadership and recover all the previous submitted jobs.</li><li><code class="highlighter-rouge">SERVICE_ONLY</code>: Only the JobManager Service will be recovered and the previous submitted jobs and job results will not be retained. This only take effect in session cluster.</li></ul><br /><br />Possible values:<ul><li>"SERVICE_ONLY"</li><li>"RECOVER_JOBS"</li></ul></td>
+        </tr>
+        <tr>
             <td><h5>high-availability.storageDir</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>

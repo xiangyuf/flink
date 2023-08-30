@@ -25,6 +25,8 @@ import org.apache.flink.runtime.checkpoint.CheckpointRecoveryFactory;
 import org.apache.flink.runtime.checkpoint.ZooKeeperCheckpointRecoveryFactory;
 import org.apache.flink.runtime.highavailability.AbstractHaServices;
 import org.apache.flink.runtime.highavailability.FileSystemJobResultStore;
+import org.apache.flink.runtime.highavailability.HighAvailabilityServicesUtils;
+import org.apache.flink.runtime.highavailability.nonha.embedded.EmbeddedJobResultStore;
 import org.apache.flink.runtime.jobmanager.JobGraphStore;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
 
@@ -52,7 +54,9 @@ public abstract class AbstractZooKeeperHaServices extends AbstractHaServices {
                 configuration,
                 executor,
                 blobStoreService,
-                FileSystemJobResultStore.fromConfiguration(configuration));
+                HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)
+                        ? FileSystemJobResultStore.fromConfiguration(configuration)
+                        : new EmbeddedJobResultStore());
         this.curatorFrameworkWrapper = checkNotNull(curatorFrameworkWrapper);
     }
 

@@ -37,8 +37,10 @@ import java.util.UUID;
 import java.util.concurrent.Executor;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /** Tests for the {@link HighAvailabilityServicesUtils} class. */
 public class HighAvailabilityServicesUtilsTest extends TestLogger {
@@ -125,6 +127,21 @@ public class HighAvailabilityServicesUtilsTest extends TestLogger {
 
         final Path expectedPath = new Path(haStorageRootDirectory, clusterId);
         assertThat(clusterHighAvailableStoragePath, is(expectedPath));
+    }
+
+    @Test
+    public void testJobRecoveryEnableAndDisable() {
+        final Configuration configuration = new Configuration();
+
+        configuration.set(
+                HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY,
+                HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+        assertTrue(HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration));
+
+        configuration.set(
+                HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY,
+                HighAvailabilityOptions.RecoverStrategy.SERVICE_ONLY);
+        assertFalse(HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration));
     }
 
     /** Testing class which needs to be public in order to be instantiatable. */

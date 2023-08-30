@@ -554,7 +554,7 @@ public abstract class ClusterEntrypoint implements AutoCloseableAsync, FatalErro
     // Internal methods
     // --------------------------------------------------
 
-    private Configuration generateClusterConfiguration(Configuration configuration) {
+    protected Configuration generateClusterConfiguration(Configuration configuration) {
         final Configuration resultConfiguration =
                 new Configuration(Preconditions.checkNotNull(configuration));
 

@@ -29,6 +29,8 @@ import org.apache.flink.runtime.blob.BlobStoreService;
 import org.apache.flink.runtime.checkpoint.CheckpointRecoveryFactory;
 import org.apache.flink.runtime.highavailability.AbstractHaServices;
 import org.apache.flink.runtime.highavailability.FileSystemJobResultStore;
+import org.apache.flink.runtime.highavailability.HighAvailabilityServicesUtils;
+import org.apache.flink.runtime.highavailability.nonha.embedded.EmbeddedJobResultStore;
 import org.apache.flink.runtime.jobmanager.JobGraphStore;
 import org.apache.flink.runtime.leaderelection.DefaultLeaderElectionService;
 import org.apache.flink.runtime.leaderelection.DefaultMultipleComponentLeaderElectionService;
@@ -89,7 +91,9 @@ public class KubernetesMultipleComponentLeaderElectionHaServices extends Abstrac
                 config,
                 executor,
                 blobStoreService,
-                FileSystemJobResultStore.fromConfiguration(config));
+                HighAvailabilityServicesUtils.isJobRecoveryEnable(config)
+                        ? FileSystemJobResultStore.fromConfiguration(config)
+                        : new EmbeddedJobResultStore());
         this.kubeClient = checkNotNull(kubeClient);
         this.clusterId = checkNotNull(config.get(KubernetesConfigOptions.CLUSTER_ID));
         this.fatalErrorHandler = checkNotNull(fatalErrorHandler);

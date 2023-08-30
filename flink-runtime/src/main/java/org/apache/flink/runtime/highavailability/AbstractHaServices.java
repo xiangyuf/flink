@@ -23,7 +23,9 @@ import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.blob.BlobStore;
 import org.apache.flink.runtime.blob.BlobStoreService;
 import org.apache.flink.runtime.checkpoint.CheckpointRecoveryFactory;
+import org.apache.flink.runtime.checkpoint.StandaloneCheckpointRecoveryFactory;
 import org.apache.flink.runtime.jobmanager.JobGraphStore;
+import org.apache.flink.runtime.jobmanager.StandaloneJobGraphStore;
 import org.apache.flink.runtime.leaderelection.LeaderElectionService;
 import org.apache.flink.runtime.leaderretrieval.LeaderRetrievalService;
 import org.apache.flink.util.ExceptionUtils;
@@ -126,12 +128,20 @@ public abstract class AbstractHaServices implements HighAvailabilityServices {
 
     @Override
     public CheckpointRecoveryFactory getCheckpointRecoveryFactory() throws Exception {
-        return createCheckpointRecoveryFactory();
+        if (!HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            return new StandaloneCheckpointRecoveryFactory();
+        } else {
+            return createCheckpointRecoveryFactory();
+        }
     }
 
     @Override
     public JobGraphStore getJobGraphStore() throws Exception {
-        return createJobGraphStore();
+        if (!HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            return new StandaloneJobGraphStore();
+        } else {
+            return createJobGraphStore();
+        }
     }
 
     @Override

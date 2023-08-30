@@ -19,8 +19,10 @@
 package org.apache.flink.runtime.entrypoint;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.runtime.dispatcher.ExecutionGraphInfoStore;
 import org.apache.flink.runtime.dispatcher.MemoryExecutionGraphInfoStore;
+import org.apache.flink.runtime.highavailability.HighAvailabilityServicesUtils;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
 
 /**
@@ -34,6 +36,20 @@ public abstract class JobClusterEntrypoint extends ClusterEntrypoint {
 
     public JobClusterEntrypoint(Configuration configuration) {
         super(configuration);
+    }
+
+    @Override
+    protected Configuration generateClusterConfiguration(Configuration configuration) {
+        Configuration generatedConfig = super.generateClusterConfiguration(configuration);
+        if (!HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            LOG.warn(
+                    "The recovery strategy of job manager is enforced to be {} in per-job mode.",
+                    HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+            generatedConfig.set(
+                    HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY,
+                    HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+        }
+        return generatedConfig;
     }
 
     @Override

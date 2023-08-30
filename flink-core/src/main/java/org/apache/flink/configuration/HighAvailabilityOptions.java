@@ -23,6 +23,8 @@ import org.apache.flink.configuration.description.Description;
 import org.apache.flink.configuration.description.TextElement;
 
 import static org.apache.flink.configuration.ConfigOptions.key;
+import static org.apache.flink.configuration.description.TextElement.code;
+import static org.apache.flink.configuration.description.TextElement.text;
 
 /** The set of configuration options relating to high-availability settings. */
 public class HighAvailabilityOptions {
@@ -93,6 +95,28 @@ public class HighAvailabilityOptions {
                                     + "A value of '0' means that a random free port is chosen. TaskManagers discover this port through "
                                     + "the high-availability services (leader election), so a random port or a port range works "
                                     + "without requiring any additional means of service discovery.");
+
+    /** The recovery strategy of JobManager high availability. */
+    @Documentation.Section(Documentation.Sections.COMMON_HIGH_AVAILABILITY)
+    public static final ConfigOption<RecoverStrategy> HA_JOB_MANAGER_RECOVERY_STRATEGY =
+            key("high-availability.jobmanager.recovery-strategy")
+                    .enumType(RecoverStrategy.class)
+                    .defaultValue(RecoverStrategy.RECOVER_JOBS)
+                    .withDescription(
+                            Description.builder()
+                                    .text(
+                                            "The recovery strategy of JobManager high availability, %s by default.",
+                                            code(RecoverStrategy.RECOVER_JOBS.toString()))
+                                    .linebreak()
+                                    .list(
+                                            text(
+                                                    "%s: A new JobManager will grant the leadership and recover all the previous submitted jobs.",
+                                                    code(RecoverStrategy.RECOVER_JOBS.toString())),
+                                            text(
+                                                    "%s: Only the JobManager Service will be recovered and the previous submitted jobs and job results "
+                                                            + "will not be retained. This only take effect in session cluster.",
+                                                    code(RecoverStrategy.SERVICE_ONLY.toString())))
+                                    .build());
 
     // ------------------------------------------------------------------------
     //  ZooKeeper Options
@@ -221,4 +245,10 @@ public class HighAvailabilityOptions {
 
     /** Not intended to be instantiated. */
     private HighAvailabilityOptions() {}
+
+    /** Defines the recovery strategy of JobManager. */
+    public enum RecoverStrategy {
+        SERVICE_ONLY,
+        RECOVER_JOBS
+    }
 }

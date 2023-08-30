@@ -25,6 +25,7 @@ import org.apache.flink.client.program.PackagedProgramUtils;
 import org.apache.flink.configuration.ConfigUtils;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.DeploymentOptions;
+import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.runtime.dispatcher.ExecutionGraphInfoStore;
 import org.apache.flink.runtime.dispatcher.MemoryExecutionGraphInfoStore;
@@ -33,6 +34,7 @@ import org.apache.flink.runtime.dispatcher.runner.DefaultDispatcherRunnerFactory
 import org.apache.flink.runtime.entrypoint.ClusterEntrypoint;
 import org.apache.flink.runtime.entrypoint.component.DefaultDispatcherResourceManagerComponentFactory;
 import org.apache.flink.runtime.entrypoint.component.DispatcherResourceManagerComponentFactory;
+import org.apache.flink.runtime.highavailability.HighAvailabilityServicesUtils;
 import org.apache.flink.runtime.resourcemanager.ResourceManagerFactory;
 import org.apache.flink.runtime.rest.JobRestEndpointFactory;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
@@ -65,6 +67,20 @@ public class ApplicationClusterEntryPoint extends ClusterEntrypoint {
         super(configuration);
         this.program = checkNotNull(program);
         this.resourceManagerFactory = checkNotNull(resourceManagerFactory);
+    }
+
+    @Override
+    protected Configuration generateClusterConfiguration(Configuration configuration) {
+        Configuration generatedConfig = super.generateClusterConfiguration(configuration);
+        if (!HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            LOG.warn(
+                    "The recovery strategy of job manager is enforced to be {} in application mode.",
+                    HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+            generatedConfig.set(
+                    HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY,
+                    HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+        }
+        return generatedConfig;
     }
 
     @Override

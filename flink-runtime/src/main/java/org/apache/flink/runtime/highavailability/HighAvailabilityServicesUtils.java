@@ -280,6 +280,12 @@ public class HighAvailabilityServicesUtils {
         return clusterStoragePath;
     }
 
+    public static boolean isJobRecoveryEnable(Configuration configuration) {
+        return configuration
+                .get(HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY)
+                .equals(HighAvailabilityOptions.RecoverStrategy.RECOVER_JOBS);
+    }
+
     private static HighAvailabilityServices createCustomHAServices(
             Configuration config, Executor executor) throws FlinkException {
         return createCustomHAServices(

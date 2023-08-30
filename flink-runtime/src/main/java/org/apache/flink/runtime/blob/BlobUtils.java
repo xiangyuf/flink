@@ -82,7 +82,8 @@ public class BlobUtils {
      */
     public static BlobStoreService createBlobStoreFromConfig(Configuration config)
             throws IOException {
-        if (HighAvailabilityMode.isHighAvailabilityModeActivated(config)) {
+        if (HighAvailabilityMode.isHighAvailabilityModeActivated(config)
+                && HighAvailabilityServicesUtils.isJobRecoveryEnable(config)) {
             return createFileSystemBlobStore(config);
         } else {
             return new VoidBlobStore();
