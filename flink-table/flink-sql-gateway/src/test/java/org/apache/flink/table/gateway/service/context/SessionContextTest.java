@@ -215,7 +215,7 @@ class SessionContextTest {
 
     @Test
     void testCreateDefaultCatalogFromStore(@TempDir Path catalogFilePath) {
-        CatalogStore catalogStore = new FileCatalogStore(catalogFilePath.toString());
+        CatalogStore catalogStore = new FileCatalogStore(catalogFilePath.toString(), "utf-8");
         catalogStore.open();
         catalogStore.storeCatalog(
                 "cat1",
