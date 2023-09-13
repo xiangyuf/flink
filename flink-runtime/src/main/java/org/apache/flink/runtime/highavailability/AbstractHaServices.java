@@ -27,7 +27,9 @@ import org.apache.flink.runtime.checkpoint.StandaloneCheckpointRecoveryFactory;
 import org.apache.flink.runtime.jobmanager.JobGraphStore;
 import org.apache.flink.runtime.jobmanager.StandaloneJobGraphStore;
 import org.apache.flink.runtime.leaderelection.LeaderElectionService;
+import org.apache.flink.runtime.leaderelection.StandaloneLeaderElectionService;
 import org.apache.flink.runtime.leaderretrieval.LeaderRetrievalService;
+import org.apache.flink.runtime.leaderretrieval.StandaloneLeaderRetrievalService;
 import org.apache.flink.util.ExceptionUtils;
 
 import org.slf4j.Logger;
@@ -92,13 +94,22 @@ public abstract class AbstractHaServices implements HighAvailabilityServices {
 
     @Override
     public LeaderRetrievalService getJobManagerLeaderRetriever(JobID jobID) {
-        return createLeaderRetrievalService(getLeaderPathForJobManager(jobID));
+        if (HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            return createLeaderRetrievalService(getLeaderPathForJobManager(jobID));
+        } else {
+            return new StandaloneLeaderRetrievalService("UNKNOWN", DEFAULT_LEADER_ID);
+        }
     }
 
     @Override
     public LeaderRetrievalService getJobManagerLeaderRetriever(
             JobID jobID, String defaultJobManagerAddress) {
-        return getJobManagerLeaderRetriever(jobID);
+        if (HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            return getJobManagerLeaderRetriever(jobID);
+        } else {
+            return new StandaloneLeaderRetrievalService(
+                    defaultJobManagerAddress, DEFAULT_LEADER_ID);
+        }
     }
 
     @Override
@@ -118,7 +129,11 @@ public abstract class AbstractHaServices implements HighAvailabilityServices {
 
     @Override
     public LeaderElectionService getJobManagerLeaderElectionService(JobID jobID) {
-        return createLeaderElectionService(getLeaderPathForJobManager(jobID));
+        if (HighAvailabilityServicesUtils.isJobRecoveryEnable(configuration)) {
+            return createLeaderElectionService(getLeaderPathForJobManager(jobID));
+        } else {
+            return new StandaloneLeaderElectionService();
+        }
     }
 
     @Override

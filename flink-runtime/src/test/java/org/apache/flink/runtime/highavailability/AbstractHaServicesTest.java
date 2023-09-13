@@ -20,12 +20,18 @@ package org.apache.flink.runtime.highavailability;
 
 import org.apache.flink.api.common.JobID;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.HighAvailabilityOptions;
 import org.apache.flink.runtime.blob.BlobKey;
 import org.apache.flink.runtime.blob.BlobStoreService;
+import org.apache.flink.runtime.blob.VoidBlobStore;
 import org.apache.flink.runtime.checkpoint.CheckpointRecoveryFactory;
+import org.apache.flink.runtime.checkpoint.StandaloneCheckpointRecoveryFactory;
 import org.apache.flink.runtime.jobmanager.JobGraphStore;
+import org.apache.flink.runtime.jobmanager.StandaloneJobGraphStore;
 import org.apache.flink.runtime.leaderelection.LeaderElectionService;
+import org.apache.flink.runtime.leaderelection.StandaloneLeaderElectionService;
 import org.apache.flink.runtime.leaderretrieval.LeaderRetrievalService;
+import org.apache.flink.runtime.leaderretrieval.StandaloneLeaderRetrievalService;
 import org.apache.flink.runtime.testutils.TestingJobResultStore;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.TestLogger;
@@ -43,12 +49,49 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 /** Tests for the {@link AbstractHaServices}. */
 public class AbstractHaServicesTest extends TestLogger {
+
+    /**
+     * Tests that with service only strategy, the job related component will use in-memory version.
+     */
+    @Test
+    public void testServiceOnlyStrategy() throws Exception {
+        final Configuration config = new Configuration();
+        config.set(
+                HighAvailabilityOptions.HA_JOB_MANAGER_RECOVERY_STRATEGY,
+                HighAvailabilityOptions.RecoverStrategy.SERVICE_ONLY);
+
+        final TestingHaServices haServices =
+                new TestingHaServices(
+                        config,
+                        Executors.directExecutor(),
+                        new VoidBlobStore(),
+                        new ArrayDeque<>(),
+                        () -> {},
+                        ignored -> {});
+
+        final JobID jobId = new JobID();
+
+        final LeaderElectionService jmLeaderElectionService =
+                haServices.getJobManagerLeaderElectionService(jobId);
+        final LeaderRetrievalService jmLeaderRetrieverService =
+                haServices.getJobManagerLeaderRetriever(jobId, "localhost");
+        final CheckpointRecoveryFactory checkpointRecoveryFactory =
+                haServices.getCheckpointRecoveryFactory();
+        final JobGraphStore jobGraphStore = haServices.getJobGraphStore();
+
+        assertThat(
+                checkpointRecoveryFactory, instanceOf(StandaloneCheckpointRecoveryFactory.class));
+        assertThat(jobGraphStore, instanceOf(StandaloneJobGraphStore.class));
+        assertThat(jmLeaderElectionService, instanceOf(StandaloneLeaderElectionService.class));
+        assertThat(jmLeaderRetrieverService, instanceOf(StandaloneLeaderRetrievalService.class));
+    }
 
     /**
      * Tests that we first delete all pointers from the HA services before deleting the blobs. See
