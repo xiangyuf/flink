@@ -18,6 +18,7 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecDeduplicate
 import org.apache.flink.table.planner.plan.utils.ChangelogPlanUtils
@@ -26,8 +27,12 @@ import org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTableConfig
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
+import org.apache.calcite.rel.RelDistribution.Type.HASH_DISTRIBUTED
+import org.apache.calcite.util.ImmutableIntList
 
 import java.util
+
+import scala.collection.JavaConversions._
 
 /**
  * Stream physical RelNode which deduplicate on keys and keeps only first row or last row. This node
@@ -58,6 +63,23 @@ class StreamPhysicalDeduplicate(
       uniqueKeys,
       isRowtime,
       keepLastRow)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    val shuffleKeys = requiredDistribution.getKeys
+    val partitionKeyList = ImmutableIntList.of(uniqueKeys: _*)
+    val canSatisfy = requiredDistribution.getType match {
+      case HASH_DISTRIBUTED =>
+        shuffleKeys == partitionKeyList
+      case _ => false
+    }
+    if (!canSatisfy) {
+      return None
+    }
+
+    val newProvidedTraitSet = getTraitSet.replace(requiredDistribution)
+    Some(copy(newProvidedTraitSet, Seq(getInput)))
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {

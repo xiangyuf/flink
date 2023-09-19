@@ -17,9 +17,15 @@
  */
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
+
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel.{RelNode, SingleRel}
+import org.apache.calcite.rel.RelDistribution.Type.HASH_DISTRIBUTED
 import org.apache.calcite.rel.core.{Aggregate, AggregateCall}
+import org.apache.calcite.util.ImmutableIntList
+
+import scala.collection.JavaConversions._
 
 /**
  * Base stream physical RelNode for unbounded group aggregate.
@@ -46,4 +52,22 @@ abstract class StreamPhysicalGroupAggregateBase(
     val grouping: Array[Int],
     val aggCalls: Seq[AggregateCall])
   extends SingleRel(cluster, traitSet, inputRel)
-  with StreamPhysicalRel {}
+  with StreamPhysicalRel {
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    val canSatisfy = requiredDistribution.getType match {
+      case HASH_DISTRIBUTED =>
+        val shuffleKeys = requiredDistribution.getKeys
+        val groupKeysList = ImmutableIntList.of(grouping.indices.toArray: _*)
+        grouping.nonEmpty && shuffleKeys == groupKeysList
+      case _ => false
+    }
+    if (!canSatisfy) {
+      return None
+    }
+
+    val newProvidedTraitSet = getTraitSet.replace(requiredDistribution)
+    Some(copy(newProvidedTraitSet, Seq(getInput)))
+  }
+}

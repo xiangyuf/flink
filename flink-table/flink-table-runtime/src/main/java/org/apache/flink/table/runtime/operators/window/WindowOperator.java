@@ -332,7 +332,7 @@ public abstract class WindowOperator<K, W extends Window> extends AbstractStream
         RowData inputRow = record.getValue();
         long timestamp;
         if (windowAssigner.isEventTime()) {
-            timestamp = inputRow.getLong(rowtimeIndex);
+            timestamp = inputRow.getTimestamp(rowtimeIndex, 3).getMillisecond();
         } else {
             timestamp = internalTimerService.currentProcessingTime();
         }

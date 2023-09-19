@@ -26,7 +26,7 @@ import org.apache.flink.table.api.config.OptimizerConfigOptions;
 import org.apache.flink.table.planner.plan.nodes.FlinkRelNode;
 import org.apache.flink.table.planner.plan.nodes.physical.FlinkPhysicalRel;
 import org.apache.flink.table.planner.plan.nodes.physical.stream.StreamPhysicalGroupAggregate;
-import org.apache.flink.table.planner.plan.rules.physical.stream.TwoStageOptimizedAggregateRule;
+import org.apache.flink.table.planner.plan.utils.AggregateUtil;
 import org.apache.flink.table.planner.utils.AggregatePhaseStrategy;
 import org.apache.flink.table.planner.utils.ShortcutUtils;
 
@@ -63,11 +63,9 @@ public class GroupAggregationAnalyzer implements PlanAnalyzer {
                         @Override
                         public RelNode visit(RelNode other) {
                             if (other instanceof StreamPhysicalGroupAggregate) {
-                                if (((TwoStageOptimizedAggregateRule)
-                                                TwoStageOptimizedAggregateRule.INSTANCE())
-                                        .matchesTwoStage(
-                                                (StreamPhysicalGroupAggregate) other,
-                                                other.getInput(0).getInput(0))) {
+                                if (AggregateUtil.matchesTwoStage(
+                                        (StreamPhysicalGroupAggregate) other,
+                                        other.getInput(0).getInput(0))) {
                                     targetRelIds.add(other.getId());
                                 }
                             }

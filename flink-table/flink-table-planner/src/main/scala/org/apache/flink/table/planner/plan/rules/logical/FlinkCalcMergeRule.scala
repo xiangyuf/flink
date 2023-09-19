@@ -69,7 +69,7 @@ class FlinkCalcMergeRule[C <: Calc](calcClass: Class[C])
    * merge into one, each non-deterministic [[RexNode]] of bottom [[Calc]] should appear at most
    * once in the project list and filter list of top [[Calc]].
    */
-  private def isMergeable(topCalc: Calc, bottomCalc: Calc): Boolean = {
+  def isMergeable(topCalc: Calc, bottomCalc: Calc): Boolean = {
     val topProgram = topCalc.getProgram
     val bottomProgram = bottomCalc.getProgram
 

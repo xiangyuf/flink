@@ -23,7 +23,6 @@ import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.spec.IntervalJoinSpec
 import org.apache.flink.table.planner.plan.nodes.exec.spec.IntervalJoinSpec.WindowBounds
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecIntervalJoin
-import org.apache.flink.table.planner.plan.nodes.physical.common.CommonPhysicalJoin
 import org.apache.flink.table.planner.plan.utils.PythonUtil.containsPythonCall
 import org.apache.flink.table.planner.plan.utils.RelExplainUtil.preferExpressionFormat
 import org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTableConfig
@@ -46,8 +45,13 @@ class StreamPhysicalIntervalJoin(
     // remaining join condition contains all of join condition except window bounds
     remainingCondition: RexNode,
     windowBounds: WindowBounds)
-  extends CommonPhysicalJoin(cluster, traitSet, leftRel, rightRel, remainingCondition, joinType)
-  with StreamPhysicalRel {
+  extends StreamPhysicalJoinBase(
+    cluster,
+    traitSet,
+    leftRel,
+    rightRel,
+    remainingCondition,
+    joinType) {
 
   if (
     joinSpec.getNonEquiCondition.isPresent

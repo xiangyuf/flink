@@ -23,6 +23,7 @@ import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.runtime.operators.bundle.KeyedMapBundleOperator;
 import org.apache.flink.table.runtime.operators.bundle.trigger.CountBundleTrigger;
 import org.apache.flink.types.RowKind;
@@ -55,13 +56,13 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
     @Test
     public void testRowTimeDeduplicateKeepFirstRow() throws Exception {
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(record(RowKind.INSERT, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 101L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(101L)));
         expectedOutput.add(new Watermark(102));
-        expectedOutput.add(record(RowKind.INSERT, "key3", 5, 299L));
+        expectedOutput.add(record(RowKind.INSERT, "key3", 5, TimestampData.fromEpochMillis(299L)));
         expectedOutput.add(new Watermark(302));
-        expectedOutput.add(record(RowKind.INSERT, "key1", 12, 400L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 401L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 12, TimestampData.fromEpochMillis(400L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(401L)));
         expectedOutput.add(new Watermark(402));
 
         // generateUpdateBefore: true, generateInsert: true
@@ -75,13 +76,18 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
 
         // generateUpdateBefore: false, generateInsert: false
         expectedOutput.clear();
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 101L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(101L)));
         expectedOutput.add(new Watermark(102));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key3", 5, 299L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key3", 5, TimestampData.fromEpochMillis(299L)));
         expectedOutput.add(new Watermark(302));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 400L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 401L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(400L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(401L)));
         expectedOutput.add(new Watermark(402));
         testRowTimeDeduplicateKeepFirstRow(false, false, expectedOutput);
     }
@@ -89,19 +95,25 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
     @Test
     public void testRowTimeDeduplicateKeepLastRow() throws Exception {
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(record(RowKind.INSERT, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.UPDATE_BEFORE, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 100L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 101L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_BEFORE, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(100L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(101L)));
         expectedOutput.add(new Watermark(102));
-        expectedOutput.add(record(RowKind.UPDATE_BEFORE, "key1", 12, 100L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 300L));
-        expectedOutput.add(record(RowKind.UPDATE_BEFORE, "key2", 11, 101L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 301L));
-        expectedOutput.add(record(RowKind.INSERT, "key3", 5, 299L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_BEFORE, "key1", 12, TimestampData.fromEpochMillis(100L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(300L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_BEFORE, "key2", 11, TimestampData.fromEpochMillis(101L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(301L)));
+        expectedOutput.add(record(RowKind.INSERT, "key3", 5, TimestampData.fromEpochMillis(299L)));
         expectedOutput.add(new Watermark(302));
-        expectedOutput.add(record(RowKind.INSERT, "key1", 12, 400L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 401L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 12, TimestampData.fromEpochMillis(400L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(401L)));
         expectedOutput.add(new Watermark(402));
 
         // generateUpdateBefore: true, generateInsert: true
@@ -112,31 +124,42 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
 
         // generateUpdateBefore: false, generateInsert: true
         expectedOutput.clear();
-        expectedOutput.add(record(RowKind.INSERT, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 100L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 101L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(100L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(101L)));
         expectedOutput.add(new Watermark(102));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 300L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 301L));
-        expectedOutput.add(record(RowKind.INSERT, "key3", 5, 299L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(300L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(301L)));
+        expectedOutput.add(record(RowKind.INSERT, "key3", 5, TimestampData.fromEpochMillis(299L)));
         expectedOutput.add(new Watermark(302));
-        expectedOutput.add(record(RowKind.INSERT, "key1", 12, 400L));
-        expectedOutput.add(record(RowKind.INSERT, "key2", 11, 401L));
+        expectedOutput.add(record(RowKind.INSERT, "key1", 12, TimestampData.fromEpochMillis(400L)));
+        expectedOutput.add(record(RowKind.INSERT, "key2", 11, TimestampData.fromEpochMillis(401L)));
         expectedOutput.add(new Watermark(402));
         testRowTimeDeduplicateKeepLastRow(false, true, expectedOutput);
 
         // generateUpdateBefore: false, generateInsert: false
         expectedOutput.clear();
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 13, 99L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 100L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 101L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 13, TimestampData.fromEpochMillis(99L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(100L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(101L)));
         expectedOutput.add(new Watermark(102));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 300L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 301L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key3", 5, 299L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(300L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(301L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key3", 5, TimestampData.fromEpochMillis(299L)));
         expectedOutput.add(new Watermark(302));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key1", 12, 400L));
-        expectedOutput.add(record(RowKind.UPDATE_AFTER, "key2", 11, 401L));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key1", 12, TimestampData.fromEpochMillis(400L)));
+        expectedOutput.add(
+                record(RowKind.UPDATE_AFTER, "key2", 11, TimestampData.fromEpochMillis(401L)));
         expectedOutput.add(new Watermark(402));
         testRowTimeDeduplicateKeepLastRow(false, false, expectedOutput);
     }
@@ -177,10 +200,10 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
         List<Object> actualOutput = new ArrayList<>();
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 13, 99L));
-        testHarness.processElement(insertRecord("key1", 13, 99L));
-        testHarness.processElement(insertRecord("key1", 12, 100L));
-        testHarness.processElement(insertRecord("key2", 11, 101L));
+        testHarness.processElement(insertRecord("key1", 13, TimestampData.fromEpochMillis(99L)));
+        testHarness.processElement(insertRecord("key1", 13, TimestampData.fromEpochMillis(99L)));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(100L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(101L)));
 
         // test 1: keep first row with row time
         testHarness.processWatermark(new Watermark(102));
@@ -200,17 +223,17 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
         testHarness.initializeState(snapshot);
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 12, 300L));
-        testHarness.processElement(insertRecord("key2", 11, 301L));
-        testHarness.processElement(insertRecord("key3", 5, 299L));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(300L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(301L)));
+        testHarness.processElement(insertRecord("key3", 5, TimestampData.fromEpochMillis(299L)));
 
         // test 2:  load snapshot state
         testHarness.processWatermark(new Watermark(302));
 
         // test 3: expire the state
         testHarness.setStateTtlProcessingTime(minTtlTime.toMilliseconds() + 1);
-        testHarness.processElement(insertRecord("key1", 12, 400L));
-        testHarness.processElement(insertRecord("key2", 11, 401L));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(400L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(401L)));
         testHarness.processWatermark(402);
 
         // ("key1", 13, 99L) and ("key2", 11, 101L) had retired, thus output ("key1", 12,
@@ -257,9 +280,9 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
         List<Object> actualOutput = new ArrayList<>();
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 13, 99L));
-        testHarness.processElement(insertRecord("key1", 12, 100L));
-        testHarness.processElement(insertRecord("key2", 11, 101L));
+        testHarness.processElement(insertRecord("key1", 13, TimestampData.fromEpochMillis(99L)));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(100L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(101L)));
 
         // test 1: keep last row with row time
         testHarness.processWatermark(new Watermark(102));
@@ -279,17 +302,17 @@ public class RowTimeDeduplicateFunctionTest extends RowTimeDeduplicateFunctionTe
         testHarness.initializeState(snapshot);
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 12, 300L));
-        testHarness.processElement(insertRecord("key2", 11, 301L));
-        testHarness.processElement(insertRecord("key3", 5, 299L));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(300L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(301L)));
+        testHarness.processElement(insertRecord("key3", 5, TimestampData.fromEpochMillis(299L)));
 
         // test 2: load snapshot state
         testHarness.processWatermark(new Watermark(302));
 
         // test 3: expire the state
         testHarness.setStateTtlProcessingTime(minTtlTime.toMilliseconds() + 1);
-        testHarness.processElement(insertRecord("key1", 12, 400L));
-        testHarness.processElement(insertRecord("key2", 11, 401L));
+        testHarness.processElement(insertRecord("key1", 12, TimestampData.fromEpochMillis(400L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(401L)));
         testHarness.processWatermark(402);
 
         // all state has expired, so the record ("key1", 12, 400L), ("key2", 12, 401L) will be

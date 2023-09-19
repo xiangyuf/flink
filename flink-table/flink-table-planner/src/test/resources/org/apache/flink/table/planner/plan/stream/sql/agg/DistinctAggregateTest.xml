@@ -382,8 +382,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[MIN($1)], EXPR$2=[MAX($1)], EXPR$3=[SUM($1
 GroupAggregate(groupBy=[c], partialFinalType=[FINAL], select=[c, MIN_RETRACT($f3_0) AS $f1, MAX_RETRACT($f4_0) AS $f2, SUM_RETRACT($f5) AS $f3, $SUM0_RETRACT($f6) AS $f4, $SUM0_RETRACT($f7) AS $f5], changelogMode=[I,UA,D])
 +- Exchange(distribution=[hash[c]], changelogMode=[I,UB,UA,D])
    +- GroupAggregate(groupBy=[c, $f3, $f4], partialFinalType=[PARTIAL], select=[c, $f3, $f4, MIN_RETRACT(b) FILTER $g_2 AS $f3_0, MAX_RETRACT(b) FILTER $g_2 AS $f4_0, SUM_RETRACT(b) FILTER $g_3 AS $f5, COUNT_RETRACT(*) FILTER $g_3 AS $f6, COUNT_RETRACT(DISTINCT a) FILTER $g_1 AS $f7], changelogMode=[I,UB,UA,D])
-      +- Exchange(distribution=[hash[c, $f3, $f4]], changelogMode=[I,UB,UA])
-         +- Calc(select=[a, b, c, $f3, $f4, =($e, 2) AS $g_2, =($e, 3) AS $g_3, =($e, 1) AS $g_1], changelogMode=[I,UB,UA])
+      +- Calc(select=[a, b, c, $f3, $f4, =($e, 2) AS $g_2, =($e, 3) AS $g_3, =($e, 1) AS $g_1], changelogMode=[I,UB,UA])
+         +- Exchange(distribution=[hash[c, $f3, $f4]], changelogMode=[I,UB,UA])
             +- Expand(projects=[{a, b, c, $f3, null AS $f4, 1 AS $e}, {a, b, c, null AS $f3, $f4, 2 AS $e}, {a, b, c, null AS $f3, null AS $f4, 3 AS $e}], changelogMode=[I,UB,UA])
                +- Calc(select=[a, b, c, MOD(HASH_CODE(a), 1024) AS $f3, MOD(HASH_CODE(b), 1024) AS $f4], changelogMode=[I,UB,UA])
                   +- GroupAggregate(groupBy=[a], select=[a, AVG(b) AS b, MAX(c) AS c], changelogMode=[I,UB,UA])
@@ -620,8 +620,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[MIN($1)], EXPR$2=[MAX($1)], EXPR$3=[SUM($1
 GroupAggregate(groupBy=[c], partialFinalType=[FINAL], select=[c, MIN_RETRACT($f3_0) AS $f1, MAX_RETRACT($f4_0) AS $f2, SUM_RETRACT($f5) AS $f3, $SUM0_RETRACT($f6) AS $f4, $SUM0_RETRACT($f7) AS $f5])
 +- Exchange(distribution=[hash[c]])
    +- GroupAggregate(groupBy=[c, $f3, $f4], partialFinalType=[PARTIAL], select=[c, $f3, $f4, MIN_RETRACT(b) FILTER $g_2 AS $f3_0, MAX_RETRACT(b) FILTER $g_2 AS $f4_0, SUM_RETRACT(b) FILTER $g_3 AS $f5, COUNT_RETRACT(*) FILTER $g_3 AS $f6, COUNT_RETRACT(DISTINCT a) FILTER $g_1 AS $f7])
-      +- Exchange(distribution=[hash[c, $f3, $f4]])
-         +- Calc(select=[a, b, c, $f3, $f4, ($e = 2) AS $g_2, ($e = 3) AS $g_3, ($e = 1) AS $g_1])
+      +- Calc(select=[a, b, c, $f3, $f4, ($e = 2) AS $g_2, ($e = 3) AS $g_3, ($e = 1) AS $g_1])
+         +- Exchange(distribution=[hash[c, $f3, $f4]])
             +- Expand(projects=[{a, b, c, $f3, null AS $f4, 1 AS $e}, {a, b, c, null AS $f3, $f4, 2 AS $e}, {a, b, c, null AS $f3, null AS $f4, 3 AS $e}])
                +- Calc(select=[a, b, c, MOD(HASH_CODE(a), 1024) AS $f3, MOD(HASH_CODE(b), 1024) AS $f4])
                   +- GroupAggregate(groupBy=[a], select=[a, AVG(b) AS b, MAX(c) AS c])
@@ -1664,12 +1664,11 @@ LogicalAggregate(group=[{0}], EXPR$1=[COUNT(DISTINCT $0)], EXPR$2=[COUNT($1)])
     <Resource name="optimized exec plan">
       <![CDATA[
 GroupAggregate(groupBy=[a], partialFinalType=[FINAL], select=[a, $SUM0_RETRACT($f1) AS $f1, $SUM0_RETRACT($f2) AS $f2])
-+- Exchange(distribution=[hash[a]])
-   +- GroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(DISTINCT a) AS $f1, COUNT(b) AS $f2])
-      +- Exchange(distribution=[hash[a]])
-         +- Calc(select=[a, b])
-            +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
-               +- LegacyTableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(a, b, c)]]], fields=[a, b, c])
++- GroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(DISTINCT a) AS $f1, COUNT(b) AS $f2])
+   +- Exchange(distribution=[hash[a]])
+      +- Calc(select=[a, b])
+         +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(a, b, c)]]], fields=[a, b, c])
 ]]>
     </Resource>
   </TestCase>
@@ -1686,15 +1685,13 @@ LogicalAggregate(group=[{0}], EXPR$1=[COUNT(DISTINCT $0)], EXPR$2=[COUNT($1)])
     </Resource>
     <Resource name="optimized exec plan">
       <![CDATA[
-GlobalGroupAggregate(groupBy=[a], partialFinalType=[FINAL], select=[a, $SUM0_RETRACT(sum$0) AS $f1, $SUM0_RETRACT(sum$1) AS $f2])
-+- Exchange(distribution=[hash[a]])
-   +- LocalGroupAggregate(groupBy=[a], partialFinalType=[FINAL], select=[a, $SUM0_RETRACT($f1) AS sum$0, $SUM0_RETRACT($f2) AS sum$1, COUNT_RETRACT(*) AS count1$2])
-      +- GlobalGroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(distinct$0 count$0) AS $f1, COUNT(count$1) AS $f2])
-         +- Exchange(distribution=[hash[a]])
-            +- LocalGroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(distinct$0 a) AS count$0, COUNT(b) AS count$1, DISTINCT(a) AS distinct$0])
-               +- Calc(select=[a, b])
-                  +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
-                     +- LegacyTableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(a, b, c)]]], fields=[a, b, c])
+GroupAggregate(groupBy=[a], partialFinalType=[FINAL], select=[a, $SUM0_RETRACT($f1) AS $f1, $SUM0_RETRACT($f2) AS $f2])
++- GlobalGroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(distinct$0 count$0) AS $f1, COUNT(count$1) AS $f2])
+   +- Exchange(distribution=[hash[a]])
+      +- LocalGroupAggregate(groupBy=[a], partialFinalType=[PARTIAL], select=[a, COUNT(distinct$0 a) AS count$0, COUNT(b) AS count$1, DISTINCT(a) AS distinct$0])
+         +- Calc(select=[a, b])
+            +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, MyTable, source: [TestTableSource(a, b, c)]]], fields=[a, b, c])
 ]]>
     </Resource>
   </TestCase>

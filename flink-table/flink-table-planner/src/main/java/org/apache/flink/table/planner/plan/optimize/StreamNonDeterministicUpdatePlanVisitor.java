@@ -736,7 +736,7 @@ public class StreamNonDeterministicUpdatePlanVisitor {
         } else {
             inputRequireDeterminism = NO_REQUIRED_DETERMINISM;
         }
-        return transmitDeterminismRequirement(rel, inputRequireDeterminism);
+        return visit(rel, requireDeterminismExcludeUpsertKey(rel, inputRequireDeterminism));
     }
 
     /** Extracts the out from source field index mapping of the given projects. */

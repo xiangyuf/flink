@@ -36,6 +36,19 @@
     "inputProperties" : [ ]
   }, {
     "id" : 2,
+    "type" : "stream-exec-exchange_1",
+    "inputProperties" : [ {
+      "requiredDistribution" : {
+        "type" : "HASH",
+        "keys" : [ 3 ]
+      },
+      "damBehavior" : "PIPELINED",
+      "priority" : 0
+    } ],
+    "outputType" : "ROW<`a` BIGINT, `b` INT NOT NULL, `c` VARCHAR(2147483647), `d` BIGINT>",
+    "description" : "Exchange(distribution=[hash[d]])"
+  }, {
+    "id" : 3,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -78,19 +91,6 @@
     } ],
     "outputType" : "ROW<`d` BIGINT, `a` BIGINT, `$f2` BOOLEAN NOT NULL, `b` INT NOT NULL, `c` VARCHAR(2147483647)>",
     "description" : "Calc(select=[d, a, (b > 10) AS $f2, b, c])"
-  }, {
-    "id" : 3,
-    "type" : "stream-exec-exchange_1",
-    "inputProperties" : [ {
-      "requiredDistribution" : {
-        "type" : "HASH",
-        "keys" : [ 0 ]
-      },
-      "damBehavior" : "PIPELINED",
-      "priority" : 0
-    } ],
-    "outputType" : "ROW<`d` BIGINT, `a` BIGINT, `$f2` BOOLEAN NOT NULL, `b` INT NOT NULL, `c` VARCHAR(2147483647)>",
-    "description" : "Exchange(distribution=[hash[d]])"
   }, {
     "id" : 4,
     "type" : "stream-exec-group-aggregate_1",

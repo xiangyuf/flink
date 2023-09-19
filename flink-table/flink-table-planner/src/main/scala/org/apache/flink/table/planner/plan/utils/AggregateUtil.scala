@@ -35,10 +35,11 @@ import org.apache.flink.table.planner.functions.inference.OperatorBindingCallCon
 import org.apache.flink.table.planner.functions.sql.{FlinkSqlOperatorTable, SqlFirstLastValueAggFunction, SqlListAggFunction}
 import org.apache.flink.table.planner.functions.utils.AggSqlFunction
 import org.apache.flink.table.planner.functions.utils.UserDefinedFunctionUtils._
-import org.apache.flink.table.planner.plan.`trait`.{ModifyKindSetTrait, ModifyKindSetTraitDef, RelModifiedMonotonicity}
+import org.apache.flink.table.planner.plan.`trait`.{FlinkRelDistribution, FlinkRelDistributionTraitDef, ModifyKindSetTrait, ModifyKindSetTraitDef, RelModifiedMonotonicity}
 import org.apache.flink.table.planner.plan.logical.{HoppingWindowSpec, WindowSpec}
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
-import org.apache.flink.table.planner.plan.nodes.physical.stream.StreamPhysicalRel
+import org.apache.flink.table.planner.plan.nodes.logical.FlinkLogicalAggregate
+import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamPhysicalGroupAggregate, StreamPhysicalRel}
 import org.apache.flink.table.planner.typeutils.DataViewUtils
 import org.apache.flink.table.planner.typeutils.LegacyDataViewUtils.useNullSerializerForStateViewFieldsFromAccType
 import org.apache.flink.table.planner.utils.JavaScalaConversionUtil.toScala
@@ -56,7 +57,7 @@ import org.apache.flink.table.types.logical.utils.LogicalTypeChecks
 import org.apache.flink.table.types.utils.DataTypeUtils
 
 import org.apache.calcite.rel.`type`._
-import org.apache.calcite.rel.RelCollations
+import org.apache.calcite.rel.{RelCollations, RelNode}
 import org.apache.calcite.rel.core.{Aggregate, AggregateCall}
 import org.apache.calcite.rel.core.Aggregate.AggCallBinding
 import org.apache.calcite.sql.`type`.{SqlTypeName, SqlTypeUtil}
@@ -272,6 +273,26 @@ object AggregateUtil extends Enumeration {
       aggCalls,
       aggCallNeedRetractions,
       needInputCount,
+      isStateBackendDataViews = true
+    )
+  }
+
+  def deriveAggregateInfoList(
+      agg: FlinkLogicalAggregate,
+      groupCount: Int,
+      aggCalls: Seq[AggregateCall]): AggregateInfoList = {
+    val input = agg.getInput(0)
+    val fmq = FlinkRelMetadataQuery.reuseOrCreate(agg.getCluster.getMetadataQuery)
+    val monotonicity = fmq.getRelModifiedMonotonicity(agg)
+    val needRetractionFlag = needRetraction(agg)
+    val aggCallNeedRetractions =
+      deriveAggCallNeedRetractions(groupCount, aggCalls, needRetractionFlag, monotonicity)
+    transformToStreamAggregateInfoList(
+      unwrapTypeFactory(agg),
+      FlinkTypeFactory.toLogicalRowType(input.getRowType),
+      aggCalls,
+      aggCallNeedRetractions,
+      needRetractionFlag,
       isStateBackendDataViews = true
     )
   }
@@ -1002,7 +1023,7 @@ object AggregateUtil extends Enumeration {
   }
 
   /** Return true if the given agg rel needs retraction message, else false. */
-  def needRetraction(agg: StreamPhysicalRel): Boolean = {
+  def needRetraction(agg: RelNode): Boolean = {
     // need to call `retract()` if input contains update or delete
     val modifyKindSetTrait = agg.getInput(0).getTraitSet.getTrait(ModifyKindSetTraitDef.INSTANCE)
     if (modifyKindSetTrait == null || modifyKindSetTrait == ModifyKindSetTrait.EMPTY) {
@@ -1188,5 +1209,40 @@ object AggregateUtil extends Enumeration {
             case _ => None
           })
       .exists(_.getKind == FunctionKind.TABLE_AGGREGATE)
+  }
+
+  def isInputSatisfyRequiredDistribution(input: RelNode, keys: Array[Int]): Boolean = {
+    val requiredDistribution = createDistribution(keys)
+    val inputDistribution = input.getTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    inputDistribution.satisfies(requiredDistribution)
+  }
+
+  def createDistribution(keys: Array[Int]): FlinkRelDistribution = {
+    if (keys.nonEmpty) {
+      val fields = new util.ArrayList[Integer]()
+      keys.foreach(fields.add(_))
+      FlinkRelDistribution.hash(fields)
+    } else {
+      FlinkRelDistribution.SINGLETON
+    }
+  }
+
+  def matchesTwoStage(agg: StreamPhysicalGroupAggregate, realInput: RelNode): Boolean = {
+    val needRetraction = !ChangelogPlanUtils.isInsertOnly(realInput.asInstanceOf[StreamPhysicalRel])
+    val fmq = FlinkRelMetadataQuery.reuseOrCreate(agg.getCluster.getMetadataQuery)
+    val monotonicity = fmq.getRelModifiedMonotonicity(agg)
+    val needRetractionArray =
+      deriveAggCallNeedRetractions(agg.grouping.length, agg.aggCalls, needRetraction, monotonicity)
+
+    val aggInfoList = transformToStreamAggregateInfoList(
+      unwrapTypeFactory(agg),
+      FlinkTypeFactory.toLogicalRowType(agg.getInput.getRowType),
+      agg.aggCalls,
+      needRetractionArray,
+      needRetraction,
+      isStateBackendDataViews = true
+    )
+    doAllSupportPartialMerge(aggInfoList.aggInfos) &&
+    !isInputSatisfyRequiredDistribution(realInput, agg.grouping)
   }
 }

@@ -475,19 +475,6 @@
     "description" : "Calc(select=[a, window_start, window_end, cnt, uv])"
   }, {
     "id" : 8,
-    "type" : "stream-exec-exchange_1",
-    "inputProperties" : [ {
-      "requiredDistribution" : {
-        "type" : "HASH",
-        "keys" : [ 0 ]
-      },
-      "damBehavior" : "PIPELINED",
-      "priority" : 0
-    } ],
-    "outputType" : "ROW<`a` INT, `window_start` TIMESTAMP(3) NOT NULL, `window_end` TIMESTAMP(3) NOT NULL, `cnt` BIGINT NOT NULL, `uv` BIGINT NOT NULL>",
-    "description" : "Exchange(distribution=[hash[a]])"
-  }, {
-    "id" : 9,
     "type" : "stream-exec-table-source-scan_1",
     "scanTableSource" : {
       "table" : {
@@ -579,7 +566,7 @@
     "description" : "TableSourceScan(table=[[default_catalog, default_database, MyTable2, project=[a, c], metadata=[]]], fields=[a, c])",
     "inputProperties" : [ ]
   }, {
-    "id" : 10,
+    "id" : 9,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -610,7 +597,7 @@
     "outputType" : "ROW<`a` INT, `c` VARCHAR(2147483647), `rowtime` TIMESTAMP(3)>",
     "description" : "Calc(select=[a, c, TO_TIMESTAMP(c) AS rowtime])"
   }, {
-    "id" : 11,
+    "id" : 10,
     "type" : "stream-exec-watermark-assigner_1",
     "watermarkExpr" : {
       "kind" : "CALL",
@@ -654,7 +641,7 @@
     },
     "description" : "WatermarkAssigner(rowtime=[rowtime], watermark=[(rowtime - 1000:INTERVAL SECOND)])"
   }, {
-    "id" : 12,
+    "id" : 11,
     "type" : "stream-exec-local-window-aggregate_1",
     "configuration" : {
       "table.local-time-zone" : "default"
@@ -742,7 +729,7 @@
     },
     "description" : "LocalWindowAggregate(groupBy=[a], window=[TUMBLE(time_col=[rowtime], size=[15 min])], select=[a, COUNT(*) AS count1$0, COUNT(distinct$0 c) AS count$1, DISTINCT(c) AS distinct$0, slice_end('w$) AS $slice_end])"
   }, {
-    "id" : 13,
+    "id" : 12,
     "type" : "stream-exec-exchange_1",
     "inputProperties" : [ {
       "requiredDistribution" : {
@@ -792,7 +779,7 @@
     },
     "description" : "Exchange(distribution=[hash[a]])"
   }, {
-    "id" : 14,
+    "id" : 13,
     "type" : "stream-exec-global-window-aggregate_1",
     "configuration" : {
       "table.local-time-zone" : "default"
@@ -926,7 +913,7 @@
     },
     "description" : "GlobalWindowAggregate(groupBy=[a], window=[TUMBLE(slice_end=[$slice_end], size=[15 min])], select=[a, COUNT(count1$0) AS cnt, COUNT(distinct$0 count$1) AS uv, start('w$) AS window_start, end('w$) AS window_end, rowtime('w$) AS window_time])"
   }, {
-    "id" : 15,
+    "id" : 14,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -960,20 +947,7 @@
     "outputType" : "ROW<`a` INT, `window_start` TIMESTAMP(3) NOT NULL, `window_end` TIMESTAMP(3) NOT NULL, `cnt` BIGINT NOT NULL, `uv` BIGINT NOT NULL>",
     "description" : "Calc(select=[a, window_start, window_end, cnt, uv])"
   }, {
-    "id" : 16,
-    "type" : "stream-exec-exchange_1",
-    "inputProperties" : [ {
-      "requiredDistribution" : {
-        "type" : "HASH",
-        "keys" : [ 0 ]
-      },
-      "damBehavior" : "PIPELINED",
-      "priority" : 0
-    } ],
-    "outputType" : "ROW<`a` INT, `window_start` TIMESTAMP(3) NOT NULL, `window_end` TIMESTAMP(3) NOT NULL, `cnt` BIGINT NOT NULL, `uv` BIGINT NOT NULL>",
-    "description" : "Exchange(distribution=[hash[a]])"
-  }, {
-    "id" : 17,
+    "id" : 15,
     "type" : "stream-exec-window-join_1",
     "configuration" : {
       "table.local-time-zone" : "default"
@@ -1031,7 +1005,7 @@
     "outputType" : "ROW<`a` INT, `window_start` TIMESTAMP(3) NOT NULL, `window_end` TIMESTAMP(3) NOT NULL, `cnt` BIGINT NOT NULL, `uv` BIGINT NOT NULL, `a0` INT, `window_start0` TIMESTAMP(3) NOT NULL, `window_end0` TIMESTAMP(3) NOT NULL, `cnt0` BIGINT NOT NULL, `uv0` BIGINT NOT NULL>",
     "description" : "WindowJoin(leftWindow=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], rightWindow=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], joinType=[InnerJoin], where=[(a = a0)], select=[a, window_start, window_end, cnt, uv, a0, window_start0, window_end0, cnt0, uv0])"
   }, {
-    "id" : 18,
+    "id" : 16,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -1077,7 +1051,7 @@
     "outputType" : "ROW<`a` INT, `window_start` TIMESTAMP(3) NOT NULL, `window_end` TIMESTAMP(3) NOT NULL, `cnt` BIGINT NOT NULL, `uv` BIGINT NOT NULL, `a0` INT, `cnt0` BIGINT NOT NULL, `uv0` BIGINT NOT NULL>",
     "description" : "Calc(select=[a, window_start, window_end, cnt, uv, a0, cnt0, uv0])"
   }, {
-    "id" : 19,
+    "id" : 17,
     "type" : "stream-exec-sink_1",
     "configuration" : {
       "table.exec.sink.keyed-shuffle" : "AUTO",
@@ -1178,8 +1152,8 @@
     },
     "shuffleMode" : "PIPELINED"
   }, {
-    "source" : 7,
-    "target" : 8,
+    "source" : 8,
+    "target" : 9,
     "shuffle" : {
       "type" : "FORWARD"
     },
@@ -1220,6 +1194,13 @@
     },
     "shuffleMode" : "PIPELINED"
   }, {
+    "source" : 7,
+    "target" : 15,
+    "shuffle" : {
+      "type" : "FORWARD"
+    },
+    "shuffleMode" : "PIPELINED"
+  }, {
     "source" : 14,
     "target" : 15,
     "shuffle" : {
@@ -1234,29 +1215,8 @@
     },
     "shuffleMode" : "PIPELINED"
   }, {
-    "source" : 8,
-    "target" : 17,
-    "shuffle" : {
-      "type" : "FORWARD"
-    },
-    "shuffleMode" : "PIPELINED"
-  }, {
     "source" : 16,
     "target" : 17,
-    "shuffle" : {
-      "type" : "FORWARD"
-    },
-    "shuffleMode" : "PIPELINED"
-  }, {
-    "source" : 17,
-    "target" : 18,
-    "shuffle" : {
-      "type" : "FORWARD"
-    },
-    "shuffleMode" : "PIPELINED"
-  }, {
-    "source" : 18,
-    "target" : 19,
     "shuffle" : {
       "type" : "FORWARD"
     },

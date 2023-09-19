@@ -21,6 +21,7 @@ package org.apache.flink.table.runtime.operators.deduplicate;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.runtime.operators.bundle.KeyedMapBundleOperator;
 import org.apache.flink.table.runtime.operators.bundle.trigger.CountBundleTrigger;
 
@@ -43,22 +44,22 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(false, true, true);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 11, 2L));
+        expectedOutput.add(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(updateAfterRecord("book", 14, 3L));
+        expectedOutput.add(updateAfterRecord("book", 14, TimestampData.fromEpochMillis(3L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
@@ -70,22 +71,22 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(false, false, true);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(updateAfterRecord("book", 11, 2L));
+        expectedOutput.add(updateAfterRecord("book", 11, TimestampData.fromEpochMillis(2L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(updateAfterRecord("book", 14, 3L));
+        expectedOutput.add(updateAfterRecord("book", 14, TimestampData.fromEpochMillis(3L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
@@ -96,23 +97,23 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, true, true);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 11, 2L));
+        expectedOutput.add(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(updateBeforeRecord("book", 11, 2L));
-        expectedOutput.add(updateAfterRecord("book", 14, 3L));
+        expectedOutput.add(updateBeforeRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        expectedOutput.add(updateAfterRecord("book", 14, TimestampData.fromEpochMillis(3L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
@@ -123,23 +124,23 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, false, true);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 11, 2L));
+        expectedOutput.add(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(updateBeforeRecord("book", 11, 2L));
-        expectedOutput.add(updateAfterRecord("book", 14, 3L));
+        expectedOutput.add(updateBeforeRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        expectedOutput.add(updateAfterRecord("book", 14, TimestampData.fromEpochMillis(3L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
@@ -151,25 +152,25 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, true, true);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 11, 2L));
+        expectedOutput.add(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
         // clear state.
         testHarness.setStateTtlProcessingTime(10);
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(insertRecord("book", 14, 3L));
+        expectedOutput.add(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
@@ -181,19 +182,19 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(false, true, false);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 10, 1L));
+        expectedOutput.add(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
         expectedOutput.add(new Watermark(3L));
@@ -207,19 +208,19 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(false, false, false);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(updateAfterRecord("book", 10, 1L));
+        expectedOutput.add(updateAfterRecord("book", 10, TimestampData.fromEpochMillis(1L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
         expectedOutput.add(new Watermark(3L));
@@ -232,19 +233,19 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, true, false);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 10, 1L));
+        expectedOutput.add(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
         expectedOutput.add(new Watermark(3L));
@@ -258,19 +259,19 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, false, false);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 10, 1L));
+        expectedOutput.add(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
         expectedOutput.add(new Watermark(3L));
@@ -284,25 +285,25 @@ public class RowTimeMiniBatchLatestChangeDeduplicateFunctionTest
         OneInputStreamOperatorTestHarness<RowData, RowData> testHarness =
                 createTestHarness(true, true, false);
         testHarness.open();
-        testHarness.processElement(insertRecord("book", 10, 1L));
-        testHarness.processElement(insertRecord("book", 11, 2L));
-        testHarness.processElement(insertRecord("book", 13, 1L));
+        testHarness.processElement(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
+        testHarness.processElement(insertRecord("book", 11, TimestampData.fromEpochMillis(2L)));
+        testHarness.processElement(insertRecord("book", 13, TimestampData.fromEpochMillis(1L)));
         // output is empty because bundle not trigger yet.
         assertThat(testHarness.getOutput()).isEmpty();
         // bundle trigger emit.
-        testHarness.processElement(insertRecord("book", 12, 1L));
+        testHarness.processElement(insertRecord("book", 12, TimestampData.fromEpochMillis(1L)));
         List<Object> expectedOutput = new ArrayList<>();
-        expectedOutput.add(insertRecord("book", 10, 1L));
+        expectedOutput.add(insertRecord("book", 10, TimestampData.fromEpochMillis(1L)));
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());
 
         // clear state.
         testHarness.setStateTtlProcessingTime(10);
 
-        testHarness.processElement(insertRecord("book", 14, 3L));
-        testHarness.processElement(insertRecord("book", 15, 1L));
+        testHarness.processElement(insertRecord("book", 14, TimestampData.fromEpochMillis(3L)));
+        testHarness.processElement(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         // watermark trigger emit.
         testHarness.processWatermark(new Watermark(3L));
-        expectedOutput.add(insertRecord("book", 15, 1L));
+        expectedOutput.add(insertRecord("book", 15, TimestampData.fromEpochMillis(1L)));
         expectedOutput.add(new Watermark(3L));
         testHarness.close();
         assertor.assertOutputEqualsSorted("output wrong.", expectedOutput, testHarness.getOutput());

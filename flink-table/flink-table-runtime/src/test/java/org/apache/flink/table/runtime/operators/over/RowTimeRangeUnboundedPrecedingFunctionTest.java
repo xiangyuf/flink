@@ -23,6 +23,7 @@ import org.apache.flink.streaming.api.operators.KeyedProcessOperator;
 import org.apache.flink.streaming.api.watermark.Watermark;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.TimestampData;
 
 import org.junit.Test;
 
@@ -48,14 +49,14 @@ public class RowTimeRangeUnboundedPrecedingFunctionTest extends RowTimeOverWindo
         Counter counter = function.getCounter();
 
         // put some records
-        testHarness.processElement(insertRecord("key", 1L, 100L));
-        testHarness.processElement(insertRecord("key", 1L, 100L));
-        testHarness.processElement(insertRecord("key", 1L, 500L));
+        testHarness.processElement(insertRecord("key", 1L, TimestampData.fromEpochMillis(100L)));
+        testHarness.processElement(insertRecord("key", 1L, TimestampData.fromEpochMillis(100L)));
+        testHarness.processElement(insertRecord("key", 1L, TimestampData.fromEpochMillis(500L)));
 
         testHarness.processWatermark(new Watermark(500L));
 
         // late record
-        testHarness.processElement(insertRecord("key", 1L, 400L));
+        testHarness.processElement(insertRecord("key", 1L, TimestampData.fromEpochMillis(400L)));
 
         assertThat(counter.getCount()).isEqualTo(1L);
     }

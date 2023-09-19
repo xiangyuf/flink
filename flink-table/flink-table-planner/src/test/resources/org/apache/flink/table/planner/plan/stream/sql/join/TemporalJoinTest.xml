@@ -44,11 +44,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -247,11 +246,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -283,11 +281,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -319,11 +316,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -355,11 +351,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -391,11 +386,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-         +- Exchange(distribution=[hash[currency]])
-            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+      +- Exchange(distribution=[hash[currency]])
+         +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -427,12 +421,11 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Calc(select=[currency, rate, rowtime], where=[((rate + 1) = 100)])
-         +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-            +- Exchange(distribution=[hash[currency]])
-               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Calc(select=[currency, rate, rowtime], where=[((rate + 1) = 100)])
+      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+         +- Exchange(distribution=[hash[currency]])
+            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -561,11 +554,10 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Deduplicate(keep=[LastRow], key=[currency], order=[PROCTIME])
+   +- Deduplicate(keep=[LastRow], key=[currency], order=[PROCTIME])
+      +- Calc(select=[currency, rate, PROCTIME() AS $2])
          +- Exchange(distribution=[hash[currency]])
-            +- Calc(select=[currency, rate, PROCTIME() AS $2])
-               +- TableSourceScan(table=[[default_catalog, default_database, RatesOnly]], fields=[currency, rate])
+            +- TableSourceScan(table=[[default_catalog, default_database, RatesOnly]], fields=[currency, rate])
 ]]>
     </Resource>
   </TestCase>
@@ -596,12 +588,11 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
-         +- Exchange(distribution=[hash[currency]])
-            +- Calc(select=[currency, rate])
-               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
+      +- Exchange(distribution=[hash[currency]])
+         +- Calc(select=[currency, rate])
+            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -632,12 +623,11 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
-         +- Exchange(distribution=[hash[currency]])
-            +- Calc(select=[currency, rate])
-               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
+      +- Exchange(distribution=[hash[currency]])
+         +- Calc(select=[currency, rate])
+            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -669,13 +659,12 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :     +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :        +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :           +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Calc(select=[currency, rate], where=[(rate < 100)])
-         +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
-            +- Exchange(distribution=[hash[currency]])
-               +- Calc(select=[currency, rate])
-                  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                     +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Calc(select=[currency, rate], where=[(rate < 100)])
+      +- GroupAggregate(groupBy=[currency], select=[currency, LAST_VALUE(rate) AS rate])
+         +- Exchange(distribution=[hash[currency]])
+            +- Calc(select=[currency, rate])
+               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -707,12 +696,11 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Calc(select=[currency, rate, rowtime], where=[((rate + 1) = 100)])
-         +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-            +- Exchange(distribution=[hash[currency]])
-               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Calc(select=[currency, rate, rowtime], where=[((rate + 1) = 100)])
+      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+         +- Exchange(distribution=[hash[currency]])
+            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -744,12 +732,11 @@ Calc(select=[amount, currency, rowtime, PROCTIME_MATERIALIZE(proctime) AS procti
    :  +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
    :     +- Calc(select=[amount, currency, rowtime, PROCTIME() AS proctime])
    :        +- TableSourceScan(table=[[default_catalog, default_database, Orders]], fields=[amount, currency, rowtime])
-   +- Exchange(distribution=[hash[currency]])
-      +- Calc(select=[currency, rate, rowtime], where=[('RMB-100' = CONCAT('RMB-', CAST(rate AS VARCHAR(2147483647))))])
-         +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
-            +- Exchange(distribution=[hash[currency]])
-               +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
-                  +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
+   +- Calc(select=[currency, rate, rowtime], where=[('RMB-100' = CONCAT('RMB-', CAST(rate AS VARCHAR(2147483647))))])
+      +- Deduplicate(keep=[LastRow], key=[currency], order=[ROWTIME])
+         +- Exchange(distribution=[hash[currency]])
+            +- WatermarkAssigner(rowtime=[rowtime], watermark=[rowtime])
+               +- TableSourceScan(table=[[default_catalog, default_database, RatesHistory]], fields=[currency, rate, rowtime])
 ]]>
     </Resource>
   </TestCase>

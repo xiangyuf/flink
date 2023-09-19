@@ -23,6 +23,7 @@ import org.apache.flink.configuration.ConfigOptions.key
 import org.apache.flink.table.planner.plan.logical.{LogicalWindow, SlidingGroupWindow, TumblingGroupWindow}
 import org.apache.flink.table.planner.plan.nodes.calcite.{Expand, Rank, WindowAggregate}
 import org.apache.flink.table.planner.plan.nodes.physical.batch._
+import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamPhysicalGlobalGroupAggregate, StreamPhysicalGroupAggregate, StreamPhysicalGroupAggregateBase, StreamPhysicalGroupTableAggregate, StreamPhysicalLocalGroupAggregate, StreamPhysicalPythonGroupAggregate, StreamPhysicalPythonGroupTableAggregate}
 import org.apache.flink.table.planner.plan.stats.ValueInterval
 import org.apache.flink.table.planner.plan.utils.{FlinkRelMdUtil, SortUtil}
 import org.apache.flink.table.planner.plan.utils.AggregateUtil.{hasTimeIntervalType, toLong}
@@ -142,15 +143,31 @@ class FlinkRelMdRowCount private extends MetadataHandler[BuiltInMetadata.RowCoun
     }
   }
 
-  def getRowCount(rel: BatchPhysicalGroupAggregateBase, mq: RelMetadataQuery): JDouble = {
-    getRowCountOfBatchExecAgg(rel, mq)
+  def getRowCount(rel: StreamPhysicalGroupAggregateBase, mq: RelMetadataQuery): JDouble = {
+    getRowCountOfPhysicalAgg(rel, mq)
   }
 
-  private def getRowCountOfBatchExecAgg(rel: SingleRel, mq: RelMetadataQuery): JDouble = {
+  def getRowCount(rel: BatchPhysicalGroupAggregateBase, mq: RelMetadataQuery): JDouble = {
+    getRowCountOfPhysicalAgg(rel, mq)
+  }
+
+  private def getRowCountOfPhysicalAgg(rel: SingleRel, mq: RelMetadataQuery): JDouble = {
     val input = rel.getInput
     val (grouping, isFinal, isMerge) = rel match {
       case agg: BatchPhysicalGroupAggregateBase =>
         (ImmutableBitSet.of(agg.grouping: _*), agg.isFinal, agg.isMerge)
+      case streamAgg: StreamPhysicalGroupAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), true, false)
+      case streamAgg: StreamPhysicalGlobalGroupAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), true, true)
+      case streamAgg: StreamPhysicalLocalGroupAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), false, false)
+      case streamAgg: StreamPhysicalPythonGroupAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), true, false)
+      case streamAgg: StreamPhysicalGroupTableAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), true, false)
+      case streamAgg: StreamPhysicalPythonGroupTableAggregate =>
+        (ImmutableBitSet.of(streamAgg.grouping: _*), true, false)
       case windowAgg: BatchPhysicalWindowAggregateBase =>
         (ImmutableBitSet.of(windowAgg.grouping: _*), windowAgg.isFinal, windowAgg.isMerge)
       case _ => throw new IllegalArgumentException(s"Unknown aggregate type ${rel.getRelTypeName}!")
@@ -203,7 +220,7 @@ class FlinkRelMdRowCount private extends MetadataHandler[BuiltInMetadata.RowCoun
   }
 
   def getRowCount(rel: BatchPhysicalWindowAggregateBase, mq: RelMetadataQuery): JDouble = {
-    val ndvOfGroupKeys = getRowCountOfBatchExecAgg(rel, mq)
+    val ndvOfGroupKeys = getRowCountOfPhysicalAgg(rel, mq)
     val inputRowCount = mq.getRowCount(rel.getInput)
     estimateRowCountOfWindowAgg(ndvOfGroupKeys, inputRowCount, rel.window)
   }

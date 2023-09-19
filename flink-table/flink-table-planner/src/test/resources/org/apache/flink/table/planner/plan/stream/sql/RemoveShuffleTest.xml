@@ -1,0 +1,1178 @@
+<?xml version="1.0" ?>
+<!--
+  ~ Licensed to the Apache Software Foundation (ASF) under one
+  ~ or more contributor license agreements.  See the NOTICE file
+  ~ distributed with this work for additional information
+  ~ regarding copyright ownership.  The ASF licenses this file
+  ~ to you under the Apache License, Version 2.0 (the
+  ~ "License"); you may not use this file except in compliance
+  ~ with the License.  You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+<Root>
+  <TestCase name="testAggWithJoinFromLeftKeys">
+    <Resource name="sql">
+      <![CDATA[
+SELECT a1, b1, COUNT(a2), SUM(b2) FROM
+  (SELECT a1, b1, a2, b2 FROM T1 JOIN T2 ON a1 = a2 AND b1 = b2) t
+GROUP BY a1, b1
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalAggregate(group=[{0, 1}], EXPR$2=[COUNT($2)], EXPR$3=[SUM($3)])
++- LogicalProject(a1=[$0], b1=[$1], a2=[$3], b2=[$4])
+   +- LogicalJoin(condition=[AND(=($0, $3), =($1, $4))], joinType=[inner])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+GroupAggregate(groupBy=[a1, b1], select=[a1, b1, COUNT(a2) AS EXPR$2, SUM(b2) AS EXPR$3])
++- Join(joinType=[InnerJoin], where=[((a1 = a2) AND (b1 = b2))], select=[a1, b1, a2, b2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+   :- Exchange(distribution=[hash[a1, b1]])
+   :  +- Calc(select=[a1, b1])
+   :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+   +- Exchange(distribution=[hash[a2, b2]])
+      +- Calc(select=[a2, b2])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testAggWithJoinFromRightKeys">
+    <Resource name="sql">
+      <![CDATA[
+SELECT a2, b2, COUNT(a1), SUM(b1) FROM
+  (SELECT a1, b1, a2, b2 FROM T1 JOIN T2 ON a1 = a2 AND b1 = b2) t
+GROUP BY b2, a2
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a2=[$1], b2=[$0], EXPR$2=[$2], EXPR$3=[$3])
++- LogicalAggregate(group=[{0, 1}], EXPR$2=[COUNT($2)], EXPR$3=[SUM($3)])
+   +- LogicalProject(b2=[$4], a2=[$3], a1=[$0], b1=[$1])
+      +- LogicalJoin(condition=[AND(=($0, $3), =($1, $4))], joinType=[inner])
+         :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+         +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+GroupAggregate(groupBy=[a2, b2], select=[a2, b2, COUNT(a1) AS EXPR$2, SUM(b1) AS EXPR$3])
++- Join(joinType=[InnerJoin], where=[((a1 = a2) AND (b1 = b2))], select=[a1, b1, a2, b2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+   :- Exchange(distribution=[hash[a1, b1]])
+   :  +- Calc(select=[a1, b1])
+   :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+   +- Exchange(distribution=[hash[a2, b2]])
+      +- Calc(select=[a2, b2])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testAggWithJoinWithPartialKey">
+    <Resource name="sql">
+      <![CDATA[
+SELECT a1, MAX(b1), COUNT(a2), SUM(b2) FROM
+  (SELECT a1, b1, a2, b2 FROM T1 JOIN T2 ON a1 = a2 AND b1 = b2) t
+GROUP BY a1
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)], EXPR$2=[COUNT($2)], EXPR$3=[SUM($3)])
++- LogicalProject(a1=[$0], b1=[$1], a2=[$3], b2=[$4])
+   +- LogicalJoin(condition=[AND(=($0, $3), =($1, $4))], joinType=[inner])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, MAX(b1) AS EXPR$1, COUNT(a2) AS EXPR$2, SUM(b2) AS EXPR$3])
++- Exchange(distribution=[hash[a1]])
+   +- Join(joinType=[InnerJoin], where=[((a1 = a2) AND (b1 = b2))], select=[a1, b1, a2, b2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+      :- Exchange(distribution=[hash[a1, b1]])
+      :  +- Calc(select=[a1, b1])
+      :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+      +- Exchange(distribution=[hash[a2, b2]])
+         +- Calc(select=[a2, b2])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testJoinWithAggs">
+    <Resource name="sql">
+      <![CDATA[SELECT * FROM (SELECT a1, SUM(b1) AS b1 FROM T1 GROUP BY a1) LEFT JOIN (SELECT a2, SUM(b2) AS b2 FROM T2 GROUP BY a2) ON a1 = a2]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], a2=[$2], b2=[$3])
++- LogicalJoin(condition=[=($0, $2)], joinType=[left])
+   :- LogicalAggregate(group=[{0}], b1=[SUM($1)])
+   :  +- LogicalProject(a1=[$0], b1=[$1])
+   :     +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   +- LogicalAggregate(group=[{0}], b2=[SUM($1)])
+      +- LogicalProject(a2=[$0], b2=[$1])
+         +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a1 = a2)], select=[a1, b1, a2, b2], leftInputSpec=[JoinKeyContainsUniqueKey], rightInputSpec=[JoinKeyContainsUniqueKey])
+:- GroupAggregate(groupBy=[a1], select=[a1, SUM(b1) AS b1])
+:  +- Exchange(distribution=[hash[a1]])
+:     +- Calc(select=[a1, b1])
+:        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
++- GroupAggregate(groupBy=[a2], select=[a2, SUM(b2) AS b2])
+   +- Exchange(distribution=[hash[a2]])
+      +- Calc(select=[a2, b2])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testJoinWithAggsWithCalc">
+    <Resource name="sql">
+      <![CDATA[SELECT * FROM (SELECT SUM(b1) AS b1, a1 FROM T1 GROUP BY a1) LEFT JOIN (SELECT SUM(b2) AS b2, a2 FROM T2 GROUP BY a2) ON a1 = a2]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(b1=[$0], a1=[$1], b2=[$2], a2=[$3])
++- LogicalJoin(condition=[=($1, $3)], joinType=[left])
+   :- LogicalProject(b1=[$1], a1=[$0])
+   :  +- LogicalAggregate(group=[{0}], b1=[SUM($1)])
+   :     +- LogicalProject(a1=[$0], b1=[$1])
+   :        +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   +- LogicalProject(b2=[$1], a2=[$0])
+      +- LogicalAggregate(group=[{0}], b2=[SUM($1)])
+         +- LogicalProject(a2=[$0], b2=[$1])
+            +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a1 = a2)], select=[b1, a1, b2, a2], leftInputSpec=[JoinKeyContainsUniqueKey], rightInputSpec=[JoinKeyContainsUniqueKey])
+:- Calc(select=[b1, a1])
+:  +- GroupAggregate(groupBy=[a1], select=[a1, SUM(b1) AS b1])
+:     +- Exchange(distribution=[hash[a1]])
+:        +- Calc(select=[a1, b1])
+:           +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
++- Calc(select=[b2, a2])
+   +- GroupAggregate(groupBy=[a2], select=[a2, SUM(b2) AS b2])
+      +- Exchange(distribution=[hash[a2]])
+         +- Calc(select=[a2, b2])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleFullJoins">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM
+  (SELECT * FROM T1 FULL JOIN T2 ON a1 = a2) TMP
+    FULL JOIN T3 ON a1 = a3
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8])
++- LogicalJoin(condition=[=($0, $6)], joinType=[full])
+   :- LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5])
+   :  +- LogicalJoin(condition=[=($0, $3)], joinType=[full])
+   :     :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   :     +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[FullOuterJoin], where=[(a1 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Exchange(distribution=[hash[a1]])
+:  +- Join(joinType=[FullOuterJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:     :- Exchange(distribution=[hash[a1]])
+:     :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:     +- Exchange(distribution=[hash[a2]])
+:        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
++- Exchange(distribution=[hash[a3]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleGroupAggWithEmptyKey">
+    <Resource name="sql">
+      <![CDATA[
+SELECT SUM(b) FROM (SELECT COUNT(b1) AS b FROM T1) t
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalAggregate(group=[{}], EXPR$0=[SUM($0)])
++- LogicalAggregate(group=[{}], b=[COUNT($0)])
+   +- LogicalProject(b1=[$1])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+GroupAggregate(select=[SUM_RETRACT(b) AS EXPR$0])
++- Exchange(distribution=[single])
+   +- GroupAggregate(select=[COUNT(b1) AS b])
+      +- Exchange(distribution=[single])
+         +- Calc(select=[b1])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleGroupAggWithSameKeys">
+    <Resource name="sql">
+      <![CDATA[
+SELECT a1, count(*) FROM (SELECT a1 FROM T1 GROUP BY a1) t GROUP BY a1
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[COUNT()])
++- LogicalAggregate(group=[{0}])
+   +- LogicalProject(a1=[$0])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, COUNT_RETRACT(*) AS EXPR$1])
++- GroupAggregate(groupBy=[a1], select=[a1])
+   +- Exchange(distribution=[hash[a1]])
+      +- Calc(select=[a1])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleRightJoinsWithJoinKeyWithLeftSide">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM
+  (SELECT * FROM T1 RIGHT JOIN T2 ON a1 = a2) TMP
+    RIGHT JOIN T3 ON a1 = a3
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8])
++- LogicalJoin(condition=[=($0, $6)], joinType=[right])
+   :- LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5])
+   :  +- LogicalJoin(condition=[=($0, $3)], joinType=[right])
+   :     :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   :     +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[RightOuterJoin], where=[(a1 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Exchange(distribution=[hash[a1]])
+:  +- Join(joinType=[RightOuterJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:     :- Exchange(distribution=[hash[a1]])
+:     :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:     +- Exchange(distribution=[hash[a2]])
+:        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
++- Exchange(distribution=[hash[a3]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleInnerJoins">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM T1, T2, T3, T4
+WHERE a1 = a2 AND a2 = a3 AND a3 = a4
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8], a4=[$9], b4=[$10], c4=[$11])
++- LogicalFilter(condition=[AND(=($0, $3), =($3, $6), =($6, $9))])
+   +- LogicalJoin(condition=[true], joinType=[inner])
+      :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :  :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      :  :  +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+      :  +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[InnerJoin], where=[(a3 = a4)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3, a4, b4, c4], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Join(joinType=[InnerJoin], where=[(a2 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :- Join(joinType=[InnerJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :  :- Exchange(distribution=[hash[a1]])
+:  :  :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:  :  +- Exchange(distribution=[hash[a2]])
+:  :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+:  +- Exchange(distribution=[hash[a3]])
+:     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
++- Exchange(distribution=[hash[a4]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]], fields=[a4, b4, c4])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleInnerJoinsWithPartialKey">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM T1, T2, T3, T4
+WHERE a1 = a2 AND a2 = a3 AND a3 = a4 AND b3 = b4
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8], a4=[$9], b4=[$10], c4=[$11])
++- LogicalFilter(condition=[AND(=($0, $3), =($3, $6), =($6, $9), =($7, $10))])
+   +- LogicalJoin(condition=[true], joinType=[inner])
+      :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :  :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      :  :  +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+      :  +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[InnerJoin], where=[((a3 = a4) AND (b3 = b4))], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3, a4, b4, c4], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Exchange(distribution=[hash[a3, b3]])
+:  +- Join(joinType=[InnerJoin], where=[(a2 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:     :- Join(joinType=[InnerJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:     :  :- Exchange(distribution=[hash[a1]])
+:     :  :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:     :  +- Exchange(distribution=[hash[a2]])
+:     :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+:     +- Exchange(distribution=[hash[a3]])
+:        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
++- Exchange(distribution=[hash[a4, b4]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]], fields=[a4, b4, c4])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleInnerJoinsWithMultipleKeys">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM T1, T2, T3, T4
+WHERE a1 = a2 AND b1 = b2 AND a2 = a3 AND b3 = b2 AND a3 = a4 AND b3 = b4
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8], a4=[$9], b4=[$10], c4=[$11])
++- LogicalFilter(condition=[AND(=($0, $3), =($1, $4), =($3, $6), =($7, $4), =($6, $9), =($7, $10))])
+   +- LogicalJoin(condition=[true], joinType=[inner])
+      :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :- LogicalJoin(condition=[true], joinType=[inner])
+      :  :  :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      :  :  +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+      :  +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[InnerJoin], where=[((a3 = a4) AND (b3 = b4))], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3, a4, b4, c4], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Join(joinType=[InnerJoin], where=[((a2 = a3) AND (b3 = b2))], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :- Join(joinType=[InnerJoin], where=[((a1 = a2) AND (b1 = b2))], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :  :- Exchange(distribution=[hash[a1, b1]])
+:  :  :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:  :  +- Exchange(distribution=[hash[a2, b2]])
+:  :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+:  +- Exchange(distribution=[hash[a3, b3]])
+:     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
++- Exchange(distribution=[hash[a4, b4]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]], fields=[a4, b4, c4])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleLeftJoinsWithJoinKeyWithRightSide">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM
+  (SELECT * FROM T1 LEFT JOIN T2 ON a1 = a2) TMP
+    LEFT JOIN T3 ON a2 = a3
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8])
++- LogicalJoin(condition=[=($3, $6)], joinType=[left])
+   :- LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5])
+   :  +- LogicalJoin(condition=[=($0, $3)], joinType=[left])
+   :     :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   :     +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a2 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Exchange(distribution=[hash[a2]])
+:  +- Join(joinType=[LeftOuterJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:     :- Exchange(distribution=[hash[a1]])
+:     :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:     +- Exchange(distribution=[hash[a2]])
+:        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
++- Exchange(distribution=[hash[a3]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
+]]>
+    </Resource>
+  </TestCase>
+  <TestCase name="testMultipleLeftJoins">
+    <Resource name="sql">
+      <![CDATA[
+SELECT * FROM
+ (SELECT * FROM
+   (SELECT * FROM T1 LEFT JOIN T2 ON a1 = a2) TMP1
+     LEFT JOIN T3 ON a1 = a3) TMP2
+ LEFT JOIN T4 ON a1 = a4
+         ]]>
+    </Resource>
+    <Resource name="ast">
+      <![CDATA[
+LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8], a4=[$9], b4=[$10], c4=[$11])
++- LogicalJoin(condition=[=($0, $9)], joinType=[left])
+   :- LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5], a3=[$6], b3=[$7], c3=[$8])
+   :  +- LogicalJoin(condition=[=($0, $6)], joinType=[left])
+   :     :- LogicalProject(a1=[$0], b1=[$1], c1=[$2], a2=[$3], b2=[$4], c2=[$5])
+   :     :  +- LogicalJoin(condition=[=($0, $3)], joinType=[left])
+   :     :     :- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   :     :     +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+   :     +- LogicalTableScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]])
+]]>
+    </Resource>
+    <Resource name="optimized exec plan">
+      <![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a1 = a4)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3, a4, b4, c4], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Join(joinType=[LeftOuterJoin], where=[(a1 = a3)], select=[a1, b1, c1, a2, b2, c2, a3, b3, c3], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :- Join(joinType=[LeftOuterJoin], where=[(a1 = a2)], select=[a1, b1, c1, a2, b2, c2], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:  :  :- Exchange(distribution=[hash[a1]])
+:  :  :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+:  :  +- Exchange(distribution=[hash[a2]])
+:  :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+:  +- Exchange(distribution=[hash[a3]])
+:     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T3, source: [TestTableSource(a3, b3, c3)]]], fields=[a3, b3, c3])
++- Exchange(distribution=[hash[a4]])
+   +- LegacyTableSourceScan(table=[[default_catalog, default_database, T4, source: [TestTableSource(a4, b4, c4)]]], fields=[a4, b4, c4])
+]]>
+    </Resource>
+  </TestCase>
+	<TestCase name="testAggWithSemiJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a1, MAX(b1), COUNT(c1)
+FROM T1
+WHERE EXISTS
+  (SELECT 1 FROM T2 WHERE T1.a1 = T2.a2)
+GROUP BY a1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)], EXPR$2=[COUNT($2)])
++- LogicalFilter(condition=[EXISTS({
+LogicalFilter(condition=[=($cor0.a1, $0)])
+  LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+})], variablesSet=[[$cor0]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, MAX(b1) AS EXPR$1, COUNT(c1) AS EXPR$2])
++- Join(joinType=[LeftSemiJoin], where=[(a1 = a2)], select=[a1, b1, c1], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+   :- Exchange(distribution=[hash[a1]])
+   :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+   +- Exchange(distribution=[hash[a2]])
+      +- Calc(select=[a2])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithAntiJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a1, MAX(b1), COUNT(c1)
+FROM T1
+WHERE NOT EXISTS
+  (SELECT 1 FROM T2 WHERE T1.a1 = T2.a2)
+GROUP BY a1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)], EXPR$2=[COUNT($2)])
++- LogicalFilter(condition=[NOT(EXISTS({
+LogicalFilter(condition=[=($cor0.a1, $0)])
+  LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+}))], variablesSet=[[$cor0]])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, MAX_RETRACT(b1) AS EXPR$1, COUNT_RETRACT(c1) AS EXPR$2])
++- Join(joinType=[LeftAntiJoin], where=[(a1 = a2)], select=[a1, b1, c1], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+   :- Exchange(distribution=[hash[a1]])
+   :  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+   +- Exchange(distribution=[hash[a2]])
+      +- Calc(select=[a2])
+         +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggAfterPartitionedLookupJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, COUNT(name), MAX(b5) FROM
+T5 JOIN L FOR SYSTEM_TIME AS OF T5.proctime
+ON a5 = L.id
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[COUNT($1)], EXPR$2=[MAX($2)])
++- LogicalProject(a5=[$0], name=[$5], b5=[$1])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0, 3}])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+      +- LogicalFilter(condition=[=($cor0.a5, $0)])
+         +- LogicalSnapshot(period=[$cor0.proctime])
+            +- LogicalTableScan(table=[[default_catalog, default_database, L]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, COUNT(name) AS EXPR$1, MAX(b5) AS EXPR$2])
++- Calc(select=[a5, name, b5])
+   +- LookupJoin(table=[default_catalog.default_database.L], joinType=[InnerJoin], async=[false], lookup=[id=a5], select=[a5, b5, id, name])
+      +- Exchange(distribution=[hash[a5]])
+         +- Calc(select=[a5, b5])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggOnRightFieldAfterPartitionedLookupJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT age, COUNT(name), MAX(b5) FROM
+T5 JOIN L FOR SYSTEM_TIME AS OF T5.proctime
+ON a5 = L.age
+GROUP BY L.age
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[COUNT($1)], EXPR$2=[MAX($2)])
++- LogicalProject(age=[$6], name=[$5], b5=[$1])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0, 3}])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+      +- LogicalFilter(condition=[=($cor0.a5, $2)])
+         +- LogicalSnapshot(period=[$cor0.proctime])
+            +- LogicalTableScan(table=[[default_catalog, default_database, L]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[age], select=[age, COUNT(name) AS EXPR$1, MAX(b5) AS EXPR$2])
++- Calc(select=[age, name, b5])
+   +- LookupJoin(table=[default_catalog.default_database.L], joinType=[InnerJoin], async=[false], lookup=[age=a5], select=[a5, b5, name, age])
+      +- Exchange(distribution=[hash[a5]])
+         +- Calc(select=[a5, b5])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggOnRightFieldAfterPartitionedLeftLookupJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT age, COUNT(name), MAX(b5) FROM
+T5 LEFT JOIN L FOR SYSTEM_TIME AS OF T5.proctime
+ON a5 = L.age
+GROUP BY L.age
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[COUNT($1)], EXPR$2=[MAX($2)])
++- LogicalProject(age=[$6], name=[$5], b5=[$1])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[left], requiredColumns=[{0, 3}])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+      +- LogicalFilter(condition=[=($cor0.a5, $2)])
+         +- LogicalSnapshot(period=[$cor0.proctime])
+            +- LogicalTableScan(table=[[default_catalog, default_database, L]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[age], select=[age, COUNT(name) AS EXPR$1, MAX(b5) AS EXPR$2])
++- Exchange(distribution=[hash[age]])
+   +- Calc(select=[age, name, b5])
+      +- LookupJoin(table=[default_catalog.default_database.L], joinType=[LeftOuterJoin], async=[false], lookup=[age=a5], select=[a5, b5, name, age])
+         +- Exchange(distribution=[hash[a5]])
+            +- Calc(select=[a5, b5])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testJoinWithDeduplicate">
+		<Resource name="sql">
+			<![CDATA[SELECT * FROM (
+SELECT a5, b5
+FROM (
+  SELECT a5, b5, ROW_NUMBER() OVER (PARTITION BY a5 ORDER BY proctime) as rank_num
+  FROM T5
+)
+WHERE rank_num = 1
+) LEFT JOIN (
+SELECT a6, b6
+FROM (
+  SELECT a6, b6, ROW_NUMBER() OVER (PARTITION BY a6 ORDER BY proctime) as rank_num
+  FROM T6
+)
+WHERE rank_num = 1
+) ON a5 = a6]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalProject(a5=[$0], b5=[$1], a6=[$2], b6=[$3])
++- LogicalJoin(condition=[=($0, $2)], joinType=[left])
+   :- LogicalProject(a5=[$0], b5=[$1])
+   :  +- LogicalFilter(condition=[=($2, 1)])
+   :     +- LogicalProject(a5=[$0], b5=[$1], rank_num=[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST)])
+   :        +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+   +- LogicalProject(a6=[$0], b6=[$1])
+      +- LogicalFilter(condition=[=($2, 1)])
+         +- LogicalProject(a6=[$0], b6=[$1], rank_num=[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST)])
+            +- LogicalTableScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a5 = a6)], select=[a5, b5, a6, b6], leftInputSpec=[JoinKeyContainsUniqueKey], rightInputSpec=[JoinKeyContainsUniqueKey])
+:- Calc(select=[a5, b5])
+:  +- Deduplicate(keep=[FirstRow], key=[a5], order=[PROCTIME])
+:     +- Exchange(distribution=[hash[a5]])
+:        +- Calc(select=[a5, b5, proctime])
+:           +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
++- Calc(select=[a6, b6])
+   +- Deduplicate(keep=[FirstRow], key=[a6], order=[PROCTIME])
+      +- Exchange(distribution=[hash[a6]])
+         +- Calc(select=[a6, b6, proctime])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]], fields=[a6, b6, c6, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testJoinWithRank">
+		<Resource name="sql">
+			<![CDATA[SELECT * FROM (
+SELECT a5, b5
+FROM (
+  SELECT a5, b5, ROW_NUMBER() OVER (PARTITION BY a5 ORDER BY proctime) as rank_num
+  FROM T5
+)
+WHERE rank_num = 5
+) LEFT JOIN (
+SELECT a6, b6
+FROM (
+  SELECT a6, b6, ROW_NUMBER() OVER (PARTITION BY a6 ORDER BY proctime) as rank_num
+  FROM T6
+)
+WHERE rank_num = 5
+) ON a5 = a6]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalProject(a5=[$0], b5=[$1], a6=[$2], b6=[$3])
++- LogicalJoin(condition=[=($0, $2)], joinType=[left])
+   :- LogicalProject(a5=[$0], b5=[$1])
+   :  +- LogicalFilter(condition=[=($2, 5)])
+   :     +- LogicalProject(a5=[$0], b5=[$1], rank_num=[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST)])
+   :        +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+   +- LogicalProject(a6=[$0], b6=[$1])
+      +- LogicalFilter(condition=[=($2, 5)])
+         +- LogicalProject(a6=[$0], b6=[$1], rank_num=[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST)])
+            +- LogicalTableScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+Join(joinType=[LeftOuterJoin], where=[(a5 = a6)], select=[a5, b5, a6, b6], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+:- Calc(select=[a5, b5])
+:  +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=5, rankEnd=5], partitionBy=[a5], orderBy=[proctime ASC], select=[a5, b5, proctime])
+:     +- Exchange(distribution=[hash[a5]])
+:        +- Calc(select=[a5, b5, proctime])
+:           +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
++- Calc(select=[a6, b6])
+   +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=5, rankEnd=5], partitionBy=[a6], orderBy=[proctime ASC], select=[a6, b6, proctime])
+      +- Exchange(distribution=[hash[a6]])
+         +- Calc(select=[a6, b6, proctime])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]], fields=[a6, b6, c6, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testDeduplicateWithWindowAggregate">
+		<Resource name="sql">
+			<![CDATA[
+SELECT *
+FROM (
+  SELECT a5, cnt, ROW_NUMBER() OVER (PARTITION BY a5 ORDER BY window_time) as rank_num
+  FROM (
+SELECT
+   a5,
+   window_start,
+   window_time,
+   count(*) as cnt
+FROM TABLE(TUMBLE(TABLE T5, DESCRIPTOR(proctime), INTERVAL '15' MINUTE))
+GROUP BY a5, window_start, window_end, window_time
+      )
+)
+WHERE rank_num = 1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalProject(a5=[$0], cnt=[$1], rank_num=[$2])
++- LogicalFilter(condition=[=($2, 1)])
+   +- LogicalProject(a5=[$0], cnt=[$4], rank_num=[ROW_NUMBER() OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST)])
+      +- LogicalAggregate(group=[{0, 1, 2, 3}], cnt=[COUNT()])
+         +- LogicalProject(a5=[$0], window_start=[$5], window_end=[$6], window_time=[$7])
+            +- LogicalTableFunctionScan(invocation=[TUMBLE($4, DESCRIPTOR($3), 900000:INTERVAL MINUTE)], rowType=[RecordType(INTEGER a5, BIGINT b5, VARCHAR(2147483647) c5, TIMESTAMP_LTZ(3) *PROCTIME* proctime, TIMESTAMP(3) *ROWTIME* rowtime, TIMESTAMP(3) window_start, TIMESTAMP(3) window_end, TIMESTAMP_LTZ(3) *PROCTIME* window_time)])
+               +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4])
+                  +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+Calc(select=[a5, cnt, 1 AS $2])
++- Deduplicate(keep=[FirstRow], key=[a5], order=[PROCTIME])
+   +- Calc(select=[a5, window_start, window_end, window_time, cnt])
+      +- WindowAggregate(groupBy=[a5], window=[TUMBLE(time_col=[proctime], size=[15 min])], select=[a5, COUNT(*) AS cnt, start('w$) AS window_start, end('w$) AS window_end, proctime('w$) AS window_time])
+         +- Exchange(distribution=[hash[a5]])
+            +- Calc(select=[a5, proctime])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithIntervalJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, MAX(b6) FROM
+(
+  SELECT a5, b6 FROM T5 JOIN T6 ON
+   a5 = a6 AND T5.proctime BETWEEN T6.proctime - INTERVAL '5' SECOND AND T6.proctime
+)
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a5=[$0], b6=[$6])
+   +- LogicalJoin(condition=[AND(=($0, $5), >=($3, -($8, 5000:INTERVAL SECOND)), <=($3, $8))], joinType=[inner])
+      :- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, MAX(b6) AS EXPR$1])
++- Calc(select=[a5, b6])
+   +- IntervalJoin(joinType=[InnerJoin], windowBounds=[isRowTime=false, leftLowerBound=-5000, leftUpperBound=0, leftTimeIndex=1, rightTimeIndex=2], where=[((a5 = a6) AND (proctime >= (proctime0 - 5000:INTERVAL SECOND)) AND (proctime <= proctime0))], select=[a5, proctime, a6, b6, proctime0])
+      :- Exchange(distribution=[hash[a5]])
+      :  +- Calc(select=[a5, proctime])
+      :     +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+      +- Exchange(distribution=[hash[a6]])
+         +- Calc(select=[a6, b6, proctime])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]], fields=[a6, b6, c6, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithTemporalJoinLeftSide">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a7, MAX(b8) FROM
+(
+  SELECT a7, b8 FROM T7 JOIN T8 FOR SYSTEM_TIME AS OF T7.proctime as r1 ON
+   a7 = a8
+)
+GROUP BY a7
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a7=[$0], b8=[$5])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0, 2}])
+      :- LogicalProject(a7=[$0], b7=[$1], proctime=[PROCTIME()], c7=[$2])
+      :  +- LogicalTableScan(table=[[default_catalog, default_database, T7]])
+      +- LogicalFilter(condition=[=($cor0.a7, $0)])
+         +- LogicalSnapshot(period=[$cor0.proctime])
+            +- LogicalTableScan(table=[[default_catalog, default_database, T8]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a7], select=[a7, MAX(b8) AS EXPR$1])
++- Calc(select=[a7, b8])
+   +- TemporalJoin(joinType=[InnerJoin], where=[((a7 = a8) AND __TEMPORAL_JOIN_CONDITION(proctime, __TEMPORAL_JOIN_CONDITION_PRIMARY_KEY(a8), __TEMPORAL_JOIN_LEFT_KEY(a7), __TEMPORAL_JOIN_RIGHT_KEY(a8)))], select=[a7, proctime, a8, b8])
+      :- Calc(select=[a7, PROCTIME() AS proctime])
+      :  +- Exchange(distribution=[hash[a7]])
+      :     +- TableSourceScan(table=[[default_catalog, default_database, T7, project=[a7], metadata=[]]], fields=[a7])
+      +- Exchange(distribution=[hash[a8]])
+         +- TableSourceScan(table=[[default_catalog, default_database, T8, project=[a8, b8], metadata=[]]], fields=[a8, b8])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithTemporalJoinRightSide">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a8, MAX(b7) FROM
+(
+  SELECT a8, b7 FROM T7 JOIN T8 FOR SYSTEM_TIME AS OF T7.proctime as r1 ON
+   a7 = a8
+)
+GROUP BY a8
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a8=[$4], b7=[$1])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{0, 2}])
+      :- LogicalProject(a7=[$0], b7=[$1], proctime=[PROCTIME()], c7=[$2])
+      :  +- LogicalTableScan(table=[[default_catalog, default_database, T7]])
+      +- LogicalFilter(condition=[=($cor0.a7, $0)])
+         +- LogicalSnapshot(period=[$cor0.proctime])
+            +- LogicalTableScan(table=[[default_catalog, default_database, T8]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a8], select=[a8, MAX(b7) AS EXPR$1])
++- Calc(select=[a8, b7])
+   +- TemporalJoin(joinType=[InnerJoin], where=[((a7 = a8) AND __TEMPORAL_JOIN_CONDITION(proctime, __TEMPORAL_JOIN_CONDITION_PRIMARY_KEY(a8), __TEMPORAL_JOIN_LEFT_KEY(a7), __TEMPORAL_JOIN_RIGHT_KEY(a8)))], select=[a7, b7, proctime, a8])
+      :- Calc(select=[a7, b7, PROCTIME() AS proctime])
+      :  +- Exchange(distribution=[hash[a7]])
+      :     +- TableSourceScan(table=[[default_catalog, default_database, T7, project=[a7, b7], metadata=[]]], fields=[a7, b7])
+      +- Exchange(distribution=[hash[a8]])
+         +- TableSourceScan(table=[[default_catalog, default_database, T8, project=[a8], metadata=[]]], fields=[a8])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithWindowDeduplicate">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, MAX(b5)
+FROM (
+  SELECT *
+  FROM (
+    SELECT *,
+      ROW_NUMBER() OVER(PARTITION BY a5, window_start, window_end
+      ORDER BY proctime DESC) as rownum
+    FROM TABLE(TUMBLE(TABLE T5, DESCRIPTOR(proctime), INTERVAL '15' MINUTE))
+)
+WHERE rownum <= 1
+)
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a5=[$0], b5=[$1])
+   +- LogicalFilter(condition=[<=($8, 1)])
+      +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4], window_start=[$5], window_end=[$6], window_time=[$7], rownum=[ROW_NUMBER() OVER (PARTITION BY $0, $5, $6 ORDER BY $3 DESC NULLS LAST)])
+         +- LogicalTableFunctionScan(invocation=[TUMBLE($4, DESCRIPTOR($3), 900000:INTERVAL MINUTE)], rowType=[RecordType(INTEGER a5, BIGINT b5, VARCHAR(2147483647) c5, TIMESTAMP_LTZ(3) *PROCTIME* proctime, TIMESTAMP(3) *ROWTIME* rowtime, TIMESTAMP(3) window_start, TIMESTAMP(3) window_end, TIMESTAMP_LTZ(3) *PROCTIME* window_time)])
+            +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4])
+               +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, MAX(b5) AS EXPR$1])
++- Calc(select=[a5, b5])
+   +- WindowDeduplicate(window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], keep=[LastRow], partitionKeys=[a5], orderKey=[proctime], order=[PROCTIME])
+      +- Exchange(distribution=[hash[a5]])
+         +- Calc(select=[a5, b5, proctime, window_start, window_end])
+            +- WindowTableFunction(window=[TUMBLE(time_col=[proctime], size=[15 min])])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithWindowRank">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, MAX(b5)
+FROM (
+  SELECT *
+  FROM (
+    SELECT *,
+      ROW_NUMBER() OVER(PARTITION BY a5, window_start, window_end
+      ORDER BY proctime DESC) as rownum
+    FROM TABLE(TUMBLE(TABLE T5, DESCRIPTOR(proctime), INTERVAL '15' MINUTE))
+)
+WHERE rownum <= 5
+)
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a5=[$0], b5=[$1])
+   +- LogicalFilter(condition=[<=($8, 5)])
+      +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4], window_start=[$5], window_end=[$6], window_time=[$7], rownum=[ROW_NUMBER() OVER (PARTITION BY $0, $5, $6 ORDER BY $3 DESC NULLS LAST)])
+         +- LogicalTableFunctionScan(invocation=[TUMBLE($4, DESCRIPTOR($3), 900000:INTERVAL MINUTE)], rowType=[RecordType(INTEGER a5, BIGINT b5, VARCHAR(2147483647) c5, TIMESTAMP_LTZ(3) *PROCTIME* proctime, TIMESTAMP(3) *ROWTIME* rowtime, TIMESTAMP(3) window_start, TIMESTAMP(3) window_end, TIMESTAMP_LTZ(3) *PROCTIME* window_time)])
+            +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4])
+               +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, MAX(b5) AS EXPR$1])
++- Calc(select=[a5, b5])
+   +- WindowRank(window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=5], partitionBy=[a5], orderBy=[proctime DESC], select=[a5, b5, proctime, window_start, window_end])
+      +- Exchange(distribution=[hash[a5]])
+         +- Calc(select=[a5, b5, proctime, window_start, window_end])
+            +- WindowTableFunction(window=[TUMBLE(time_col=[proctime], size=[15 min])])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithWindowJoin">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, MAX(b6)
+FROM (
+SELECT *
+FROM (
+  SELECT *
+  FROM TABLE(TUMBLE(TABLE T5, DESCRIPTOR(rowtime), INTERVAL '15' MINUTE))
+  WHERE b5 > 10
+) L
+JOIN (
+  SELECT *
+  FROM TABLE(TUMBLE(TABLE T6, DESCRIPTOR(rowtime), INTERVAL '15' MINUTE))
+  WHERE b6 > 10
+) R
+ON L.window_start = R.window_start AND L.window_end = R.window_end AND L.a5 = R.a6
+)
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a5=[$0], b6=[$9])
+   +- LogicalJoin(condition=[AND(=($5, $13), =($6, $14), =($0, $8))], joinType=[inner])
+      :- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4], window_start=[$5], window_end=[$6], window_time=[$7])
+      :  +- LogicalFilter(condition=[>($1, 10)])
+      :     +- LogicalTableFunctionScan(invocation=[TUMBLE($4, DESCRIPTOR($4), 900000:INTERVAL MINUTE)], rowType=[RecordType(INTEGER a5, BIGINT b5, VARCHAR(2147483647) c5, TIMESTAMP_LTZ(3) *PROCTIME* proctime, TIMESTAMP(3) *ROWTIME* rowtime, TIMESTAMP(3) window_start, TIMESTAMP(3) window_end, TIMESTAMP(3) *ROWTIME* window_time)])
+      :        +- LogicalProject(a5=[$0], b5=[$1], c5=[$2], proctime=[$3], rowtime=[$4])
+      :           +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+      +- LogicalProject(a6=[$0], b6=[$1], c6=[$2], proctime=[$3], rowtime=[$4], window_start=[$5], window_end=[$6], window_time=[$7])
+         +- LogicalFilter(condition=[>($1, 10)])
+            +- LogicalTableFunctionScan(invocation=[TUMBLE($4, DESCRIPTOR($4), 900000:INTERVAL MINUTE)], rowType=[RecordType(INTEGER a6, BIGINT b6, VARCHAR(2147483647) c6, TIMESTAMP_LTZ(3) *PROCTIME* proctime, TIMESTAMP(3) *ROWTIME* rowtime, TIMESTAMP(3) window_start, TIMESTAMP(3) window_end, TIMESTAMP(3) *ROWTIME* window_time)])
+               +- LogicalProject(a6=[$0], b6=[$1], c6=[$2], proctime=[$3], rowtime=[$4])
+                  +- LogicalTableScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, MAX(b6) AS EXPR$1])
++- Calc(select=[a5, b6])
+   +- WindowJoin(leftWindow=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], rightWindow=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], joinType=[InnerJoin], where=[(a5 = a6)], select=[a5, window_start, window_end, a6, b6, window_start0, window_end0])
+      :- Exchange(distribution=[hash[a5]])
+      :  +- Calc(select=[a5, window_start, window_end], where=[(b5 > 10)])
+      :     +- WindowTableFunction(window=[TUMBLE(time_col=[rowtime], size=[15 min])])
+      :        +- Calc(select=[a5, b5, rowtime])
+      :           +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+      +- Exchange(distribution=[hash[a6]])
+         +- Calc(select=[a6, b6, window_start, window_end], where=[(b6 > 10)])
+            +- WindowTableFunction(window=[TUMBLE(time_col=[rowtime], size=[15 min])])
+               +- Calc(select=[a6, b6, rowtime])
+                  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T6, source: [TestTableSource(a6, b6, c6, proctime, rowtime)]]], fields=[a6, b6, c6, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithOverAgg">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a5, MAX(maxc + minc)
+FROM (
+  SELECT a5,
+    SUM(b5) OVER (PARTITION BY a5 ORDER BY proctime
+       ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) as maxc,
+    MIN(b5) OVER (PARTITION BY a5 ORDER BY proctime
+       ROWS BETWEEN 3 PRECEDING AND CURRENT ROW) as minc
+  FROM T5
+)
+GROUP BY a5
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a5=[$0], $f1=[+(CASE(>(COUNT($1) OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST ROWS 3 PRECEDING), 0), $SUM0($1) OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST ROWS 3 PRECEDING), null:BIGINT), MIN($1) OVER (PARTITION BY $0 ORDER BY $3 NULLS FIRST ROWS 3 PRECEDING))])
+   +- LogicalTableScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a5], select=[a5, MAX($f1) AS EXPR$1])
++- Calc(select=[a5, (CASE((w0$o0 > 0), w0$o1, null:BIGINT) + w0$o2) AS $f1])
+   +- OverAggregate(partitionBy=[a5], orderBy=[proctime ASC], window=[ ROWS BETWEEN 3 PRECEDING AND CURRENT ROW], select=[a5, b5, proctime, COUNT(b5) AS w0$o0, $SUM0(b5) AS w0$o1, MIN(b5) AS w0$o2])
+      +- Exchange(distribution=[hash[a5]])
+         +- Calc(select=[a5, b5, proctime])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T5, source: [TestTableSource(a5, b5, c5, proctime, rowtime)]]], fields=[a5, b5, c5, proctime, rowtime])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithUnion">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a, SUM(b)
+FROM
+(
+ SELECT * FROM
+ (SELECT a1 a, MAX(b1) b FROM T1 GROUP BY a1)
+ UNION ALL
+ (SELECT a2 a, MAX(b2) b FROM T2 GROUP BY a2)
+)
+GROUP BY a
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[SUM($1)])
++- LogicalUnion(all=[true])
+   :- LogicalProject(a=[$0], b=[$1])
+   :  +- LogicalAggregate(group=[{0}], b=[MAX($1)])
+   :     +- LogicalProject(a=[$0], b1=[$1])
+   :        +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+   +- LogicalAggregate(group=[{0}], b=[MAX($1)])
+      +- LogicalProject(a=[$0], b2=[$1])
+         +- LogicalTableScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a], select=[a, SUM_RETRACT(b) AS EXPR$1])
++- Union(all=[true], union=[a, b])
+   :- GroupAggregate(groupBy=[a], select=[a, MAX(b1) AS b])
+   :  +- Exchange(distribution=[hash[a]])
+   :     +- Calc(select=[a1 AS a, b1])
+   :        +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+   +- GroupAggregate(groupBy=[a], select=[a, MAX(b2) AS b])
+      +- Exchange(distribution=[hash[a]])
+         +- Calc(select=[a2 AS a, b2])
+            +- LegacyTableSourceScan(table=[[default_catalog, default_database, T2, source: [TestTableSource(a2, b2, c2)]]], fields=[a2, b2, c2])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testAggWithCorrelate">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a1, MAX(d)
+FROM
+(
+ SELECT * FROM
+ (
+   SELECT a1, FIRST_VALUE(c1) as c1 FROM T1 GROUP BY a1
+ )
+ , LATERAL TABLE(str_split(c1, ',')) as T0(d)
+)
+GROUP BY a1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalProject(a1=[$0], d=[$2])
+   +- LogicalCorrelate(correlation=[$cor0], joinType=[inner], requiredColumns=[{1}])
+      :- LogicalAggregate(group=[{0}], c1=[FIRST_VALUE($1)])
+      :  +- LogicalProject(a1=[$0], c1=[$2])
+      :     +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+      +- LogicalTableFunctionScan(invocation=[str_split($cor0.c1, _UTF-16LE',')], rowType=[RecordType(VARCHAR(2147483647) f0)], elementType=[class [Ljava.lang.Object;])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, MAX_RETRACT(d) AS EXPR$1])
++- Calc(select=[a1, f0 AS d])
+   +- Correlate(invocation=[str_split($cor0.c1, _UTF-16LE',')], correlate=[table(str_split($cor0.c1,','))], select=[a1,c1,f0], rowType=[RecordType(INTEGER a1, VARCHAR(2147483647) c1, VARCHAR(2147483647) f0)], joinType=[INNER])
+      +- GroupAggregate(groupBy=[a1], select=[a1, FIRST_VALUE(c1) AS c1])
+         +- Exchange(distribution=[hash[a1]])
+            +- Calc(select=[a1, c1])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testMiniBatchGroupAggWithSameKeys">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a1, count(*) FROM (SELECT a1 FROM T1 GROUP BY a1) t GROUP BY a1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[COUNT()])
++- LogicalAggregate(group=[{0}])
+   +- LogicalProject(a1=[$0])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GroupAggregate(groupBy=[a1], select=[a1, COUNT_RETRACT(*) AS EXPR$1])
++- GlobalGroupAggregate(groupBy=[a1], select=[a1])
+   +- Exchange(distribution=[hash[a1]])
+      +- LocalGroupAggregate(groupBy=[a1], select=[a1])
+         +- Calc(select=[a1])
+            +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
+               +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+]]>
+		</Resource>
+	</TestCase>
+	<TestCase name="testSplitGroupAggWithSameKeys">
+		<Resource name="sql">
+			<![CDATA[
+SELECT a1, MAX(b1) FROM (SELECT a1, COUNT(DISTINCT b1) as b1 FROM T1 GROUP BY a1) t GROUP BY a1
+]]>
+		</Resource>
+		<Resource name="ast">
+			<![CDATA[
+LogicalAggregate(group=[{0}], EXPR$1=[MAX($1)])
++- LogicalAggregate(group=[{0}], b1=[COUNT(DISTINCT $1)])
+   +- LogicalProject(a1=[$0], b1=[$1])
+      +- LogicalTableScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]])
+]]>
+		</Resource>
+		<Resource name="optimized exec plan">
+			<![CDATA[
+GlobalGroupAggregate(groupBy=[a1], partialFinalType=[FINAL], select=[a1, $SUM0(count$0) AS $f1])
++- Exchange(distribution=[hash[a1]])
+   +- IncrementalGroupAggregate(partialAggGrouping=[a1, $f2], finalAggGrouping=[a1], select=[a1, COUNT(distinct$0 count$0) AS count$0])
+      +- Exchange(distribution=[hash[a1, $f2]])
+         +- LocalGroupAggregate(groupBy=[a1, $f2], partialFinalType=[PARTIAL], select=[a1, $f2, COUNT(distinct$0 b1) AS count$0, DISTINCT(b1) AS distinct$0])
+            +- Calc(select=[a1, b1, MOD(HASH_CODE(b1), 1024) AS $f2])
+               +- MiniBatchAssigner(interval=[1000ms], mode=[ProcTime])
+                  +- LegacyTableSourceScan(table=[[default_catalog, default_database, T1, source: [TestTableSource(a1, b1, c1)]]], fields=[a1, b1, c1])
+]]>
+		</Resource>
+	</TestCase>
+</Root>

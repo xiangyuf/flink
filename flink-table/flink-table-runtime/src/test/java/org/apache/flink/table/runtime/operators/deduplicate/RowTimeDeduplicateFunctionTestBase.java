@@ -29,8 +29,8 @@ import org.apache.flink.table.runtime.operators.bundle.KeyedMapBundleOperator;
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo;
 import org.apache.flink.table.runtime.util.GenericRowRecordSortComparator;
 import org.apache.flink.table.runtime.util.RowDataHarnessAssertor;
-import org.apache.flink.table.types.logical.BigIntType;
 import org.apache.flink.table.types.logical.IntType;
+import org.apache.flink.table.types.logical.TimestampType;
 import org.apache.flink.table.types.logical.VarCharType;
 import org.apache.flink.table.utils.HandwrittenSelectorUtil;
 
@@ -40,7 +40,7 @@ abstract class RowTimeDeduplicateFunctionTestBase {
     protected final long miniBatchSize = 4L;
     protected Time minTtlTime = Time.milliseconds(10);
     protected InternalTypeInfo inputRowType =
-            InternalTypeInfo.ofFields(VarCharType.STRING_TYPE, new IntType(), new BigIntType());
+            InternalTypeInfo.ofFields(VarCharType.STRING_TYPE, new IntType(), new TimestampType(3));
     protected TypeSerializer<RowData> serializer = inputRowType.toSerializer();
     protected int rowTimeIndex = 2;
     protected int rowKeyIndex = 0;

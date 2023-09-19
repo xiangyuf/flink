@@ -256,12 +256,11 @@ LogicalSink(table=[default_catalog.default_database.sink_without_pk], fields=[a,
 Sink(table=[default_catalog.default_database.sink_without_pk], fields=[a, nd, b])
 +- Calc(select=[a, nd, b])
    +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=1], partitionBy=[a], orderBy=[uv DESC], select=[a, uv, b, nd])
-      +- Exchange(distribution=[hash[a]])
-         +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
-            +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
-               +- Exchange(distribution=[hash[a]])
-                  +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
-                     +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
+      +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
+         +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
+            +- Exchange(distribution=[hash[a]])
+               +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
+                  +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -301,12 +300,11 @@ LogicalSink(table=[default_catalog.default_database.sink_without_pk], fields=[a,
 Sink(table=[default_catalog.default_database.sink_without_pk], fields=[a, nd, b])
 +- Calc(select=[a, nd, b])
    +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=1], partitionBy=[a], orderBy=[uv DESC], select=[a, uv, b, nd])
-      +- Exchange(distribution=[hash[a]])
-         +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
-            +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
-               +- Exchange(distribution=[hash[a]])
-                  +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
-                     +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
+      +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
+         +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
+            +- Exchange(distribution=[hash[a]])
+               +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
+                  +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -345,12 +343,11 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
       <![CDATA[
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, uv, b, nd])
 +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=1], partitionBy=[a], orderBy=[uv DESC], select=[a, uv, b, nd])
-   +- Exchange(distribution=[hash[a]])
-      +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
-         +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
-            +- Exchange(distribution=[hash[a]])
-               +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
-                  +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
+   +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
+      +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
+         +- Exchange(distribution=[hash[a]])
+            +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
+               +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -389,12 +386,11 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
       <![CDATA[
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, uv, b, nd])
 +- Rank(strategy=[AppendFastStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=1], partitionBy=[a], orderBy=[uv DESC], select=[a, uv, b, nd])
-   +- Exchange(distribution=[hash[a]])
-      +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
-         +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
-            +- Exchange(distribution=[hash[a]])
-               +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
-                  +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
+   +- Calc(select=[a, w0$o0 AS uv, b, w0$o1 AS nd])
+      +- OverAggregate(partitionBy=[a], orderBy=[proctime ASC], window=[ ROWS BETWEEN 2 PRECEDING AND CURRENT ROW], select=[a, b, proctime, $3, COUNT(DISTINCT b) AS w0$o0, ndAggFunc($3) AS w0$o1])
+         +- Exchange(distribution=[hash[a]])
+            +- Calc(select=[a, b, proctime, CAST(a AS BIGINT) AS $3])
+               +- DataStreamScan(table=[[default_catalog, default_database, T1]], fields=[a, b, c, proctime, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -1249,12 +1245,12 @@ LogicalSink(table=[default_catalog.default_database.sink_without_pk], fields=[a,
       <![CDATA[
 Sink(table=[default_catalog.default_database.sink_without_pk], fields=[a, b, c])
 +- Calc(select=[a, b0 AS b, c])
-   +- Join(joinType=[InnerJoin], where=[((b = b0) AND (proctime > (proctime0 - 5000:INTERVAL SECOND)))], select=[b, c, proctime, a, b0, proctime0], leftInputSpec=[NoUniqueKey], rightInputSpec=[HasUniqueKey])
-      :- Exchange(distribution=[hash[b]])
-      :  +- Calc(select=[b, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+   +- Join(joinType=[InnerJoin], where=[((b = b0) AND (proctime > (proctime0 - 5000:INTERVAL SECOND)))], select=[b, c, proctime, a, b0, proctime0], leftInputSpec=[NoUniqueKey], rightInputSpec=[NoUniqueKey])
+      :- Calc(select=[b, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      :  +- Exchange(distribution=[hash[b]])
       :     +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[b, c], metadata=[]]], fields=[b, c])
-      +- Exchange(distribution=[hash[b]])
-         +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+         +- Exchange(distribution=[hash[b]])
             +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[a, b], metadata=[]]], fields=[a, b])
 ]]>
     </Resource>
@@ -1285,11 +1281,11 @@ LogicalSink(table=[default_catalog.default_database.sink_without_pk], fields=[a,
 Sink(table=[default_catalog.default_database.sink_without_pk], fields=[a, b, c])
 +- Calc(select=[a0 AS a, b, c])
    +- Join(joinType=[InnerJoin], where=[((a = a0) AND (proctime > (proctime0 - 5000:INTERVAL SECOND)))], select=[a, c, proctime, a0, b, proctime0], leftInputSpec=[JoinKeyContainsUniqueKey], rightInputSpec=[JoinKeyContainsUniqueKey])
-      :- Exchange(distribution=[hash[a]])
-      :  +- Calc(select=[a, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      :- Calc(select=[a, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      :  +- Exchange(distribution=[hash[a]])
       :     +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[a, c], metadata=[]]], fields=[a, c])
-      +- Exchange(distribution=[hash[a]])
-         +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+         +- Exchange(distribution=[hash[a]])
             +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[a, b], metadata=[]]], fields=[a, b])
 ]]>
     </Resource>
@@ -1320,11 +1316,11 @@ LogicalSink(table=[default_catalog.default_database.sink_without_pk], fields=[a,
 Sink(table=[default_catalog.default_database.sink_without_pk], fields=[a, b, c])
 +- Calc(select=[a0 AS a, b, c])
    +- Join(joinType=[InnerJoin], where=[((a = a0) AND (proctime > (proctime0 - 5000:INTERVAL SECOND)))], select=[a, c, proctime, a0, b, proctime0], leftInputSpec=[JoinKeyContainsUniqueKey], rightInputSpec=[JoinKeyContainsUniqueKey])
-      :- Exchange(distribution=[hash[a]])
-      :  +- Calc(select=[a, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      :- Calc(select=[a, c, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      :  +- Exchange(distribution=[hash[a]])
       :     +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[a, c], metadata=[]]], fields=[a, c])
-      +- Exchange(distribution=[hash[a]])
-         +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+      +- Calc(select=[a, b, PROCTIME_MATERIALIZE(PROCTIME()) AS proctime])
+         +- Exchange(distribution=[hash[a]])
             +- TableSourceScan(table=[[default_catalog, default_database, cdc, project=[a, b], metadata=[]]], fields=[a, b])
 ]]>
     </Resource>
@@ -2300,8 +2296,8 @@ LogicalSink(table=[default_catalog.default_database.sink2], fields=[a, day, b, c
     </Resource>
     <Resource name="optimized exec plan">
       <![CDATA[
-Exchange(distribution=[hash[a]])(reuse_id=[1])
-+- Calc(select=[a, DATE_FORMAT(CURRENT_TIMESTAMP(), 'yyMMdd') AS day])
+Calc(select=[a, DATE_FORMAT(CURRENT_TIMESTAMP(), 'yyMMdd') AS day])(reuse_id=[1])
++- Exchange(distribution=[hash[a]])
    +- TableSourceScan(table=[[default_catalog, default_database, src1, project=[a], metadata=[]]], fields=[a])
 
 Sink(table=[default_catalog.default_database.sink1], fields=[a, day, EXPR$2, EXPR$3])
@@ -2539,10 +2535,9 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, cnt, c, rn])
 +- Calc(select=[a, cnt, c, rn])
    +- Rank(strategy=[RetractStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=100], partitionBy=[a], orderBy=[cnt DESC], select=[a, c, cnt, rn])
-      +- Exchange(distribution=[hash[a]])
-         +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) AS cnt])
-            +- Exchange(distribution=[hash[a]])
-               +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
+      +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) AS cnt])
+         +- Exchange(distribution=[hash[a]])
+            +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
 ]]>
     </Resource>
   </TestCase>
@@ -2634,10 +2629,9 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, cnt, c, rn])
 +- Calc(select=[a, cnt, c, rn])
    +- Rank(strategy=[RetractStrategy], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=100], partitionBy=[a], orderBy=[cnt DESC], select=[a, c, cnt, rn])
-      +- Exchange(distribution=[hash[a]])
-         +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) AS cnt])
-            +- Exchange(distribution=[hash[a]])
-               +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
+      +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) AS cnt])
+         +- Exchange(distribution=[hash[a]])
+            +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
 ]]>
     </Resource>
   </TestCase>
@@ -2987,11 +2981,10 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, cnt, c, rn])
 +- Calc(select=[a, cnt, c, rn])
    +- Rank(strategy=[UpdateFastStrategy[0]], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=100], partitionBy=[a], orderBy=[cnt DESC], select=[a, c, cnt, rn])
-      +- Exchange(distribution=[hash[a]])
-         +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) FILTER $f3 AS cnt])
+      +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) FILTER $f3 AS cnt])
+         +- Calc(select=[a, c, b, (b > 0) IS TRUE AS $f3])
             +- Exchange(distribution=[hash[a]])
-               +- Calc(select=[a, c, b, (b > 0) IS TRUE AS $f3])
-                  +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
+               +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
 ]]>
     </Resource>
   </TestCase>
@@ -3070,11 +3063,10 @@ LogicalSink(table=[default_catalog.default_database.sink_with_composite_pk], fie
 Sink(table=[default_catalog.default_database.sink_with_composite_pk], fields=[a, cnt, c, rn])
 +- Calc(select=[a, cnt, c, rn])
    +- Rank(strategy=[UpdateFastStrategy[0]], rankType=[ROW_NUMBER], rankRange=[rankStart=1, rankEnd=100], partitionBy=[a], orderBy=[cnt DESC], select=[a, c, cnt, rn])
-      +- Exchange(distribution=[hash[a]])
-         +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) FILTER $f3 AS cnt])
+      +- GroupAggregate(groupBy=[a], select=[a, MAX(c) AS c, SUM(b) FILTER $f3 AS cnt])
+         +- Calc(select=[a, c, b, (b > 0) IS TRUE AS $f3])
             +- Exchange(distribution=[hash[a]])
-               +- Calc(select=[a, c, b, (b > 0) IS TRUE AS $f3])
-                  +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
+               +- TableSourceScan(table=[[default_catalog, default_database, src, project=[a, c, b], metadata=[]]], fields=[a, c, b])
 ]]>
     </Resource>
   </TestCase>

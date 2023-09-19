@@ -26,6 +26,7 @@ import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.data.utils.JoinedRowData;
 import org.apache.flink.table.runtime.dataview.StateDataViewStore;
 import org.apache.flink.table.runtime.generated.GeneratedNamespaceTableAggsHandleFunction;
@@ -182,16 +183,16 @@ public class WindowOperatorTest {
         ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 3999L));
-        testHarness.processElement(insertRecord("key2", 1, 3000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3000L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 20L));
-        testHarness.processElement(insertRecord("key1", 1, 0L));
-        testHarness.processElement(insertRecord("key1", 1, 999L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(20L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(999L)));
 
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
-        testHarness.processElement(insertRecord("key2", 1, 1999L));
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.processWatermark(new Watermark(999));
         expectedOutput.addAll(
@@ -354,7 +355,8 @@ public class WindowOperatorTest {
 
         // timestamp is ignored in processing time
         testHarness.setProcessingTime(3);
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(1000);
 
@@ -372,8 +374,10 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(2000);
 
@@ -390,8 +394,10 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(3000);
 
@@ -419,9 +425,12 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(7000);
 
@@ -498,16 +507,16 @@ public class WindowOperatorTest {
         ConcurrentLinkedQueue<Object> expectedOutput = new ConcurrentLinkedQueue<>();
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 2999L));
-        testHarness.processElement(insertRecord("key2", 1, 3000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(2999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3000L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 20L));
-        testHarness.processElement(insertRecord("key1", 1, 0L));
-        testHarness.processElement(insertRecord("key1", 1, 999L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(20L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(999L)));
 
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
-        testHarness.processElement(insertRecord("key2", 1, 1999L));
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.processWatermark(new Watermark(999));
         expectedOutput.addAll(
@@ -668,14 +677,14 @@ public class WindowOperatorTest {
 
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key2", 1, 500L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(500L)));
         testHarness.processWatermark(new Watermark(1500));
 
         expectedOutput.add(
                 insertRecord("key2", 1L, 1L, localMills(0L), localMills(1000L), localMills(999L)));
         expectedOutput.add(new Watermark(1500));
 
-        testHarness.processElement(insertRecord("key2", 1, 1300L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1300L)));
         testHarness.processWatermark(new Watermark(2300));
 
         expectedOutput.add(
@@ -684,7 +693,7 @@ public class WindowOperatorTest {
 
         // this will not be dropped because window.maxTimestamp() + allowedLateness >
         // currentWatermark
-        testHarness.processElement(insertRecord("key2", 1, 1997L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1997L)));
         testHarness.processWatermark(new Watermark(6000));
 
         // this is 1 and not 3 because the trigger fires and purges
@@ -699,7 +708,7 @@ public class WindowOperatorTest {
         expectedOutput.add(new Watermark(6000));
 
         // this will be dropped because window.maxTimestamp() + allowedLateness < currentWatermark
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
         testHarness.processWatermark(new Watermark(7000));
 
         expectedOutput.add(new Watermark(7000));
@@ -738,7 +747,8 @@ public class WindowOperatorTest {
 
         // timestamp is ignored in processing time
         testHarness.setProcessingTime(3);
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(1000);
 
@@ -756,8 +766,10 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(2000);
 
@@ -774,8 +786,10 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(3000);
 
@@ -803,9 +817,12 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key1", 1, Long.MAX_VALUE));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(
+                insertRecord("key1", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
 
         testHarness.setProcessingTime(7000);
 
@@ -902,16 +919,16 @@ public class WindowOperatorTest {
         testHarness.open();
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 3999L));
-        testHarness.processElement(insertRecord("key2", 1, 3000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3000L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 20L));
-        testHarness.processElement(insertRecord("key1", 1, 0L));
-        testHarness.processElement(insertRecord("key1", 1, 999L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(20L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(999L)));
 
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
-        testHarness.processElement(insertRecord("key2", 1, 1999L));
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.processWatermark(new Watermark(999));
         expectedOutput.add(new Watermark(999));
@@ -1032,17 +1049,17 @@ public class WindowOperatorTest {
         testHarness.setProcessingTime(0L);
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 3999L));
-        testHarness.processElement(insertRecord("key2", 1, 3000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3000L)));
 
         testHarness.setProcessingTime(1L);
-        testHarness.processElement(insertRecord("key1", 1, 20L));
-        testHarness.processElement(insertRecord("key1", 1, 0L));
-        testHarness.processElement(insertRecord("key1", 1, 999L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(20L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(999L)));
 
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
-        testHarness.processElement(insertRecord("key2", 1, 1999L));
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.setProcessingTime(1000);
         expectedOutput.add(
@@ -1084,7 +1101,7 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 1, 4999L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(4999L)));
         testHarness.processWatermark(new Watermark(3999));
         testHarness.setProcessingTime(4001);
         expectedOutput.add(new Watermark(3999));
@@ -1098,14 +1115,14 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         // late arrival
-        testHarness.processElement(insertRecord("key2", 1, 2001L));
-        testHarness.processElement(insertRecord("key1", 1, 2030L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(2001L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(2030L)));
         // drop late elements
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         testHarness.setProcessingTime(5100);
-        testHarness.processElement(insertRecord("key2", 1, 5122L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(5122L)));
         testHarness.processWatermark(new Watermark(4999));
         expectedOutput.add(new Watermark(4999));
         assertor.assertOutputEqualsSorted(
@@ -1136,8 +1153,8 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         // late arrival, drop
-        testHarness.processElement(insertRecord("key2", 1, 2877L));
-        testHarness.processElement(insertRecord("key1", 1, 2899L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(2877L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(2899L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
@@ -1182,17 +1199,17 @@ public class WindowOperatorTest {
         testHarness.setProcessingTime(0L);
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 3999L));
-        testHarness.processElement(insertRecord("key2", 1, 3000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(3000L)));
 
         testHarness.setProcessingTime(1L);
-        testHarness.processElement(insertRecord("key1", 1, 20L));
-        testHarness.processElement(insertRecord("key1", 1, 0L));
-        testHarness.processElement(insertRecord("key1", 1, 999L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(20L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(999L)));
 
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
-        testHarness.processElement(insertRecord("key2", 1, 1999L));
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1999L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.setProcessingTime(1000);
         expectedOutput.add(
@@ -1235,7 +1252,7 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 1, 4999L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(4999L)));
         testHarness.processWatermark(new Watermark(3999));
         testHarness.setProcessingTime(4001);
         expectedOutput.add(new Watermark(3999));
@@ -1249,7 +1266,7 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         // late arrival
-        testHarness.processElement(insertRecord("key2", 1, 2001L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(2001L)));
         expectedOutput.add(
                 updateBeforeRecord(
                         "key2", 3L, 3L, localMills(0L), localMills(3000L), localMills(2999L)));
@@ -1260,7 +1277,7 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         // late arrival
-        testHarness.processElement(insertRecord("key1", 1, 2030L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(2030L)));
         expectedOutput.add(
                 updateBeforeRecord(
                         "key1", 3L, 3L, localMills(0L), localMills(3000L), localMills(2999L)));
@@ -1271,7 +1288,7 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         testHarness.setProcessingTime(5100);
-        testHarness.processElement(insertRecord("key2", 1, 5122L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(5122L)));
         testHarness.processWatermark(new Watermark(4999));
         expectedOutput.add(new Watermark(4999));
         assertor.assertOutputEqualsSorted(
@@ -1302,8 +1319,8 @@ public class WindowOperatorTest {
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
         // late arrival, but too late, drop
-        testHarness.processElement(insertRecord("key2", 1, 2877L));
-        testHarness.processElement(insertRecord("key1", 1, 2899L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(2877L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(2899L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
@@ -1341,12 +1358,13 @@ public class WindowOperatorTest {
         testHarness.setProcessingTime(3);
 
         // timestamp is ignored in processing time
-        testHarness.processElement(insertRecord("key2", 1, Long.MAX_VALUE));
-        testHarness.processElement(insertRecord("key2", 1, 7000L));
-        testHarness.processElement(insertRecord("key2", 1, 7000L));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(Long.MAX_VALUE)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(7000L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(7000L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 7000L));
-        testHarness.processElement(insertRecord("key1", 1, 7000L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(7000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(7000L)));
 
         testHarness.setProcessingTime(5000);
 
@@ -1374,9 +1392,9 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 1, 7000L));
-        testHarness.processElement(insertRecord("key1", 1, 7000L));
-        testHarness.processElement(insertRecord("key1", 1, 7000L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(7000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(7000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(7000L)));
 
         testHarness.setProcessingTime(7000);
 
@@ -1424,12 +1442,12 @@ public class WindowOperatorTest {
         testHarness.open();
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 0L));
-        testHarness.processElement(insertRecord("key2", 2, 1000L));
-        testHarness.processElement(insertRecord("key2", 3, 2500L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key2", 2, TimestampData.fromEpochMillis(1000L)));
+        testHarness.processElement(insertRecord("key2", 3, TimestampData.fromEpochMillis(2500L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 10L));
-        testHarness.processElement(insertRecord("key1", 2, 1000L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(10L)));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(1000L)));
 
         // do a snapshot, close and restore again
         OperatorSubtaskState snapshotV2 = testHarness.snapshot(0L, 0);
@@ -1443,12 +1461,12 @@ public class WindowOperatorTest {
 
         assertThat(operator.getWatermarkLatency().getValue()).isEqualTo(0L);
 
-        testHarness.processElement(insertRecord("key1", 3, 2500L));
+        testHarness.processElement(insertRecord("key1", 3, TimestampData.fromEpochMillis(2500L)));
 
-        testHarness.processElement(insertRecord("key2", 4, 5501L));
-        testHarness.processElement(insertRecord("key2", 5, 6000L));
-        testHarness.processElement(insertRecord("key2", 5, 6000L));
-        testHarness.processElement(insertRecord("key2", 6, 6050L));
+        testHarness.processElement(insertRecord("key2", 4, TimestampData.fromEpochMillis(5501L)));
+        testHarness.processElement(insertRecord("key2", 5, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 5, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 6, TimestampData.fromEpochMillis(6050L)));
 
         testHarness.processWatermark(new Watermark(12000));
 
@@ -1486,9 +1504,9 @@ public class WindowOperatorTest {
         expectedOutput.add(new Watermark(12000));
 
         // add a late data
-        testHarness.processElement(insertRecord("key1", 3, 4000L));
-        testHarness.processElement(insertRecord("key2", 10, 15000L));
-        testHarness.processElement(insertRecord("key2", 20, 15000L));
+        testHarness.processElement(insertRecord("key1", 3, TimestampData.fromEpochMillis(4000L)));
+        testHarness.processElement(insertRecord("key2", 10, TimestampData.fromEpochMillis(15000L)));
+        testHarness.processElement(insertRecord("key2", 20, TimestampData.fromEpochMillis(15000L)));
 
         testHarness.processWatermark(new Watermark(17999));
 
@@ -1548,10 +1566,10 @@ public class WindowOperatorTest {
 
         // timestamp is ignored in processing time
         testHarness.setProcessingTime(3);
-        testHarness.processElement(insertRecord("key2", 1, 1L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1L)));
 
         testHarness.setProcessingTime(1000);
-        testHarness.processElement(insertRecord("key2", 1, 1002L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1002L)));
 
         testHarness.setProcessingTime(5000);
 
@@ -1569,11 +1587,11 @@ public class WindowOperatorTest {
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 1, 5000L));
-        testHarness.processElement(insertRecord("key2", 1, 5000L));
-        testHarness.processElement(insertRecord("key1", 1, 5000L));
-        testHarness.processElement(insertRecord("key1", 1, 5000L));
-        testHarness.processElement(insertRecord("key1", 1, 5000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(5000L)));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(5000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(5000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(5000L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(5000L)));
 
         testHarness.setProcessingTime(10000);
 
@@ -1637,8 +1655,8 @@ public class WindowOperatorTest {
         testHarness.open();
 
         // add elements out-of-order
-        testHarness.processElement(insertRecord("key2", 1, 0L));
-        testHarness.processElement(insertRecord("key2", 33, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key2", 33, TimestampData.fromEpochMillis(1000L)));
 
         // do a snapshot, close and restore again
         OperatorSubtaskState snapshot = testHarness.snapshot(0L, 0);
@@ -1649,11 +1667,11 @@ public class WindowOperatorTest {
         testHarness.initializeState(snapshot);
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key2", 33, 2500L));
+        testHarness.processElement(insertRecord("key2", 33, TimestampData.fromEpochMillis(2500L)));
 
-        testHarness.processElement(insertRecord("key1", 1, 10L));
-        testHarness.processElement(insertRecord("key1", 2, 1000L));
-        testHarness.processElement(insertRecord("key1", 33, 2500L));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(10L)));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(1000L)));
+        testHarness.processElement(insertRecord("key1", 33, TimestampData.fromEpochMillis(2500L)));
 
         testHarness.processWatermark(new Watermark(12000));
 
@@ -1712,12 +1730,12 @@ public class WindowOperatorTest {
 
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key2", 1, 500L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(500L)));
         testHarness.processWatermark(new Watermark(1500));
 
         expectedOutput.add(new Watermark(1500));
 
-        testHarness.processElement(insertRecord("key2", 1, 1300L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1300L)));
         testHarness.processWatermark(new Watermark(2300));
 
         expectedOutput.add(
@@ -1726,7 +1744,7 @@ public class WindowOperatorTest {
 
         // this will not be dropped because window.maxTimestamp() + allowedLateness >
         // currentWatermark
-        testHarness.processElement(insertRecord("key2", 1, 1997L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1997L)));
         testHarness.processWatermark(new Watermark(6000));
 
         // this is 1 and not 3 because the trigger fires and purges
@@ -1739,7 +1757,7 @@ public class WindowOperatorTest {
         expectedOutput.add(new Watermark(6000));
 
         // this will be dropped because window.maxTimestamp() + allowedLateness < currentWatermark
-        testHarness.processElement(insertRecord("key2", 1, 1998L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1998L)));
         testHarness.processWatermark(new Watermark(7000));
 
         expectedOutput.add(new Watermark(7000));
@@ -1780,7 +1798,7 @@ public class WindowOperatorTest {
         ConcurrentLinkedQueue<Object> expected = new ConcurrentLinkedQueue<>();
 
         // normal element
-        testHarness.processElement(insertRecord("key2", 1, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(1000L)));
         testHarness.processWatermark(new Watermark(1599));
         testHarness.processWatermark(new Watermark(1999));
         testHarness.processWatermark(new Watermark(2000));
@@ -1835,7 +1853,8 @@ public class WindowOperatorTest {
                 windowAssigner.assignWindows(GenericRowData.of(fromString("key2"), 1), timestamp);
         TimeWindow window = windows.iterator().next();
 
-        testHarness.processElement(insertRecord("key2", 1, timestamp));
+        testHarness.processElement(
+                insertRecord("key2", 1, TimestampData.fromEpochMillis(timestamp)));
 
         // the garbage collection timer would wrap-around
         assertThat(window.maxTimestamp() + lateness).isLessThan(window.maxTimestamp());
@@ -1894,11 +1913,11 @@ public class WindowOperatorTest {
 
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key2", 1, 0L));
-        testHarness.processElement(insertRecord("key2", 2, 1000L));
-        testHarness.processElement(insertRecord("key2", 3, 2500L));
-        testHarness.processElement(insertRecord("key1", 1, 10L));
-        testHarness.processElement(insertRecord("key1", 2, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key2", 2, TimestampData.fromEpochMillis(1000L)));
+        testHarness.processElement(insertRecord("key2", 3, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(10L)));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.processWatermark(new Watermark(12000));
         testHarness.setProcessingTime(12000L);
@@ -1917,29 +1936,29 @@ public class WindowOperatorTest {
         testHarness.initializeState(snapshotV2);
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 2, 2500L));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(2500L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key1", 5L, 3L, 0L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 4, 5501L));
-        testHarness.processElement(insertRecord("key2", 5, 6000L));
-        testHarness.processElement(insertRecord("key2", 5, 6000L));
-        testHarness.processElement(insertRecord("key2", 6, 6050L));
+        testHarness.processElement(insertRecord("key2", 4, TimestampData.fromEpochMillis(5501L)));
+        testHarness.processElement(insertRecord("key2", 5, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 5, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 6, TimestampData.fromEpochMillis(6050L)));
 
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key2", 14L, 3L, 1L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 3, 4000L));
-        testHarness.processElement(insertRecord("key2", 10, 15000L));
-        testHarness.processElement(insertRecord("key2", 20, 15000L));
+        testHarness.processElement(insertRecord("key1", 3, TimestampData.fromEpochMillis(4000L)));
+        testHarness.processElement(insertRecord("key2", 10, TimestampData.fromEpochMillis(15000L)));
+        testHarness.processElement(insertRecord("key2", 20, TimestampData.fromEpochMillis(15000L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key2", 36L, 3L, 2L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 2, 2500L));
-        testHarness.processElement(insertRecord("key1", 2, 2500L));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(2500L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key1", 7L, 3L, 1L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
@@ -1979,13 +1998,13 @@ public class WindowOperatorTest {
 
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key2", 1, 0L));
-        testHarness.processElement(insertRecord("key2", 2, 1000L));
-        testHarness.processElement(insertRecord("key2", 3, 2500L));
-        testHarness.processElement(insertRecord("key2", 4, 2500L));
-        testHarness.processElement(insertRecord("key2", 5, 2500L));
-        testHarness.processElement(insertRecord("key1", 1, 10L));
-        testHarness.processElement(insertRecord("key1", 2, 1000L));
+        testHarness.processElement(insertRecord("key2", 1, TimestampData.fromEpochMillis(0L)));
+        testHarness.processElement(insertRecord("key2", 2, TimestampData.fromEpochMillis(1000L)));
+        testHarness.processElement(insertRecord("key2", 3, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key2", 4, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key2", 5, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key1", 1, TimestampData.fromEpochMillis(10L)));
+        testHarness.processElement(insertRecord("key1", 2, TimestampData.fromEpochMillis(1000L)));
 
         testHarness.processWatermark(new Watermark(12000));
         testHarness.setProcessingTime(12000L);
@@ -2004,26 +2023,26 @@ public class WindowOperatorTest {
         testHarness.initializeState(snapshotV2);
         testHarness.open();
 
-        testHarness.processElement(insertRecord("key1", 3, 2500L));
-        testHarness.processElement(insertRecord("key1", 4, 2500L));
-        testHarness.processElement(insertRecord("key1", 5, 2500L));
+        testHarness.processElement(insertRecord("key1", 3, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key1", 4, TimestampData.fromEpochMillis(2500L)));
+        testHarness.processElement(insertRecord("key1", 5, TimestampData.fromEpochMillis(2500L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key1", 15L, 5L, 0L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key2", 6, 6000L));
-        testHarness.processElement(insertRecord("key2", 7, 6000L));
-        testHarness.processElement(insertRecord("key2", 8, 6050L));
-        testHarness.processElement(insertRecord("key2", 9, 6050L));
+        testHarness.processElement(insertRecord("key2", 6, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 7, TimestampData.fromEpochMillis(6000L)));
+        testHarness.processElement(insertRecord("key2", 8, TimestampData.fromEpochMillis(6050L)));
+        testHarness.processElement(insertRecord("key2", 9, TimestampData.fromEpochMillis(6050L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key2", 30L, 5L, 1L)));
         assertor.assertOutputEqualsSorted(
                 "Output was not correct.", expectedOutput, testHarness.getOutput());
 
-        testHarness.processElement(insertRecord("key1", 6, 4000L));
-        testHarness.processElement(insertRecord("key1", 7, 4000L));
-        testHarness.processElement(insertRecord("key1", 8, 4000L));
-        testHarness.processElement(insertRecord("key2", 10, 15000L));
-        testHarness.processElement(insertRecord("key2", 11, 15000L));
+        testHarness.processElement(insertRecord("key1", 6, TimestampData.fromEpochMillis(4000L)));
+        testHarness.processElement(insertRecord("key1", 7, TimestampData.fromEpochMillis(4000L)));
+        testHarness.processElement(insertRecord("key1", 8, TimestampData.fromEpochMillis(4000L)));
+        testHarness.processElement(insertRecord("key2", 10, TimestampData.fromEpochMillis(15000L)));
+        testHarness.processElement(insertRecord("key2", 11, TimestampData.fromEpochMillis(15000L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key1", 30L, 5L, 1L)));
         expectedOutput.addAll(doubleRecord(isTableAggregate, insertRecord("key2", 45L, 5L, 2L)));
         assertor.assertOutputEqualsSorted(

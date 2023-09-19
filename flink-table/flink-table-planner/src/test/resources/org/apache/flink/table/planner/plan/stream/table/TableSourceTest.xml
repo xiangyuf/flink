@@ -42,8 +42,8 @@ LogicalFilter(condition=[>($2, 100)])
       <![CDATA[
 Calc(select=[id, name, w0$o0 AS valSum], where=[(w0$o0 > 100)])
 +- OverAggregate(partitionBy=[id], orderBy=[$3 ASC], window=[ RANG BETWEEN 7200000 PRECEDING AND CURRENT ROW], select=[id, val, name, $3, SUM(val) AS w0$o0])
-   +- Exchange(distribution=[hash[id]])
-      +- Calc(select=[id, val, name, PROCTIME() AS $3])
+   +- Calc(select=[id, val, name, PROCTIME() AS $3])
+      +- Exchange(distribution=[hash[id]])
          +- TableSourceScan(table=[[default_catalog, default_database, procTimeT]], fields=[id, val, name])
 ]]>
     </Resource>

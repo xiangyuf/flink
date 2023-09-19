@@ -21,7 +21,7 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.logical.{TimeAttributeWindowingStrategy, WindowAttachedWindowingStrategy, WindowingStrategy}
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecLocalWindowAggregate
-import org.apache.flink.table.planner.plan.rules.physical.stream.TwoStageOptimizedWindowAggregateRule
+import org.apache.flink.table.planner.plan.rules.physical.stream.StreamPhysicalWindowAggregateRule
 import org.apache.flink.table.planner.plan.utils.{AggregateUtil, RelExplainUtil, WindowUtil}
 import org.apache.flink.table.planner.plan.utils.WindowUtil.checkEmitConfiguration
 import org.apache.flink.table.planner.utils.ShortcutUtils.{unwrapTableConfig, unwrapTypeFactory}
@@ -41,10 +41,10 @@ import scala.collection.JavaConverters._
  * Streaming local window aggregate physical node.
  *
  * <p>This is a local-aggregation node optimized from [[StreamPhysicalWindowAggregate]] after
- * [[TwoStageOptimizedWindowAggregateRule]] optimization.
+ * [[StreamPhysicalWindowAggregateRule]] optimization.
  *
  * @see
- *   [[TwoStageOptimizedWindowAggregateRule]]
+ *   [[StreamPhysicalWindowAggregateRule]]
  * @see
  *   [[StreamPhysicalWindowAggregate]]
  */

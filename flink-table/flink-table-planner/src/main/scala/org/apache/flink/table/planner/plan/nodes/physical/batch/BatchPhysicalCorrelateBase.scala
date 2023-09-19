@@ -19,14 +19,13 @@ package org.apache.flink.table.planner.plan.nodes.physical.batch
 
 import org.apache.flink.table.planner.plan.`trait`.{FlinkRelDistribution, FlinkRelDistributionTraitDef, TraitUtil}
 import org.apache.flink.table.planner.plan.nodes.logical.FlinkLogicalTableFunctionScan
-import org.apache.flink.table.planner.plan.utils.RelExplainUtil
+import org.apache.flink.table.planner.plan.utils.{FlinkRexUtil, RelExplainUtil}
 
 import org.apache.calcite.plan.{RelOptCluster, RelOptRule, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelCollationTraitDef, RelDistribution, RelFieldCollation, RelNode, RelWriter, SingleRel}
 import org.apache.calcite.rel.core.{Correlate, JoinRelType}
 import org.apache.calcite.rex.{RexCall, RexNode}
-import org.apache.calcite.util.mapping.{Mapping, Mappings, MappingType}
 
 import scala.collection.JavaConversions._
 
@@ -78,14 +77,7 @@ abstract class BatchPhysicalCorrelateBase(
       return None
     }
 
-    def getOutputInputMapping: Mapping = {
-      val inputFieldCnt = getInput.getRowType.getFieldCount
-      val mapping = Mappings.create(MappingType.FUNCTION, inputFieldCnt, inputFieldCnt)
-      (0 until inputFieldCnt).foreach(index => mapping.set(index, index))
-      mapping
-    }
-
-    val mapping = getOutputInputMapping
+    val mapping = FlinkRexUtil.getOutputInputMapping(getInput.getRowType.getFieldCount)
     val appliedDistribution = requiredDistribution.apply(mapping)
     // If both distribution and collation can be satisfied, satisfy both. If only distribution
     // can be satisfied, only satisfy distribution. There is no possibility to only satisfy

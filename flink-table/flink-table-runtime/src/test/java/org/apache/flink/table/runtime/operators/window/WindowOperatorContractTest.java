@@ -24,6 +24,7 @@ import org.apache.flink.streaming.util.KeyedOneInputStreamOperatorTestHarness;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.table.data.GenericRowData;
 import org.apache.flink.table.data.RowData;
+import org.apache.flink.table.data.TimestampData;
 import org.apache.flink.table.runtime.generated.NamespaceAggsHandleFunction;
 import org.apache.flink.table.runtime.generated.NamespaceAggsHandleFunctionBase;
 import org.apache.flink.table.runtime.generated.NamespaceTableAggsHandleFunction;
@@ -81,13 +82,15 @@ public class WindowOperatorContractTest {
         when(mockAssigner.assignWindows(any(), anyLong()))
                 .thenReturn(Collections.singletonList(new TimeWindow(0, 0)));
 
-        testHarness.processElement(insertRecord("String", 1, 0L));
+        testHarness.processElement(insertRecord("String", 1, TimestampData.fromEpochMillis(0L)));
 
-        verify(mockAssigner, times(1)).assignWindows(eq(row("String", 1, 0L)), eq(0L));
+        verify(mockAssigner, times(1))
+                .assignWindows(eq(row("String", 1, TimestampData.fromEpochMillis(0L))), eq(0L));
 
-        testHarness.processElement(insertRecord("String", 1, 0L));
+        testHarness.processElement(insertRecord("String", 1, TimestampData.fromEpochMillis(0L)));
 
-        verify(mockAssigner, times(2)).assignWindows(eq(row("String", 1, 0L)), eq(0L));
+        verify(mockAssigner, times(2))
+                .assignWindows(eq(row("String", 1, TimestampData.fromEpochMillis(0L))), eq(0L));
     }
 
     @Test
@@ -106,7 +109,7 @@ public class WindowOperatorContractTest {
 
         shouldFireOnElement(mockTrigger);
 
-        testHarness.processElement(insertRecord("String", 1, 0L));
+        testHarness.processElement(insertRecord("String", 1, TimestampData.fromEpochMillis(0L)));
 
         verify(mockAggregate, times(2)).getValue(anyTimeWindow());
         verify(mockAggregate, times(1)).getValue(eq(new TimeWindow(0, 2)));
@@ -129,7 +132,7 @@ public class WindowOperatorContractTest {
 
         shouldFireOnElement(mockTrigger);
 
-        testHarness.processElement(insertRecord("String", 1, 0L));
+        testHarness.processElement(insertRecord("String", 1, TimestampData.fromEpochMillis(0L)));
 
         verify(mockAggregate, times(2)).emitValue(anyTimeWindow(), any(), any());
         verify(mockAggregate, times(1)).emitValue(eq(new TimeWindow(0, 2)), any(), any());
@@ -151,10 +154,18 @@ public class WindowOperatorContractTest {
         when(mockAssigner.assignWindows(anyGenericRow(), anyLong()))
                 .thenReturn(Arrays.asList(new TimeWindow(2, 4), new TimeWindow(0, 2)));
 
-        testHarness.processElement(insertRecord("String", 42, 1L));
+        testHarness.processElement(insertRecord("String", 42, TimestampData.fromEpochMillis(1L)));
 
-        verify(mockTrigger).onElement(eq(row("String", 42, 1L)), eq(1L), eq(new TimeWindow(2, 4)));
-        verify(mockTrigger).onElement(eq(row("String", 42, 1L)), eq(1L), eq(new TimeWindow(0, 2)));
+        verify(mockTrigger)
+                .onElement(
+                        eq(row("String", 42, TimestampData.fromEpochMillis(1L))),
+                        eq(1L),
+                        eq(new TimeWindow(2, 4)));
+        verify(mockTrigger)
+                .onElement(
+                        eq(row("String", 42, TimestampData.fromEpochMillis(1L))),
+                        eq(1L),
+                        eq(new TimeWindow(0, 2)));
         verify(mockTrigger, times(2)).onElement(any(), anyLong(), anyTimeWindow());
     }
 
@@ -174,7 +185,7 @@ public class WindowOperatorContractTest {
 
         assertThat(testHarness.getOutput()).isEmpty();
 
-        testHarness.processElement(insertRecord("String", 42, 0L));
+        testHarness.processElement(insertRecord("String", 42, TimestampData.fromEpochMillis(0L)));
 
         verify(mockAssigner).mergeWindows(eq(new TimeWindow(2, 4)), any(), anyMergeCallback());
         verify(mockAssigner).mergeWindows(eq(new TimeWindow(0, 2)), any(), anyMergeCallback());

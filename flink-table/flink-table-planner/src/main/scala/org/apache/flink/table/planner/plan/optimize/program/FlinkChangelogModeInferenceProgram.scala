@@ -167,9 +167,15 @@ class FlinkChangelogModeInferenceProgram extends FlinkOptimizeProgram[StreamOpti
         }
         createNewNode(deduplicate, children, providedTrait, requiredTrait, requester)
 
-      case agg: StreamPhysicalGroupAggregate =>
+      case agg: StreamPhysicalLocalGroupAggregate =>
+        // aggregate supports consuming all changes
+        val children = visitChildren(rel, ModifyKindSetTrait.ALL_CHANGES)
+        // local aggregate will only produce insert-only accumulators.
+        createNewNode(agg, children, ModifyKindSetTrait.INSERT_ONLY, requiredTrait, requester)
+
+      case _: StreamPhysicalGroupAggregate | _: StreamPhysicalPythonGroupAggregate =>
         // agg support all changes in input
-        val children = visitChildren(agg, ModifyKindSetTrait.ALL_CHANGES)
+        val children = visitChildren(rel, ModifyKindSetTrait.ALL_CHANGES)
         val inputModifyKindSet = getModifyKindSet(children.head)
         val builder = ModifyKindSet
           .newBuilder()
@@ -182,30 +188,38 @@ class FlinkChangelogModeInferenceProgram extends FlinkOptimizeProgram[StreamOpti
           builder.addContainedKind(ModifyKind.DELETE)
         }
         val providedTrait = new ModifyKindSetTrait(builder.build())
-        createNewNode(agg, children, providedTrait, requiredTrait, requester)
+        createNewNode(rel, children, providedTrait, requiredTrait, requester)
+
+      case _: StreamPhysicalGlobalGroupAggregate =>
+        // agg support all changes in input
+        val children = visitChildren(rel, ModifyKindSetTrait.ALL_CHANGES)
+        // ignore the exchange and local aggregate node.
+        val realInput = children.head match {
+          case exchange: StreamPhysicalExchange => exchange.getInput.getInput(0)
+          case localAgg: StreamPhysicalLocalGroupAggregate => localAgg.getInput
+          case other =>
+            throw new UnsupportedOperationException(
+              s"Unsupported input of GlobalAggregate: ${other.getDigest}.")
+        }
+        val inputModifyKindSet = getModifyKindSet(realInput)
+        val builder = ModifyKindSet
+          .newBuilder()
+          .addContainedKind(ModifyKind.INSERT)
+          .addContainedKind(ModifyKind.UPDATE)
+        if (
+          inputModifyKindSet.contains(ModifyKind.UPDATE) ||
+          inputModifyKindSet.contains(ModifyKind.DELETE)
+        ) {
+          builder.addContainedKind(ModifyKind.DELETE)
+        }
+        val providedTrait = new ModifyKindSetTrait(builder.build())
+        createNewNode(rel, children, providedTrait, requiredTrait, requester)
 
       case tagg: StreamPhysicalGroupTableAggregateBase =>
         // table agg support all changes in input
         val children = visitChildren(tagg, ModifyKindSetTrait.ALL_CHANGES)
         // table aggregate will produce all changes, including deletions
         createNewNode(tagg, children, ModifyKindSetTrait.ALL_CHANGES, requiredTrait, requester)
-
-      case agg: StreamPhysicalPythonGroupAggregate =>
-        // agg support all changes in input
-        val children = visitChildren(agg, ModifyKindSetTrait.ALL_CHANGES)
-        val inputModifyKindSet = getModifyKindSet(children.head)
-        val builder = ModifyKindSet
-          .newBuilder()
-          .addContainedKind(ModifyKind.INSERT)
-          .addContainedKind(ModifyKind.UPDATE)
-        if (
-          inputModifyKindSet.contains(ModifyKind.UPDATE) ||
-          inputModifyKindSet.contains(ModifyKind.DELETE)
-        ) {
-          builder.addContainedKind(ModifyKind.DELETE)
-        }
-        val providedTrait = new ModifyKindSetTrait(builder.build())
-        createNewNode(agg, children, providedTrait, requiredTrait, requester)
 
       case window: StreamPhysicalGroupWindowAggregateBase =>
         // WindowAggregate and WindowTableAggregate support all changes in input
@@ -220,7 +234,8 @@ class FlinkChangelogModeInferenceProgram extends FlinkOptimizeProgram[StreamOpti
         createNewNode(window, children, providedTrait, requiredTrait, requester)
 
       case _: StreamPhysicalWindowAggregate | _: StreamPhysicalWindowRank |
-          _: StreamPhysicalWindowDeduplicate =>
+          _: StreamPhysicalWindowDeduplicate | _: StreamPhysicalLocalWindowAggregate |
+          _: StreamPhysicalGlobalWindowAggregate =>
         // WindowAggregate, WindowRank, WindowDeduplicate support insert-only in input
         val children = visitChildren(rel, ModifyKindSetTrait.INSERT_ONLY)
         val providedTrait = ModifyKindSetTrait.INSERT_ONLY
@@ -483,11 +498,64 @@ class FlinkChangelogModeInferenceProgram extends FlinkOptimizeProgram[StreamOpti
           // use requiredTrait as providedTrait, because they should support all kinds of UpdateKind
           createNewNode(rel, children, requiredTrait)
 
+        case agg: StreamPhysicalGlobalGroupAggregate =>
+          // global aggregate requires nothing as local aggregate will require the correct UpdateKind.
+          visitChildren(rel, UpdateKindTrait.NONE) match {
+            case None =>
+              None
+            case Some(children) =>
+              // ignore the exchange and local aggregate node.
+              val realInput = agg.getInput match {
+                case exchange: StreamPhysicalExchange => exchange.getInput.getInput(0)
+                case localAgg: StreamPhysicalLocalGroupAggregate => localAgg.getInput
+                case other =>
+                  throw new UnsupportedOperationException(
+                    s"Unsupported input of GlobalAggregate: ${other.getDigest}.")
+              }
+              val needRetraction =
+                !ChangelogPlanUtils.isInsertOnly(realInput.asInstanceOf[StreamPhysicalRel])
+              val fmq = FlinkRelMetadataQuery.reuseOrCreate(agg.getCluster.getMetadataQuery)
+              val monotonicity = fmq.getRelModifiedMonotonicity(agg)
+              val aggCallNeedRetractions = AggregateUtil.deriveAggCallNeedRetractions(
+                agg.grouping.length,
+                agg.aggCalls,
+                needRetraction,
+                monotonicity)
+              // input should also be updated here to ensure the digest of newAgg is up to date.
+              val newAgg =
+                agg.updateNeedRetraction(children, needRetraction, aggCallNeedRetractions)
+              createNewNode(newAgg, children, requiredTrait)
+          }
+
+        case localAgg: StreamPhysicalLocalGroupAggregate =>
+          // Aggregate requires update_before if there are updates
+          val requiredChildTrait = beforeAfterOrNone(getModifyKindSet(localAgg.getInput))
+          visitChildren(rel, requiredChildTrait) match {
+            case None =>
+              None
+            case Some(children) =>
+              // ignore the exchange and local aggregate node.
+              val realInput = localAgg.getInput
+              val needRetraction =
+                !ChangelogPlanUtils.isInsertOnly(realInput.asInstanceOf[StreamPhysicalRel])
+              val fmq = FlinkRelMetadataQuery.reuseOrCreate(localAgg.getCluster.getMetadataQuery)
+              val monotonicity = fmq.getRelModifiedMonotonicity(localAgg)
+              val aggCallNeedRetractions = AggregateUtil.deriveAggCallNeedRetractions(
+                localAgg.grouping.length,
+                localAgg.aggCalls,
+                needRetraction,
+                monotonicity)
+              val newAgg =
+                localAgg.updateNeedRetraction(children, needRetraction, aggCallNeedRetractions)
+              createNewNode(newAgg, children, requiredTrait)
+          }
+
         case _: StreamPhysicalWindowAggregate | _: StreamPhysicalWindowRank |
             _: StreamPhysicalWindowDeduplicate | _: StreamPhysicalDeduplicate |
             _: StreamPhysicalTemporalSort | _: StreamPhysicalMatch |
             _: StreamPhysicalOverAggregate | _: StreamPhysicalIntervalJoin |
-            _: StreamPhysicalPythonOverAggregate | _: StreamPhysicalWindowJoin =>
+            _: StreamPhysicalPythonOverAggregate | _: StreamPhysicalWindowJoin |
+            _: StreamPhysicalLocalWindowAggregate | _: StreamPhysicalGlobalWindowAggregate =>
           // WindowAggregate, WindowTableAggregate, WindowRank, WindowDeduplicate, Deduplicate,
           // TemporalSort, CEP, OverAggregate, and IntervalJoin, WindowJoin require nothing about
           // UpdateKind.
@@ -741,23 +809,30 @@ class FlinkChangelogModeInferenceProgram extends FlinkOptimizeProgram[StreamOpti
       case None =>
         None
       case Some(children) =>
-        val modifyKindSetTrait = node.getTraitSet.getTrait(ModifyKindSetTraitDef.INSTANCE)
-        val nodeDescription = node.getRelDetailedDescription
-        val isUpdateKindValid = providedTrait.updateKind match {
-          case UpdateKind.NONE =>
-            !modifyKindSetTrait.modifyKindSet.contains(ModifyKind.UPDATE)
-          case UpdateKind.BEFORE_AND_AFTER | UpdateKind.ONLY_UPDATE_AFTER =>
-            modifyKindSetTrait.modifyKindSet.contains(ModifyKind.UPDATE)
-        }
-        if (!isUpdateKindValid) {
-          throw new TableException(
-            s"UpdateKindTrait $providedTrait conflicts with " +
-              s"ModifyKindSetTrait $modifyKindSetTrait. " +
-              s"This is a bug in planner, please file an issue. \n" +
-              s"Current node is $nodeDescription.")
-        }
-        val newTraitSet = node.getTraitSet.plus(providedTrait)
-        Some(node.copy(newTraitSet, children).asInstanceOf[StreamPhysicalRel])
+        createNewNode(node, children, providedTrait)
+    }
+
+    private def createNewNode(
+        node: StreamPhysicalRel,
+        children: List[StreamPhysicalRel],
+        providedTrait: UpdateKindTrait): Option[StreamPhysicalRel] = {
+      val modifyKindSetTrait = node.getTraitSet.getTrait(ModifyKindSetTraitDef.INSTANCE)
+      val nodeDescription = node.getRelDetailedDescription
+      val isUpdateKindValid = providedTrait.updateKind match {
+        case UpdateKind.NONE =>
+          !modifyKindSetTrait.modifyKindSet.contains(ModifyKind.UPDATE)
+        case UpdateKind.BEFORE_AND_AFTER | UpdateKind.ONLY_UPDATE_AFTER =>
+          modifyKindSetTrait.modifyKindSet.contains(ModifyKind.UPDATE)
+      }
+      if (!isUpdateKindValid) {
+        throw new TableException(
+          s"UpdateKindTrait $providedTrait conflicts with " +
+            s"ModifyKindSetTrait $modifyKindSetTrait. " +
+            s"This is a bug in planner, please file an issue. \n" +
+            s"Current node is $nodeDescription.")
+      }
+      val newTraitSet = node.getTraitSet.plus(providedTrait)
+      Some(node.copy(newTraitSet, children).asInstanceOf[StreamPhysicalRel])
     }
 
     /**

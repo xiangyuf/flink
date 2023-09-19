@@ -18,6 +18,7 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.logical.WindowingStrategy
 import org.apache.flink.table.planner.plan.nodes.calcite.Rank
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
@@ -30,7 +31,8 @@ import org.apache.flink.table.runtime.operators.rank._
 import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel._
 import org.apache.calcite.rel.`type`.RelDataTypeField
-import org.apache.calcite.util.ImmutableBitSet
+import org.apache.calcite.rel.RelDistribution.Type.HASH_DISTRIBUTED
+import org.apache.calcite.util.{ImmutableBitSet, ImmutableIntList}
 
 import java.util
 
@@ -78,6 +80,23 @@ class StreamPhysicalWindowRank(
       rankNumberType,
       outputRankNumber,
       windowing)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    val shuffleKeys = requiredDistribution.getKeys
+    val partitionKeyList = ImmutableIntList.of(partitionKey.toArray: _*)
+    val canSatisfy = requiredDistribution.getType match {
+      case HASH_DISTRIBUTED =>
+        shuffleKeys == partitionKeyList
+      case _ => false
+    }
+    if (!canSatisfy) {
+      return None
+    }
+
+    val newProvidedTraitSet = getTraitSet.replace(requiredDistribution)
+    Some(copy(newProvidedTraitSet, Seq(getInput)))
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {

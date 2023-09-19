@@ -20,7 +20,6 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecJoin
-import org.apache.flink.table.planner.plan.nodes.physical.common.CommonPhysicalJoin
 import org.apache.flink.table.planner.plan.utils.JoinUtil
 import org.apache.flink.table.planner.utils.ShortcutUtils.{unwrapClassLoader, unwrapTableConfig}
 import org.apache.flink.table.runtime.typeutils.InternalTypeInfo
@@ -46,8 +45,7 @@ class StreamPhysicalJoin(
     rightRel: RelNode,
     condition: RexNode,
     joinType: JoinRelType)
-  extends CommonPhysicalJoin(cluster, traitSet, leftRel, rightRel, condition, joinType)
-  with StreamPhysicalRel {
+  extends StreamPhysicalJoinBase(cluster, traitSet, leftRel, rightRel, condition, joinType) {
 
   /**
    * This is mainly used in `FlinkChangelogModeInferenceProgram.SatisfyUpdateKindTraitVisitor`. If

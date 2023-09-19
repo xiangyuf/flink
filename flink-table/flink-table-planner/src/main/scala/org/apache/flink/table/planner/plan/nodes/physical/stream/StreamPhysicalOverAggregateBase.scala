@@ -19,16 +19,20 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.CalcitePair
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.utils.RelExplainUtil
 
 import org.apache.calcite.plan.{RelOptCluster, RelOptCost, RelOptPlanner, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelNode, RelWriter, SingleRel}
+import org.apache.calcite.rel.RelDistribution.Type.HASH_DISTRIBUTED
 import org.apache.calcite.rel.core.{AggregateCall, Window}
 import org.apache.calcite.rel.core.Window.Group
 import org.apache.calcite.rel.metadata.RelMetadataQuery
 import org.apache.calcite.rex.RexLiteral
+import org.apache.calcite.util.ImmutableIntList
 
+import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
 
 /** Base Stream physical RelNode for time-based over [[Window]]. */
@@ -51,6 +55,26 @@ abstract class StreamPhysicalOverAggregateBase(
     val orderKey = logicWindow.groups.get(0).orderKeys.getFieldCollations.get(0)
     val timeType = outputRowType.getFieldList.get(orderKey.getFieldIndex).getType
     FlinkTypeFactory.isRowtimeIndicatorType(timeType)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    val partitionKeyIndices = logicWindow.groups.get(0).keys.toArray
+
+    val canSatisfy = requiredDistribution.getType match {
+      case HASH_DISTRIBUTED =>
+        val shuffleKeys = requiredDistribution.getKeys
+        val partitionKeyList = ImmutableIntList.of(partitionKeyIndices: _*)
+        partitionKeyIndices.nonEmpty && shuffleKeys == partitionKeyList
+      case _ => false
+    }
+
+    if (!canSatisfy) {
+      return None
+    }
+
+    val providedTraits = getTraitSet.replace(requiredDistribution)
+    Some(copy(providedTraits, Seq(getInput)))
   }
 
   override def deriveRowType(): RelDataType = outputRowType

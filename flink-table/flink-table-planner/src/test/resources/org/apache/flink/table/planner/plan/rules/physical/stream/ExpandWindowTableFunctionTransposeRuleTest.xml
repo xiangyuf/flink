@@ -46,17 +46,19 @@ LogicalAggregate(group=[{0, 1, 2}], EXPR$3=[COUNT()], EXPR$4=[SUM($3)], EXPR$5=[
     <Resource name="optimized rel plan">
       <![CDATA[
 Calc(select=[a, window_start, window_end, $f1 AS $f3, $f2 AS $f4, $f3 AS $f5, $f4 AS $f6])
-+- WindowAggregate(groupBy=[a], window=[CUMULATE(win_start=[window_start], win_end=[window_end], max_size=[1 h], step=[10 min])], select=[a, $SUM0($f5) AS $f1, SUM($f6_0) AS $f2, MAX($f7_0) AS $f3, $SUM0($f8) AS $f4, start('w$) AS window_start, end('w$) AS window_end])
++- GlobalWindowAggregate(groupBy=[a], window=[CUMULATE(win_end=[$window_end], max_size=[1 h], step=[10 min])], select=[a, $SUM0(sum$0) AS $f1, SUM(sum$1) AS $f2, MAX(max$2) AS $f3, $SUM0(sum$3) AS $f4, start('w$) AS window_start, end('w$) AS window_end])
    +- Exchange(distribution=[hash[a]])
-      +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
-         +- WindowAggregate(groupBy=[a, $f6, $f7], window=[CUMULATE(win_start=[window_start], win_end=[window_end], max_size=[1 h], step=[10 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS $f3, SUM(d) FILTER $g_3 AS $f4, MAX(d) FILTER $g_1 AS $f5, COUNT(DISTINCT c) FILTER $g_2 AS $f6_0, start('w$) AS window_start, end('w$) AS window_end])
-            +- Exchange(distribution=[hash[a, $f6, $f7]])
-               +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
-                  +- WindowTableFunction(window=[CUMULATE(time_col=[rowtime], max_size=[1 h], step=[10 min])])
-                     +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
-                        +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
-                           +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
-                              +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
+      +- LocalWindowAggregate(groupBy=[a], window=[CUMULATE(win_start=[window_start], win_end=[window_end], max_size=[1 h], step=[10 min])], select=[a, $SUM0($f5) AS sum$0, SUM($f6_0) AS sum$1, MAX($f7_0) AS max$2, $SUM0($f8) AS sum$3, slice_end('w$) AS $window_end])
+         +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
+            +- GlobalWindowAggregate(groupBy=[a, $f6, $f7], window=[CUMULATE(win_end=[$window_end], max_size=[1 h], step=[10 min])], select=[a, $f6, $f7, COUNT(count1$0) AS $f3, SUM(sum$1) AS $f4, MAX(max$2) AS $f5, COUNT(distinct$0 count$3) AS $f6_0, start('w$) AS window_start, end('w$) AS window_end])
+               +- Exchange(distribution=[hash[a, $f6, $f7]])
+                  +- LocalWindowAggregate(groupBy=[a, $f6, $f7], window=[CUMULATE(win_start=[window_start], win_end=[window_end], max_size=[1 h], step=[10 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS count1$0, SUM(d) FILTER $g_3 AS sum$1, MAX(d) FILTER $g_1 AS max$2, COUNT(distinct$0 c) FILTER $g_2 AS count$3, DISTINCT(c) AS distinct$0, slice_end('w$) AS $window_end])
+                     +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
+                        +- WindowTableFunction(window=[CUMULATE(time_col=[rowtime], max_size=[1 h], step=[10 min])])
+                           +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
+                              +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
+                                 +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
+                                    +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -89,17 +91,19 @@ LogicalAggregate(group=[{0, 1, 2}], EXPR$3=[COUNT()], EXPR$4=[SUM($3)], EXPR$5=[
     <Resource name="optimized rel plan">
       <![CDATA[
 Calc(select=[a, window_start, window_end, $f1 AS $f3, $f2 AS $f4, $f3 AS $f5, $f4 AS $f6])
-+- WindowAggregate(groupBy=[a], window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], select=[a, $SUM0($f5) AS $f1, SUM($f6_0) AS $f2, MAX($f7_0) AS $f3, $SUM0($f8) AS $f4, start('w$) AS window_start, end('w$) AS window_end])
++- GlobalWindowAggregate(groupBy=[a], window=[TUMBLE(win_end=[$window_end], size=[15 min])], select=[a, $SUM0(sum$0) AS $f1, SUM(sum$1) AS $f2, MAX(max$2) AS $f3, $SUM0(sum$3) AS $f4, start('w$) AS window_start, end('w$) AS window_end])
    +- Exchange(distribution=[hash[a]])
-      +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
-         +- WindowAggregate(groupBy=[a, $f6, $f7], window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS $f3, SUM(d) FILTER $g_3 AS $f4, MAX(d) FILTER $g_1 AS $f5, COUNT(DISTINCT c) FILTER $g_2 AS $f6_0, start('w$) AS window_start, end('w$) AS window_end])
-            +- Exchange(distribution=[hash[a, $f6, $f7]])
-               +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
-                  +- WindowTableFunction(window=[TUMBLE(time_col=[rowtime], size=[15 min])])
-                     +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
-                        +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
-                           +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
-                              +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
+      +- LocalWindowAggregate(groupBy=[a], window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], select=[a, $SUM0($f5) AS sum$0, SUM($f6_0) AS sum$1, MAX($f7_0) AS max$2, $SUM0($f8) AS sum$3, slice_end('w$) AS $window_end])
+         +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
+            +- GlobalWindowAggregate(groupBy=[a, $f6, $f7], window=[TUMBLE(win_end=[$window_end], size=[15 min])], select=[a, $f6, $f7, COUNT(count1$0) AS $f3, SUM(sum$1) AS $f4, MAX(max$2) AS $f5, COUNT(distinct$0 count$3) AS $f6_0, start('w$) AS window_start, end('w$) AS window_end])
+               +- Exchange(distribution=[hash[a, $f6, $f7]])
+                  +- LocalWindowAggregate(groupBy=[a, $f6, $f7], window=[TUMBLE(win_start=[window_start], win_end=[window_end], size=[15 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS count1$0, SUM(d) FILTER $g_3 AS sum$1, MAX(d) FILTER $g_1 AS max$2, COUNT(distinct$0 c) FILTER $g_2 AS count$3, DISTINCT(c) AS distinct$0, slice_end('w$) AS $window_end])
+                     +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
+                        +- WindowTableFunction(window=[TUMBLE(time_col=[rowtime], size=[15 min])])
+                           +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
+                              +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
+                                 +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
+                                    +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
 ]]>
     </Resource>
   </TestCase>
@@ -133,17 +137,19 @@ LogicalAggregate(group=[{0, 1, 2}], EXPR$3=[COUNT()], EXPR$4=[SUM($3)], EXPR$5=[
     <Resource name="optimized rel plan">
       <![CDATA[
 Calc(select=[a, window_start, window_end, $f1 AS $f3, $f2 AS $f4, $f3 AS $f5, $f4 AS $f6])
-+- WindowAggregate(groupBy=[a], window=[HOP(win_start=[window_start], win_end=[window_end], size=[10 min], slide=[5 min])], select=[a, $SUM0($f5) AS $f1, SUM($f6_0) AS $f2, MAX($f7_0) AS $f3, $SUM0($f8) AS $f4, start('w$) AS window_start, end('w$) AS window_end])
++- GlobalWindowAggregate(groupBy=[a], window=[HOP(win_end=[$window_end], size=[10 min], slide=[5 min])], select=[a, $SUM0(sum$0) AS $f1, SUM(sum$1) AS $f2, MAX(max$2) AS $f3, $SUM0(sum$3) AS $f4, COUNT(count1$4) AS window_start, start('w$) AS window_end])
    +- Exchange(distribution=[hash[a]])
-      +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
-         +- WindowAggregate(groupBy=[a, $f6, $f7], window=[HOP(win_start=[window_start], win_end=[window_end], size=[10 min], slide=[5 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS $f3, SUM(d) FILTER $g_3 AS $f4, MAX(d) FILTER $g_1 AS $f5, COUNT(DISTINCT c) FILTER $g_2 AS $f6_0, start('w$) AS window_start, end('w$) AS window_end])
-            +- Exchange(distribution=[hash[a, $f6, $f7]])
-               +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
-                  +- WindowTableFunction(window=[HOP(time_col=[rowtime], size=[10 min], slide=[5 min])])
-                     +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
-                        +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
-                           +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
-                              +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
+      +- LocalWindowAggregate(groupBy=[a], window=[HOP(win_start=[window_start], win_end=[window_end], size=[10 min], slide=[5 min])], select=[a, $SUM0($f5) AS sum$0, SUM($f6_0) AS sum$1, MAX($f7_0) AS max$2, $SUM0($f8) AS sum$3, COUNT(*) AS count1$4, slice_end('w$) AS $window_end])
+         +- Calc(select=[a, window_start, window_end, $f6, $f7, $f3 AS $f5, $f4 AS $f6_0, $f5 AS $f7_0, $f6_0 AS $f8])
+            +- GlobalWindowAggregate(groupBy=[a, $f6, $f7], window=[HOP(win_end=[$window_end], size=[10 min], slide=[5 min])], select=[a, $f6, $f7, COUNT(count1$0) AS $f3, SUM(sum$1) AS $f4, MAX(max$2) AS $f5, COUNT(distinct$0 count$3) AS $f6_0, COUNT(count1$4) AS window_start, start('w$) AS window_end])
+               +- Exchange(distribution=[hash[a, $f6, $f7]])
+                  +- LocalWindowAggregate(groupBy=[a, $f6, $f7], window=[HOP(win_start=[window_start], win_end=[window_end], size=[10 min], slide=[5 min])], select=[a, $f6, $f7, COUNT(*) FILTER $g_3 AS count1$0, SUM(d) FILTER $g_3 AS sum$1, MAX(d) FILTER $g_1 AS max$2, COUNT(distinct$0 c) FILTER $g_2 AS count$3, COUNT(*) AS count1$4, DISTINCT(c) AS distinct$0, slice_end('w$) AS $window_end])
+                     +- Calc(select=[a, window_start, window_end, d, $f4, c, $f6, $f7, =($e, 3) AS $g_3, AND(=($e, 1), $f4) AS $g_1, =($e, 2) AS $g_2])
+                        +- WindowTableFunction(window=[HOP(time_col=[rowtime], size=[10 min], slide=[5 min])])
+                           +- Expand(projects=[{a, d, $f4, c, $f6, null AS $f7, 1 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, $f7, 2 AS $e, rowtime}, {a, d, $f4, c, null AS $f6, null AS $f7, 3 AS $e, rowtime}])
+                              +- Calc(select=[a, d, IS TRUE(>(b, 1000)) AS $f4, c, MOD(HASH_CODE(d), 1024) AS $f6, MOD(HASH_CODE(c), 1024) AS $f7, rowtime])
+                                 +- WatermarkAssigner(rowtime=[rowtime], watermark=[-(rowtime, 1000:INTERVAL SECOND)])
+                                    +- TableSourceScan(table=[[default_catalog, default_database, MyTable, project=[a, b, c, d, rowtime], metadata=[]]], fields=[a, b, c, d, rowtime])
 ]]>
     </Resource>
   </TestCase>

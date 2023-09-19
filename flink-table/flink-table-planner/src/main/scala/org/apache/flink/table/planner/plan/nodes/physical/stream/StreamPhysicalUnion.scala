@@ -18,13 +18,15 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecUnion
 import org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTableConfig
 
-import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
+import org.apache.calcite.plan.{RelOptCluster, RelOptRule, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelNode, RelWriter}
+import org.apache.calcite.rel.RelDistribution.Type._
 import org.apache.calcite.rel.core.{SetOp, Union}
 
 import java.util
@@ -49,6 +51,16 @@ class StreamPhysicalUnion(
 
   override def copy(traitSet: RelTraitSet, inputs: util.List[RelNode], all: Boolean): SetOp = {
     new StreamPhysicalUnion(cluster, traitSet, inputs, all, outputRowType)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    if (requiredDistribution.getType != HASH_DISTRIBUTED) {
+      return None
+    }
+    val newInputs = getInputs.map(RelOptRule.convert(_, requiredDistribution))
+    val providedTraitSet = getTraitSet.replace(requiredDistribution)
+    Some(copy(providedTraitSet, newInputs))
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {

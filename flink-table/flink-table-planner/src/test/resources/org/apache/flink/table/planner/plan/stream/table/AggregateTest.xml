@@ -222,8 +222,8 @@ LogicalProject(EXPR$0=[$1], EXPR$1=[$2])
       <![CDATA[
 Calc(select=[EXPR$0, EXPR$1])
 +- GroupAggregate(groupBy=[c], select=[c, *org.apache.flink.table.planner.plan.utils.JavaUserDefinedAggFunctions$WeightedAvg*(DISTINCT a, b0) AS EXPR$0, *org.apache.flink.table.planner.plan.utils.JavaUserDefinedAggFunctions$WeightedAvg*(a, b0) AS EXPR$1])
-   +- Exchange(distribution=[hash[c]])
-      +- Calc(select=[a, c, CAST(b AS BIGINT) AS b0])
+   +- Calc(select=[a, c, CAST(b AS BIGINT) AS b0])
+      +- Exchange(distribution=[hash[c]])
          +- LegacyTableSourceScan(table=[[default_catalog, default_database, Table1, source: [TestTableSource(a, b, c)]]], fields=[a, b, c])
 ]]>
     </Resource>

@@ -17,13 +17,17 @@
  */
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.nodes.common.CommonCalc
+import org.apache.flink.table.planner.plan.utils.FlinkRexUtil
 
-import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
+import org.apache.calcite.plan.{RelOptCluster, RelOptRule, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
-import org.apache.calcite.rel.RelNode
+import org.apache.calcite.rel.{RelDistribution, RelNode}
 import org.apache.calcite.rel.core.Calc
 import org.apache.calcite.rex.RexProgram
+
+import scala.collection.JavaConversions._
 
 /** Base stream physical RelNode for [[Calc]]. */
 abstract class StreamPhysicalCalcBase(
@@ -34,6 +38,25 @@ abstract class StreamPhysicalCalcBase(
     outputRowType: RelDataType)
   extends CommonCalc(cluster, traitSet, inputRel, calcProgram)
   with StreamPhysicalRel {
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    if (requiredDistribution.getType != RelDistribution.Type.HASH_DISTRIBUTED) {
+      return None
+    }
+
+    val mapping = FlinkRexUtil.getProjectMapping(getInput.getRowType.getFieldCount, calcProgram)
+    val appliedDistribution = requiredDistribution.apply(mapping)
+
+    if (appliedDistribution.getType != RelDistribution.Type.HASH_DISTRIBUTED) {
+      return None
+    }
+
+    val inputRequiredTraits = getInput.getTraitSet.replace(appliedDistribution)
+    val providedTraits = getTraitSet.replace(requiredDistribution)
+    val newInput = RelOptRule.convert(getInput, inputRequiredTraits)
+    Some(copy(providedTraits, Seq(newInput)))
+  }
 
   override def requireWatermark: Boolean = false
 

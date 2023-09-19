@@ -52,6 +52,19 @@
     "description" : "MiniBatchAssigner(interval=[10000ms], mode=[ProcTime])"
   }, {
     "id" : 3,
+    "type" : "stream-exec-exchange_1",
+    "inputProperties" : [ {
+      "requiredDistribution" : {
+        "type" : "HASH",
+        "keys" : [ 1 ]
+      },
+      "damBehavior" : "PIPELINED",
+      "priority" : 0
+    } ],
+    "outputType" : "ROW<`a` BIGINT, `b` INT NOT NULL, `c` VARCHAR(2147483647), `d` BIGINT>",
+    "description" : "Exchange(distribution=[hash[b]])"
+  }, {
+    "id" : 4,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -88,19 +101,6 @@
     } ],
     "outputType" : "ROW<`b` INT NOT NULL, `$f1` INT NOT NULL, `$f2` INT NOT NULL, `d` BIGINT, `a` BIGINT, `c` VARCHAR(2147483647)>",
     "description" : "Calc(select=[b, 10 AS $f1, 5 AS $f2, d, a, c])"
-  }, {
-    "id" : 4,
-    "type" : "stream-exec-exchange_1",
-    "inputProperties" : [ {
-      "requiredDistribution" : {
-        "type" : "HASH",
-        "keys" : [ 0 ]
-      },
-      "damBehavior" : "PIPELINED",
-      "priority" : 0
-    } ],
-    "outputType" : "ROW<`b` INT NOT NULL, `$f1` INT NOT NULL, `$f2` INT NOT NULL, `d` BIGINT, `a` BIGINT, `c` VARCHAR(2147483647)>",
-    "description" : "Exchange(distribution=[hash[b]])"
   }, {
     "id" : 5,
     "type" : "stream-exec-group-aggregate_1",

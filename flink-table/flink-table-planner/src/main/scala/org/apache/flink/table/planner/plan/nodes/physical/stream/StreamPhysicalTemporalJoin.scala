@@ -22,7 +22,6 @@ import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.spec.JoinSpec
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecTemporalJoin
-import org.apache.flink.table.planner.plan.nodes.physical.common.CommonPhysicalJoin
 import org.apache.flink.table.planner.plan.utils.{TemporalJoinUtil, TemporalTableJoinUtil}
 import org.apache.flink.table.planner.plan.utils.TemporalJoinUtil.{TEMPORAL_JOIN_CONDITION, TEMPORAL_JOIN_CONDITION_PRIMARY_KEY}
 import org.apache.flink.table.planner.utils.ShortcutUtils.unwrapTableConfig
@@ -51,8 +50,7 @@ class StreamPhysicalTemporalJoin(
     rightRel: RelNode,
     condition: RexNode,
     joinType: JoinRelType)
-  extends CommonPhysicalJoin(cluster, traitSet, leftRel, rightRel, condition, joinType)
-  with StreamPhysicalRel {
+  extends StreamPhysicalJoinBase(cluster, traitSet, leftRel, rightRel, condition, joinType) {
 
   override def requireWatermark: Boolean = TemporalJoinUtil.isRowTimeJoin(joinSpec)
 

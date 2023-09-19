@@ -18,18 +18,23 @@
 package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.{FlinkRelDistribution, FlinkRelDistributionTraitDef}
 import org.apache.flink.table.planner.plan.PartialFinalType
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecLocalGroupAggregate
 import org.apache.flink.table.planner.plan.utils._
 import org.apache.flink.table.planner.utils.ShortcutUtils.{unwrapTableConfig, unwrapTypeFactory}
 
-import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
+import org.apache.calcite.plan.{RelOptCluster, RelOptRule, RelTraitSet}
 import org.apache.calcite.rel.`type`.RelDataType
 import org.apache.calcite.rel.{RelNode, RelWriter}
+import org.apache.calcite.rel.RelDistribution.Type.HASH_DISTRIBUTED
 import org.apache.calcite.rel.core.AggregateCall
+import org.apache.calcite.util.ImmutableIntList
 
 import java.util
+
+import scala.collection.JavaConversions._
 
 /**
  * Stream physical RelNode for unbounded local group aggregate.
@@ -68,6 +73,50 @@ class StreamPhysicalLocalGroupAggregate(
   }
 
   override def copy(traitSet: RelTraitSet, inputs: util.List[RelNode]): RelNode = {
+    new StreamPhysicalLocalGroupAggregate(
+      cluster,
+      traitSet,
+      inputs.get(0),
+      grouping,
+      aggCalls,
+      aggCallNeedRetractions,
+      needRetraction,
+      partialFinalType)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    val canSatisfy = requiredDistribution.getType match {
+      case HASH_DISTRIBUTED =>
+        val shuffleKeys = requiredDistribution.getKeys
+        val groupKeysList = ImmutableIntList.of(grouping.indices.toArray: _*)
+        /*
+         * As local agg is the input of global agg, the required distribution can be of two kinds:
+         * 1. distribution that can be satisfied by global agg;
+         * 2. distribution that required by global agg from StreamPhysicalGroupAggregateRule.
+         * Local agg can only satisfy type 1 now. If type 2 is satisfied, local-global agg will
+         * become a normal agg after RemoveRedundantLocalGroupAggregateRule is applied.
+         * The cost model may choose the normal one in this case.
+         * Todo: refine the cost model to choose the best plan in this case.
+         */
+        grouping.nonEmpty && shuffleKeys == groupKeysList
+      case _ => false
+    }
+    if (!canSatisfy) {
+      return None
+    }
+
+    val inputRequiredDistribution = FlinkRelDistribution.hash(grouping, requireStrict = true)
+    val inputRequiredTraits = input.getTraitSet.replace(inputRequiredDistribution)
+    val newInput = RelOptRule.convert(getInput, inputRequiredTraits)
+    val providedTraits = getTraitSet.replace(requiredDistribution)
+    Some(copy(providedTraits, Seq(newInput)))
+  }
+
+  def updateNeedRetraction(
+      inputs: util.List[RelNode],
+      needRetraction: Boolean,
+      aggCallNeedRetractions: Array[Boolean]): StreamPhysicalLocalGroupAggregate = {
     new StreamPhysicalLocalGroupAggregate(
       cluster,
       traitSet,

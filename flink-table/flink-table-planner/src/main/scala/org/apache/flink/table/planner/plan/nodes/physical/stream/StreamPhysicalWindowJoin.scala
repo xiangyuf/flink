@@ -19,6 +19,7 @@ package org.apache.flink.table.planner.plan.nodes.physical.stream
 
 import org.apache.flink.table.api.TableException
 import org.apache.flink.table.planner.calcite.FlinkTypeFactory
+import org.apache.flink.table.planner.plan.`trait`.FlinkRelDistributionTraitDef
 import org.apache.flink.table.planner.plan.logical.WindowingStrategy
 import org.apache.flink.table.planner.plan.nodes.exec.{ExecNode, InputProperty}
 import org.apache.flink.table.planner.plan.nodes.exec.stream.StreamExecWindowJoin
@@ -31,10 +32,11 @@ import org.apache.calcite.plan.{RelOptCluster, RelTraitSet}
 import org.apache.calcite.rel._
 import org.apache.calcite.rel.core.{Join, JoinRelType}
 import org.apache.calcite.rex.RexNode
-import org.apache.calcite.util.Litmus
+import org.apache.calcite.util.{ImmutableIntList, Litmus}
 
 import scala.collection.JavaConversions._
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 /**
  * The window join requires the join condition contains window starts equality of input tables and
@@ -99,6 +101,63 @@ class StreamPhysicalWindowJoin(
       remainingCondition,
       leftWindowing,
       rightWindowing)
+  }
+
+  override def satisfyTraits(requiredTraitSet: RelTraitSet): Option[RelNode] = {
+    val requiredDistribution = requiredTraitSet.getTrait(FlinkRelDistributionTraitDef.INSTANCE)
+    if (requiredDistribution.getType != RelDistribution.Type.HASH_DISTRIBUTED) {
+      return None
+    }
+    // Full outer join cannot provide Hash distribute because it will generate null for left/right
+    // side if there is no match row.
+    if (joinType == JoinRelType.FULL) {
+      return None
+    }
+
+    val leftKeys = joinInfo.leftKeys
+    val rightKeys = joinInfo.rightKeys
+    if (leftKeys.isEmpty || rightKeys.isEmpty) {
+      return None
+    }
+
+    val leftFieldCnt = getLeft.getRowType.getFieldCount
+    val requiredShuffleKeys = requiredDistribution.getKeys
+    val requiredLeftShuffleKeyBuffer = mutable.ArrayBuffer[Int]()
+    val requiredRightShuffleKeyBuffer = mutable.ArrayBuffer[Int]()
+    // SEMI and ANTI Join can only be push down to left side.
+    requiredShuffleKeys.foreach {
+      key =>
+        if (
+          key < leftFieldCnt &&
+          (joinType == JoinRelType.LEFT || joinType == JoinRelType.INNER
+            || joinType == JoinRelType.SEMI || joinType == JoinRelType.ANTI)
+        ) {
+          requiredLeftShuffleKeyBuffer += key
+        } else if (
+          key >= leftFieldCnt &&
+          (joinType == JoinRelType.RIGHT || joinType == JoinRelType.INNER)
+        ) {
+          requiredRightShuffleKeyBuffer += (key - leftFieldCnt)
+        } else {
+          // cannot satisfy required hash distribution if requirement shuffle keys are not come from
+          // left side when Join is LOJ or are not come from right side when Join is ROJ.
+          return None
+        }
+    }
+
+    val requiredLeftShuffleKeys = ImmutableIntList.of(requiredLeftShuffleKeyBuffer: _*)
+    val requiredRightShuffleKeys = ImmutableIntList.of(requiredRightShuffleKeyBuffer: _*)
+    // the required hash distribution can be pushed down
+    // only if the required keys are all from one side and totally equal to the side's keys
+    if (
+      leftKeys.equals(requiredLeftShuffleKeys) && requiredRightShuffleKeys.isEmpty ||
+      rightKeys.equals(requiredRightShuffleKeys) && requiredLeftShuffleKeys.isEmpty
+    ) {
+      val providedTraits = getTraitSet.replace(requiredDistribution)
+      Some(copy(providedTraits, Seq(getLeft, getRight)))
+    } else {
+      None
+    }
   }
 
   override def explainTerms(pw: RelWriter): RelWriter = {

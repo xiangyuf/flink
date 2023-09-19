@@ -428,6 +428,7 @@ object FlinkStreamRuleSets {
     StreamPhysicalWindowTableFunctionRule.INSTANCE,
     StreamPhysicalWindowAggregateRule.INSTANCE,
     PullUpWindowTableFunctionIntoWindowAggregateRule.INSTANCE,
+    PullUpWindowTableFunctionIntoTwoStageWindowAggregateRule.INSTANCE,
     ExpandWindowTableFunctionTransposeRule.INSTANCE,
     StreamPhysicalWindowRankRule.INSTANCE,
     StreamPhysicalWindowDeduplicateRule.INSTANCE,
@@ -463,12 +464,10 @@ object FlinkStreamRuleSets {
 
   /** RuleSet to optimize plans after stream exec execution. */
   val PHYSICAL_REWRITE: RuleSet = RuleSets.ofList(
-    // optimize agg rule
-    TwoStageOptimizedAggregateRule.INSTANCE,
+    // remove redundant local agg rule
+    RemoveRedundantLocalGroupAggregateRule.INSTANCE,
     // incremental agg rule
     IncrementalAggregateRule.INSTANCE,
-    // optimize window agg rule
-    TwoStageOptimizedWindowAggregateRule.INSTANCE,
     // optimize ChangelogNormalize
     PushFilterPastChangelogNormalizeRule.INSTANCE
   )

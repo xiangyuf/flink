@@ -75,8 +75,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[SUM($1)], EXPR$2=[SUM($2)], EXPR$3=[SUM($3
     <Resource name="optimized rel plan">
       <![CDATA[
 GroupAggregate(groupBy=[a], select=[a, SUM($f1) AS EXPR$1, SUM($f2) AS EXPR$2, SUM($f3) AS EXPR$3, SUM($f4) AS EXPR$4, SUM($f5) AS EXPR$5, SUM($f6) AS EXPR$6, SUM($f7) AS EXPR$7]), rowType=[RecordType(INTEGER a, INTEGER EXPR$1, BIGINT EXPR$2, TINYINT EXPR$3, SMALLINT EXPR$4, FLOAT EXPR$5, DECIMAL(38, 0) EXPR$6, DOUBLE EXPR$7)]
-+- Exchange(distribution=[hash[a]]), rowType=[RecordType(INTEGER a, INTEGER $f1, BIGINT $f2, TINYINT $f3, SMALLINT $f4, FLOAT $f5, DECIMAL(10, 0) $f6, DOUBLE $f7)]
-   +- Calc(select=[a, 1 AS $f1, 2 AS $f2, 3 AS $f3, 4 AS $f4, 5 AS $f5, 6 AS $f6, 7 AS $f7]), rowType=[RecordType(INTEGER a, INTEGER $f1, BIGINT $f2, TINYINT $f3, SMALLINT $f4, FLOAT $f5, DECIMAL(10, 0) $f6, DOUBLE $f7)]
++- Calc(select=[a, 1 AS $f1, 2 AS $f2, 3 AS $f3, 4 AS $f4, 5 AS $f5, 6 AS $f6, 7 AS $f7]), rowType=[RecordType(INTEGER a, INTEGER $f1, BIGINT $f2, TINYINT $f3, SMALLINT $f4, FLOAT $f5, DECIMAL(10, 0) $f6, DOUBLE $f7)]
+   +- Exchange(distribution=[hash[a]]), rowType=[RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, BOOLEAN d)]
       +- LegacyTableSourceScan(table=[[default_catalog, default_database, T, source: [TestTableSource(a, b, c, d)]]], fields=[a, b, c, d]), rowType=[RecordType(INTEGER a, BIGINT b, VARCHAR(2147483647) c, BOOLEAN d)]
 ]]>
     </Resource>
@@ -102,8 +102,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[SUM($1) FILTER $2], EXPR$2=[COUNT(DISTINCT
     <Resource name="optimized exec plan">
       <![CDATA[
 GroupAggregate(groupBy=[a], select=[a, SUM(b) FILTER $f2 AS EXPR$1, COUNT(DISTINCT c) FILTER $f4 AS EXPR$2, MAX(b) AS EXPR$3])
-+- Exchange(distribution=[hash[a]])
-   +- Calc(select=[a, b, (c = 'A') IS TRUE AS $f2, c, d IS TRUE AS $f4])
++- Calc(select=[a, b, (c = 'A') IS TRUE AS $f2, c, d IS TRUE AS $f4])
+   +- Exchange(distribution=[hash[a]])
       +- LegacyTableSourceScan(table=[[default_catalog, default_database, T, source: [TestTableSource(a, b, c, d)]]], fields=[a, b, c, d])
 ]]>
     </Resource>

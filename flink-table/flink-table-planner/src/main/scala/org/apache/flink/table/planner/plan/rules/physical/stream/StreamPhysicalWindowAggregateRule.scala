@@ -17,30 +17,64 @@
  */
 package org.apache.flink.table.planner.plan.rules.physical.stream
 
+import org.apache.flink.configuration.ReadableConfig
 import org.apache.flink.table.api.TableException
-import org.apache.flink.table.planner.plan.`trait`.{FlinkRelDistribution, RelWindowProperties}
+import org.apache.flink.table.api.config.OptimizerConfigOptions
+import org.apache.flink.table.planner.calcite.FlinkTypeFactory
 import org.apache.flink.table.planner.plan.logical.{WindowAttachedWindowingStrategy, WindowingStrategy}
 import org.apache.flink.table.planner.plan.metadata.FlinkRelMetadataQuery
 import org.apache.flink.table.planner.plan.nodes.FlinkConventions
 import org.apache.flink.table.planner.plan.nodes.logical.FlinkLogicalAggregate
-import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamPhysicalCalc, StreamPhysicalWindowAggregate}
+import org.apache.flink.table.planner.plan.nodes.physical.stream.{StreamPhysicalCalc, StreamPhysicalGlobalWindowAggregate, StreamPhysicalLocalWindowAggregate, StreamPhysicalWindowAggregate, StreamPhysicalWindowAggregateBase}
+import org.apache.flink.table.planner.plan.rules.physical.FlinkExpandConversionRule
 import org.apache.flink.table.planner.plan.rules.physical.stream.StreamPhysicalWindowAggregateRule.{WINDOW_END, WINDOW_START, WINDOW_TIME}
+import org.apache.flink.table.planner.plan.utils.{AggregateInfo, AggregateInfoList, AggregateUtil, WindowUtil}
 import org.apache.flink.table.planner.plan.utils.PythonUtil.isPythonAggregate
-import org.apache.flink.table.planner.plan.utils.WindowUtil
+import org.apache.flink.table.planner.utils.AggregatePhaseStrategy
+import org.apache.flink.table.planner.utils.ShortcutUtils.{unwrapTableConfig, unwrapTypeFactory}
+import org.apache.flink.table.planner.utils.TableConfigUtils.getAggPhaseStrategy
 import org.apache.flink.table.runtime.groupwindow._
 
 import org.apache.calcite.plan.{RelOptRule, RelOptRuleCall, RelTraitSet}
+import org.apache.calcite.plan.RelOptRule.{any, operand}
 import org.apache.calcite.rel.RelNode
-import org.apache.calcite.rel.convert.ConverterRule
-import org.apache.calcite.rel.convert.ConverterRule.Config
 import org.apache.calcite.rel.core.Aggregate.Group
 import org.apache.calcite.rex.{RexInputRef, RexProgram}
+
+import java.util.stream.IntStream
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-/** Rule to convert a [[FlinkLogicalAggregate]] into a [[StreamPhysicalWindowAggregate]]. */
-class StreamPhysicalWindowAggregateRule(config: Config) extends ConverterRule(config) {
+/**
+ * Rule that matches [[FlinkLogicalAggregate]] and converts it to
+ * {{{
+ *   StreamPhysicalGlobalWindowAggregate
+ *   +- StreamPhysicalExchange (hash by group keys if group keys is not empty, else singleton)
+ *      +- StreamPhysicalLocalWindowAggregate
+ *         +- input of agg
+ * }}}
+ * when <ul> <li>the applied windowing is not on processing-time, because processing-time should be
+ * materialized in a single node. <li>[[OptimizerConfigOptions.TABLE_OPTIMIZER_AGG_PHASE_STRATEGY]]
+ * is TWO_PHASE or AUTO. <li>all aggregate functions support merge() method. <li>the input of
+ * exchange does not satisfy the shuffle distribution </ul> or
+ * {{{
+ *   StreamPhysicalWindowAggregate
+ *   +- StreamPhysicalExchange (hash by group keys if group keys is not empty, else singleton)
+ *      +- input of agg
+ * }}}
+ * when [[OptimizerConfigOptions.TABLE_OPTIMIZER_AGG_PHASE_STRATEGY]] is ONE_PHASE or any of the
+ * above conditions is not satisfied.
+ *
+ * Notes: if [[OptimizerConfigOptions.TABLE_OPTIMIZER_AGG_PHASE_STRATEGY]] is AUTO, this rule will
+ * try to converts it using TWO_PHASE, if the conditions cannot be satified then choose ONE_PHASE.
+ * It's different from the behaviors in batch as the cost model for streaming is not fully refined.
+ * Therefore we cannot decide which it is best based on cost.
+ */
+class StreamPhysicalWindowAggregateRule
+  extends RelOptRule(
+    operand(classOf[FlinkLogicalAggregate], operand(classOf[RelNode], any)),
+    "StreamPhysicalWindowAggregateRule") {
 
   override def matches(call: RelOptRuleCall): Boolean = {
     val agg: FlinkLogicalAggregate = call.rel(0)
@@ -61,73 +95,131 @@ class StreamPhysicalWindowAggregateRule(config: Config) extends ConverterRule(co
     WindowUtil.groupingContainsWindowStartEnd(grouping, windowProperties)
   }
 
-  override def convert(rel: RelNode): RelNode = {
-    val agg: FlinkLogicalAggregate = rel.asInstanceOf[FlinkLogicalAggregate]
-    val fmq = FlinkRelMetadataQuery.reuseOrCreate(rel.getCluster.getMetadataQuery)
-    val relWindowProperties = fmq.getRelWindowProperties(agg.getInput)
-    val grouping = agg.getGroupSet
+  override def onMatch(call: RelOptRuleCall): Unit = {
+    val tableConfig = unwrapTableConfig(call)
+    val originAgg: FlinkLogicalAggregate = call.rel(0)
+    val input: RelNode = call.rel(1)
+    val originAggCalls = originAgg.getAggCallList
+    val originGrouping = originAgg.getGroupSet
+    val providedTraitSet = originAgg.getTraitSet.replace(FlinkConventions.STREAM_PHYSICAL)
+
+    val fmq = FlinkRelMetadataQuery.reuseOrCreate(originAgg.getCluster.getMetadataQuery)
+    val relWindowProperties = fmq.getRelWindowProperties(originAgg.getInput)
     // we have check there is only one start and end in groupingContainsWindowStartEnd()
     val (startColumns, endColumns, timeColumns, newGrouping) =
-      WindowUtil.groupingExcludeWindowStartEndTimeColumns(grouping, relWindowProperties)
-
-    // step-1: build window aggregate node
-    val windowAgg = buildWindowAggregateNode(
-      agg,
-      newGrouping.toArray,
-      startColumns.toArray,
-      endColumns.toArray,
-      timeColumns.toArray,
-      relWindowProperties)
-
-    // step-2: build projection on window aggregate to fix the fields mapping
-    buildCalcProjection(
-      grouping.toArray,
-      newGrouping.toArray,
-      startColumns.toArray,
-      endColumns.toArray,
-      timeColumns.toArray,
-      agg,
-      windowAgg
-    )
-  }
-
-  private def buildWindowAggregateNode(
-      agg: FlinkLogicalAggregate,
-      newGrouping: Array[Int],
-      startColumns: Array[Int],
-      endColumns: Array[Int],
-      timeColumns: Array[Int],
-      relWindowProperties: RelWindowProperties): StreamPhysicalWindowAggregate = {
-    val requiredDistribution = if (!newGrouping.isEmpty) {
-      FlinkRelDistribution.hash(newGrouping, requireStrict = true)
-    } else {
-      FlinkRelDistribution.SINGLETON
-    }
-
-    val requiredTraitSet = agg.getCluster.getPlanner
-      .emptyTraitSet()
-      .replace(requiredDistribution)
-      .replace(FlinkConventions.STREAM_PHYSICAL)
-    val providedTraitSet = agg.getTraitSet.replace(FlinkConventions.STREAM_PHYSICAL)
-    val newInput: RelNode = RelOptRule.convert(agg.getInput, requiredTraitSet)
+      WindowUtil.groupingExcludeWindowStartEndTimeColumns(originGrouping, relWindowProperties)
 
     val windowingStrategy = new WindowAttachedWindowingStrategy(
       relWindowProperties.getWindowSpec,
       relWindowProperties.getTimeAttributeType,
-      startColumns.head,
-      endColumns.head)
+      startColumns.toArray.head,
+      endColumns.toArray.head)
 
-    val windowProperties =
-      createPlannerNamedWindowProperties(windowingStrategy, startColumns, endColumns, timeColumns)
-
-    new StreamPhysicalWindowAggregate(
-      agg.getCluster,
-      providedTraitSet,
-      newInput,
-      newGrouping,
-      agg.getAggCallList.asScala,
+    val windowProperties = createPlannerNamedWindowProperties(
       windowingStrategy,
-      windowProperties)
+      startColumns.toArray,
+      endColumns.toArray,
+      timeColumns.toArray)
+
+    val aggInfoList: AggregateInfoList = AggregateUtil.deriveStreamWindowAggregateInfoList(
+      unwrapTypeFactory(input),
+      FlinkTypeFactory.toLogicalRowType(input.getRowType),
+      originAggCalls.asScala,
+      windowingStrategy.getWindow,
+      isStateBackendDataViews = true
+    )
+    val isInputSatisfyRequiredDistribution =
+      AggregateUtil.isInputSatisfyRequiredDistribution(input, newGrouping.toArray)
+
+    // step-1: build window aggregate node
+    val windowAgg =
+      if (
+        !isInputSatisfyRequiredDistribution &&
+        isTwoPhaseAggWorkable(windowingStrategy, aggInfoList.aggInfos, tableConfig)
+      ) {
+        val localRequiredTraitSet = input.getTraitSet.replace(FlinkConventions.STREAM_PHYSICAL)
+        val localInput = RelOptRule.convert(input, localRequiredTraitSet)
+        val localAgg = new StreamPhysicalLocalWindowAggregate(
+          originAgg.getCluster,
+          providedTraitSet,
+          localInput,
+          newGrouping.toArray,
+          originAggCalls.asScala,
+          windowingStrategy)
+
+        // grouping keys is forwarded by local agg, use indices instead of groupings
+        val globalGrouping = IntStream.range(0, newGrouping.toArray.length).toArray
+        val globalDistribution = AggregateUtil.createDistribution(globalGrouping)
+        // Add exchange instead of adding converter here. As the cost model of streaming
+        // cannot make good decisions yet between local global window aggregates and normal
+        // window aggregate.
+        // Todo: add converter here to let the cost model decides whether to use two stage.
+        val newInput = FlinkExpandConversionRule.satisfyDistribution(
+          FlinkConventions.STREAM_PHYSICAL,
+          localAgg,
+          globalDistribution)
+
+        // we put windowEnd at the end of local output fields
+        val endIndex = localAgg.getRowType.getFieldCount - 1
+        val globalWindowing = new WindowAttachedWindowingStrategy(
+          windowingStrategy.getWindow,
+          windowingStrategy.getTimeAttributeType,
+          endIndex)
+
+        new StreamPhysicalGlobalWindowAggregate(
+          originAgg.getCluster,
+          providedTraitSet,
+          newInput,
+          input.getRowType,
+          globalGrouping,
+          originAggCalls.asScala,
+          globalWindowing,
+          windowProperties)
+      } else {
+        val newInput = if (isInputSatisfyRequiredDistribution) {
+          input
+        } else {
+          val requiredDistribution =
+            AggregateUtil.createDistribution(newGrouping.toArray)
+          val requiredTraitSet = originAgg.getCluster.getPlanner
+            .emptyTraitSet()
+            .replace(requiredDistribution)
+            .replace(FlinkConventions.STREAM_PHYSICAL)
+          RelOptRule.convert(originAgg.getInput, requiredTraitSet)
+        }
+
+        new StreamPhysicalWindowAggregate(
+          originAgg.getCluster,
+          providedTraitSet,
+          newInput,
+          newGrouping.toArray,
+          originAgg.getAggCallList.asScala,
+          windowingStrategy,
+          windowProperties)
+      }
+
+    // step-2: build projection on window aggregate to fix the fields mapping
+    val calc = buildCalcProjection(
+      originGrouping.toArray,
+      newGrouping.toArray,
+      startColumns.toArray,
+      endColumns.toArray,
+      timeColumns.toArray,
+      originAgg,
+      windowAgg
+    )
+
+    call.transformTo(calc)
+  }
+
+  protected def isTwoPhaseAggWorkable(
+      window: WindowingStrategy,
+      aggInfos: Array[AggregateInfo],
+      tableConfig: ReadableConfig): Boolean = getAggPhaseStrategy(tableConfig) match {
+    case AggregatePhaseStrategy.ONE_PHASE => false
+    // processing time window doesn't support two-phase,
+    // otherwise the processing-time can't be materialized in a single node
+    case _ => AggregateUtil.doAllSupportPartialMerge(aggInfos) && window.isRowtime
   }
 
   private def buildCalcProjection(
@@ -137,7 +229,7 @@ class StreamPhysicalWindowAggregateRule(config: Config) extends ConverterRule(co
       endColumns: Array[Int],
       timeColumns: Array[Int],
       agg: FlinkLogicalAggregate,
-      windowAgg: StreamPhysicalWindowAggregate): StreamPhysicalCalc = {
+      windowAgg: StreamPhysicalWindowAggregateBase): StreamPhysicalCalc = {
     val projectionMapping = getProjectionMapping(
       grouping,
       newGrouping,
@@ -243,12 +335,7 @@ class StreamPhysicalWindowAggregateRule(config: Config) extends ConverterRule(co
 }
 
 object StreamPhysicalWindowAggregateRule {
-  val INSTANCE = new StreamPhysicalWindowAggregateRule(
-    Config.INSTANCE.withConversion(
-      classOf[FlinkLogicalAggregate],
-      FlinkConventions.LOGICAL,
-      FlinkConventions.STREAM_PHYSICAL,
-      "StreamPhysicalWindowAggregateRule"))
+  val INSTANCE = new StreamPhysicalWindowAggregateRule()
 
   private val WINDOW_START: String = "window_start"
   private val WINDOW_END: String = "window_end"

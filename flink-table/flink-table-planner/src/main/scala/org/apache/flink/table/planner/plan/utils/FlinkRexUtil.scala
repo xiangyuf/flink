@@ -37,6 +37,7 @@ import org.apache.calcite.sql.{SqlAsOperator, SqlKind, SqlOperator}
 import org.apache.calcite.sql.fun.{SqlCastFunction, SqlStdOperatorTable}
 import org.apache.calcite.sql.fun.SqlStdOperatorTable._
 import org.apache.calcite.util._
+import org.apache.calcite.util.mapping.{Mapping, Mappings, MappingType}
 
 import java.lang.{Iterable => JIterable}
 import java.math.BigDecimal
@@ -436,6 +437,30 @@ object FlinkRexUtil {
       val operands = call.getOperands
       rexBuilder.makeCall(newOp, operands.last, operands.head).asInstanceOf[RexCall]
     }
+  }
+
+  def getProjectMapping(inputFieldCnt: Int, program: RexProgram): Mapping = {
+    val projects = program.getProjectList.map(program.expandLocalRef)
+    val mapping = Mappings.create(MappingType.INVERSE_FUNCTION, inputFieldCnt, projects.size)
+    projects.zipWithIndex.foreach {
+      case (project, index) =>
+        project match {
+          case inputRef: RexInputRef => mapping.set(inputRef.getIndex, index)
+          case call: RexCall if call.getKind == SqlKind.AS =>
+            call.getOperands.head match {
+              case inputRef: RexInputRef => mapping.set(inputRef.getIndex, index)
+              case _ => // ignore
+            }
+          case _ => // ignore
+        }
+    }
+    mapping.inverse()
+  }
+
+  def getOutputInputMapping(inputFieldCnt: Int): Mapping = {
+    val mapping = Mappings.create(MappingType.FUNCTION, inputFieldCnt, inputFieldCnt)
+    (0 until inputFieldCnt).foreach(index => mapping.set(index, index))
+    mapping
   }
 
   def getExpressionString(expr: RexNode, inFields: Seq[String]): String = {

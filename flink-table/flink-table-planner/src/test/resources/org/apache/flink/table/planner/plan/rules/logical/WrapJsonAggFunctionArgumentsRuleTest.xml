@@ -48,8 +48,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[JSON_ARRAYAGG_ABSENT_ON_NULL($0)])
     <Resource name="optimized rel plan">
       <![CDATA[
 GroupAggregate(groupBy=[f0], select=[f0, JSON_ARRAYAGG_ABSENT_ON_NULL($f1) AS EXPR$1])
-+- Exchange(distribution=[hash[f0]])
-   +- Calc(select=[f0, JSON_STRING(f0) AS $f1])
++- Calc(select=[f0, JSON_STRING(f0) AS $f1])
+   +- Exchange(distribution=[hash[f0]])
       +- TableSourceScan(table=[[default_catalog, default_database, T]], fields=[f0])
 ]]>
     </Resource>
@@ -67,8 +67,8 @@ LogicalAggregate(group=[{0}], EXPR$1=[JSON_OBJECTAGG_NULL_ON_NULL($1, $0)])
     <Resource name="optimized rel plan">
       <![CDATA[
 GroupAggregate(groupBy=[f0], select=[f0, JSON_OBJECTAGG_NULL_ON_NULL(f1, $f2) AS EXPR$1])
-+- Exchange(distribution=[hash[f0]])
-   +- Calc(select=[f0, f1, JSON_STRING(f0) AS $f2])
++- Calc(select=[f0, f1, JSON_STRING(f0) AS $f2])
+   +- Exchange(distribution=[hash[f0]])
       +- TableSourceScan(table=[[default_catalog, default_database, T]], fields=[f0, f1])
 ]]>
     </Resource>

@@ -93,6 +93,24 @@ class StreamPhysicalGlobalGroupAggregate(
       indexOfCountStar)
   }
 
+  def updateNeedRetraction(
+      inputs: java.util.List[RelNode],
+      needRetraction: Boolean,
+      aggCallNeedRetractions: Array[Boolean]): StreamPhysicalGlobalGroupAggregate = {
+    new StreamPhysicalGlobalGroupAggregate(
+      cluster,
+      traitSet,
+      inputs.get(0),
+      outputRowType,
+      grouping,
+      aggCalls,
+      aggCallNeedRetractions,
+      localAggInputRowType,
+      needRetraction,
+      partialFinalType,
+      indexOfCountStar)
+  }
+
   override def explainTerms(pw: RelWriter): RelWriter = {
     super
       .explainTerms(pw)

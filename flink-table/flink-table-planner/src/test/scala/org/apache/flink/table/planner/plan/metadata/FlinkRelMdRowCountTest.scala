@@ -132,12 +132,10 @@ class FlinkRelMdRowCountTest extends FlinkRelMdHandlerTestBase {
       flinkLogicalAgg,
       batchGlobalAggWithLocal,
       batchGlobalAggWithoutLocal,
-      batchLocalAgg).foreach(agg => assertEquals(7.0, mq.getRowCount(agg)))
-
-    // TODO re-check this
-    Array(streamGlobalAggWithLocal, streamGlobalAggWithoutLocal).foreach {
-      agg => assertEquals(50.0, mq.getRowCount(agg))
-    }
+      batchLocalAgg,
+      streamGlobalAggWithLocal,
+      streamGlobalAggWithoutLocal
+    ).foreach(agg => assertEquals(7.0, mq.getRowCount(agg)))
 
     Array(
       logicalAggWithAuxGroup,

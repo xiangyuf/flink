@@ -54,6 +54,19 @@
     "inputProperties" : [ ]
   }, {
     "id" : 2,
+    "type" : "stream-exec-exchange_1",
+    "inputProperties" : [ {
+      "requiredDistribution" : {
+        "type" : "HASH",
+        "keys" : [ 2 ]
+      },
+      "damBehavior" : "PIPELINED",
+      "priority" : 0
+    } ],
+    "outputType" : "ROW<`order_id` BIGINT, `user` VARCHAR(2147483647), `product` VARCHAR(2147483647), `order_time` TIMESTAMP(3)>",
+    "description" : "Exchange(distribution=[hash[product]])"
+  }, {
+    "id" : 3,
     "type" : "stream-exec-calc_1",
     "projection" : [ {
       "kind" : "INPUT_REF",
@@ -115,42 +128,6 @@
       } ]
     },
     "description" : "Calc(select=[order_id, user, product, order_time, PROCTIME() AS $4])"
-  }, {
-    "id" : 3,
-    "type" : "stream-exec-exchange_1",
-    "inputProperties" : [ {
-      "requiredDistribution" : {
-        "type" : "HASH",
-        "keys" : [ 2 ]
-      },
-      "damBehavior" : "PIPELINED",
-      "priority" : 0
-    } ],
-    "outputType" : {
-      "type" : "ROW",
-      "fields" : [ {
-        "name" : "order_id",
-        "fieldType" : "BIGINT"
-      }, {
-        "name" : "user",
-        "fieldType" : "VARCHAR(2147483647)"
-      }, {
-        "name" : "product",
-        "fieldType" : "VARCHAR(2147483647)"
-      }, {
-        "name" : "order_time",
-        "fieldType" : "TIMESTAMP(3)"
-      }, {
-        "name" : "$4",
-        "fieldType" : {
-          "type" : "TIMESTAMP_WITH_LOCAL_TIME_ZONE",
-          "nullable" : false,
-          "precision" : 3,
-          "kind" : "PROCTIME"
-        }
-      } ]
-    },
-    "description" : "Exchange(distribution=[hash[product]])"
   }, {
     "id" : 4,
     "type" : "stream-exec-deduplicate_1",

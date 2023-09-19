@@ -20,6 +20,7 @@ package org.apache.flink.table.planner.plan.metadata
 import org.apache.flink.table.planner.JDouble
 import org.apache.flink.table.planner.plan.nodes.calcite.{Expand, Rank}
 import org.apache.flink.table.planner.plan.nodes.physical.batch.BatchPhysicalGroupAggregateBase
+import org.apache.flink.table.planner.plan.nodes.physical.stream.StreamPhysicalGroupAggregateBase
 
 import org.apache.calcite.plan.volcano.RelSubset
 import org.apache.calcite.rel.RelNode
@@ -52,6 +53,12 @@ class FlinkRelMdPercentageOriginalRows private
 
   def getPercentageOriginalRows(
       rel: BatchPhysicalGroupAggregateBase,
+      mq: RelMetadataQuery): JDouble = {
+    mq.getPercentageOriginalRows(rel.getInput)
+  }
+
+  def getPercentageOriginalRows(
+      rel: StreamPhysicalGroupAggregateBase,
       mq: RelMetadataQuery): JDouble = {
     mq.getPercentageOriginalRows(rel.getInput)
   }
