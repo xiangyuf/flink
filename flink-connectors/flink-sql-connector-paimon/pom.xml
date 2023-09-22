@@ -35,7 +35,7 @@ under the License.
 	<packaging>jar</packaging>
 
 	<properties>
-		<paimon.version>0.4-byted-SNAPSHOT</paimon.version>
+		<paimon.version>0.5-byted-SNAPSHOT</paimon.version>
 	</properties>
 
 	<dependencies>
