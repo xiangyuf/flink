@@ -196,7 +196,8 @@ public class TestingDefaultExecutionGraphBuilder {
                 isDynamicGraph,
                 executionJobVertexFactory,
                 markPartitionFinishedStrategy,
-                nonFinishedHybridPartitionShouldBeUnknown);
+                nonFinishedHybridPartitionShouldBeUnknown,
+                new UnregisteredMetricsGroup());
     }
 
     public DefaultExecutionGraph build(ScheduledExecutorService executorService)

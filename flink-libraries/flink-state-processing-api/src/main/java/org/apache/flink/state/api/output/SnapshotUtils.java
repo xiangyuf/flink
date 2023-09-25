@@ -27,6 +27,7 @@ import org.apache.flink.runtime.checkpoint.OperatorSubtaskState;
 import org.apache.flink.runtime.checkpoint.SavepointType;
 import org.apache.flink.runtime.state.CheckpointStreamFactory;
 import org.apache.flink.runtime.state.filesystem.AbstractFsCheckpointStorageAccess;
+import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageAccess;
 import org.apache.flink.runtime.state.filesystem.FsCheckpointStorageLocation;
 import org.apache.flink.streaming.api.operators.OperatorSnapshotFinalizer;
 import org.apache.flink.streaming.api.operators.OperatorSnapshotFutures;
@@ -104,6 +105,8 @@ public final class SnapshotUtils {
         final Path path =
                 AbstractFsCheckpointStorageAccess.decodePathFromReference(
                         options.getTargetLocation());
+        final FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic =
+                new FsCheckpointStorageAccess.CheckpointWriteFileStatistic();
 
         return new FsCheckpointStorageLocation(
                 path.getFileSystem(),
@@ -112,6 +115,7 @@ public final class SnapshotUtils {
                 path,
                 options.getTargetLocation(),
                 MathUtils.checkedDownCast(configuration.get(FS_SMALL_FILE_THRESHOLD).getBytes()),
-                configuration.get(FS_WRITE_BUFFER_SIZE));
+                configuration.get(FS_WRITE_BUFFER_SIZE),
+                currentPeriodStatistic);
     }
 }

@@ -34,7 +34,10 @@ global:
         totalNumberOfCheckpoints,
       # used in dorado platform
         lastCheckpointDuration,
-        numberOfHdfsRetries
+        numberOfHdfsRetries,
+        checkpointWriteFileRate,
+        checkpointWriteFileLatency,
+        checkpointCloseFileLatency
     ]
 
 # non-global: jobname will be in the metric name

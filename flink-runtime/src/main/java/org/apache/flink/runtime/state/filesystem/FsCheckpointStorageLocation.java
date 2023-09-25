@@ -58,9 +58,16 @@ public class FsCheckpointStorageLocation extends FsCheckpointStreamFactory
             Path taskOwnedStateDir,
             CheckpointStorageLocationReference reference,
             int fileStateSizeThreshold,
-            int writeBufferSize) {
+            int writeBufferSize,
+            FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic) {
 
-        super(fileSystem, checkpointDir, sharedStateDir, fileStateSizeThreshold, writeBufferSize);
+        super(
+                fileSystem,
+                checkpointDir,
+                sharedStateDir,
+                fileStateSizeThreshold,
+                writeBufferSize,
+                currentPeriodStatistic);
 
         checkArgument(fileStateSizeThreshold >= 0);
         checkArgument(writeBufferSize >= 0);

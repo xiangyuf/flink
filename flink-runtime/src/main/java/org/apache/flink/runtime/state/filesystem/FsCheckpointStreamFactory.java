@@ -90,6 +90,8 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
     private final FsCheckpointStateToolset sharedStateToolset;
 
+    private final FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic;
+
     /**
      * Creates a new stream factory that stores its checkpoint data in the file system and location
      * defined by the given Path.
@@ -111,7 +113,38 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
             Path sharedStateDirectory,
             int fileStateSizeThreshold,
             int writeBufferSize) {
+        this(
+                fileSystem,
+                checkpointDirectory,
+                sharedStateDirectory,
+                fileStateSizeThreshold,
+                writeBufferSize,
+                new FsCheckpointStorageAccess.CheckpointWriteFileStatistic());
+    }
 
+    /**
+     * Creates a new stream factory that stores its checkpoint data in the file system and location
+     * defined by the given Path.
+     *
+     * <p><b>Important:</b> The given checkpoint directory must already exist. Refer to the
+     * class-level JavaDocs for an explanation why this factory must not try and create the
+     * checkpoints.
+     *
+     * @param fileSystem The filesystem to write to.
+     * @param checkpointDirectory The directory for checkpoint exclusive state data.
+     * @param sharedStateDirectory The directory for shared checkpoint data.
+     * @param fileStateSizeThreshold State up to this size will be stored as part of the metadata,
+     *     rather than in files
+     * @param writeBufferSize The write buffer size.
+     * @param currentPeriodStatistic The statistic for file write.
+     */
+    public FsCheckpointStreamFactory(
+            FileSystem fileSystem,
+            Path checkpointDirectory,
+            Path sharedStateDirectory,
+            int fileStateSizeThreshold,
+            int writeBufferSize,
+            FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic) {
         if (fileStateSizeThreshold < 0) {
             throw new IllegalArgumentException(
                     "The threshold for file state size must be zero or larger.");
@@ -132,6 +165,7 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
         this.sharedStateDirectory = checkNotNull(sharedStateDirectory);
         this.fileStateThreshold = fileStateSizeThreshold;
         this.writeBufferSize = writeBufferSize;
+        this.currentPeriodStatistic = currentPeriodStatistic;
         if (fileSystem instanceof DuplicatingFileSystem) {
             final DuplicatingFileSystem duplicatingFileSystem = (DuplicatingFileSystem) fileSystem;
             this.privateStateToolset =
@@ -156,7 +190,12 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
         final boolean entropyInjecting = EntropyInjector.isEntropyInjecting(filesystem, target);
         final boolean absolutePath = entropyInjecting || scope == CheckpointedStateScope.SHARED;
         return new FsCheckpointStateOutputStream(
-                target, filesystem, bufferSize, fileStateThreshold, !absolutePath);
+                target,
+                filesystem,
+                bufferSize,
+                fileStateThreshold,
+                !absolutePath,
+                currentPeriodStatistic);
     }
 
     private Path getTargetPath(CheckpointedStateScope scope) {
@@ -217,6 +256,8 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
      */
     public static class FsCheckpointStateOutputStream extends CheckpointStateOutputStream {
 
+        private static final long MIN_WRITE_BYTES_TO_REPORT = 8 * 1024 * 1024L;
+
         private final byte[] writeBuffer;
 
         private int pos;
@@ -237,6 +278,14 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
         private final boolean allowRelativePaths;
 
+        private final FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic;
+
+        private long writeBytes;
+
+        private long writeLatency;
+
+        private long writeCount;
+
         public FsCheckpointStateOutputStream(
                 Path basePath, FileSystem fs, int bufferSize, int localStateThreshold) {
             this(basePath, fs, bufferSize, localStateThreshold, false);
@@ -248,7 +297,22 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
                 int bufferSize,
                 int localStateThreshold,
                 boolean allowRelativePaths) {
+            this(
+                    basePath,
+                    fs,
+                    bufferSize,
+                    localStateThreshold,
+                    allowRelativePaths,
+                    new FsCheckpointStorageAccess.CheckpointWriteFileStatistic());
+        }
 
+        public FsCheckpointStateOutputStream(
+                Path basePath,
+                FileSystem fs,
+                int bufferSize,
+                int localStateThreshold,
+                boolean allowRelativePaths,
+                FsCheckpointStorageAccess.CheckpointWriteFileStatistic currentPeriodStatistic) {
             if (bufferSize < localStateThreshold) {
                 throw new IllegalArgumentException();
             }
@@ -258,6 +322,10 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
             this.writeBuffer = new byte[bufferSize];
             this.localStateThreshold = localStateThreshold;
             this.allowRelativePaths = allowRelativePaths;
+            this.currentPeriodStatistic = currentPeriodStatistic;
+            this.writeBytes = 0L;
+            this.writeLatency = 0L;
+            this.writeCount = 0L;
         }
 
         @Override
@@ -290,8 +358,15 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
             } else {
                 // flushToFile the current buffer
                 flushToFile();
-                // write the bytes directly
-                outStream.write(b, off, len);
+                long startTimeNs = System.nanoTime();
+                final long writeBytes = len;
+                try {
+                    // write the bytes directly
+                    outStream.write(b, off, len);
+                } finally {
+                    long elapsedNs = System.nanoTime() - startTimeNs;
+                    updateWriteStatistic(writeBytes, elapsedNs, false);
+                }
             }
         }
 
@@ -309,8 +384,15 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
                 }
 
                 if (pos > 0) {
-                    outStream.write(writeBuffer, 0, pos);
-                    pos = 0;
+                    long startTimeNs = System.nanoTime();
+                    long writeBytes = pos;
+                    try {
+                        outStream.write(writeBuffer, 0, pos);
+                        pos = 0;
+                    } finally {
+                        long elapsedNs = System.nanoTime() - startTimeNs;
+                        updateWriteStatistic(writeBytes, elapsedNs, false);
+                    }
                 }
             } else {
                 throw new IOException("closed");
@@ -354,11 +436,15 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
                 pos = writeBuffer.length;
 
                 if (outStream != null) {
+                    long startTimeNs = System.nanoTime();
                     try {
                         outStream.close();
                     } catch (Throwable throwable) {
                         LOG.warn("Could not close the state stream for {}.", statePath, throwable);
                     } finally {
+                        long elapsedNs = System.nanoTime() - startTimeNs;
+                        currentPeriodStatistic.updateCloseStatistics(elapsedNs);
+                        updateWriteStatistic(0L, 0L, true);
                         try {
                             fs.delete(statePath, false);
                         } catch (Exception e) {
@@ -401,7 +487,14 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
                             } catch (Exception ignored) {
                             }
 
-                            outStream.close();
+                            long startTimeNs = System.nanoTime();
+                            try {
+                                outStream.close();
+                            } finally {
+                                long elapsedNs = System.nanoTime() - startTimeNs;
+                                currentPeriodStatistic.updateCloseStatistics(elapsedNs);
+                                updateWriteStatistic(0L, 0L, true);
+                            }
 
                             return allowRelativePaths
                                     ? new RelativeFileStateHandle(
@@ -460,6 +553,19 @@ public class FsCheckpointStreamFactory implements CheckpointStreamFactory {
 
             throw new IOException(
                     "Could not open output stream for state backend", latestException);
+        }
+
+        private void updateWriteStatistic(long writeBytes, long writeLatency, boolean force) {
+            this.writeBytes += writeBytes;
+            this.writeLatency += writeLatency;
+            this.writeCount++;
+            if (this.writeBytes >= MIN_WRITE_BYTES_TO_REPORT || force) {
+                this.currentPeriodStatistic.updateWriteStatistics(
+                        this.writeBytes, this.writeLatency, this.writeCount);
+                this.writeBytes = 0L;
+                this.writeLatency = 0L;
+                this.writeCount = 0L;
+            }
         }
     }
 }
