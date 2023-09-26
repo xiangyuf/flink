@@ -18,8 +18,6 @@
 
 package org.apache.flink.table.planner.operations;
 
-import org.apache.calcite.sql.dialect.AnsiSqlDialect;
-
 import org.apache.flink.table.catalog.CatalogManager;
 import org.apache.flink.table.planner.calcite.FlinkPlannerImpl;
 import org.apache.flink.table.planner.calcite.SqlToRexConverter;
@@ -35,7 +33,7 @@ import org.apache.calcite.rel.type.RelDataTypeFactory;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.dialect.CalciteSqlDialect;
+import org.apache.calcite.sql.dialect.AnsiSqlDialect;
 import org.apache.calcite.sql.parser.SqlParser;
 import org.apache.calcite.sql.validate.SqlValidator;
 
@@ -102,14 +100,14 @@ public class SqlNodeConvertContext implements SqlNodeConverter.ConvertContext {
     private SqlDialect getSqlDialect() {
         SqlParser.Config parserConfig = flinkPlanner.config().getParserConfig();
         return
-                // The default implementation of SqlDialect suppresses all table hints since
-                // CALCITE-4640, so we should use AnsiSqlDialect instead to reserve table hints.
-                new AnsiSqlDialect(
-                        SqlDialect.EMPTY_CONTEXT
-                                .withQuotedCasing(parserConfig.unquotedCasing())
-                                .withConformance(parserConfig.conformance())
-                                .withUnquotedCasing(parserConfig.unquotedCasing())
-                                .withIdentifierQuoteString(parserConfig.quoting().string));
+        // The default implementation of SqlDialect suppresses all table hints since
+        // CALCITE-4640, so we should use AnsiSqlDialect instead to reserve table hints.
+        new AnsiSqlDialect(
+                SqlDialect.EMPTY_CONTEXT
+                        .withQuotedCasing(parserConfig.unquotedCasing())
+                        .withConformance(parserConfig.conformance())
+                        .withUnquotedCasing(parserConfig.unquotedCasing())
+                        .withIdentifierQuoteString(parserConfig.quoting().string));
     }
 
     @Override

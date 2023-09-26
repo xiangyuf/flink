@@ -17,6 +17,7 @@
 
 package org.apache.flink.table.functions;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -56,6 +57,14 @@ public class SqlLikeUtils {
     public static boolean like(String s, String pattern, String escape) {
         final String regex = sqlToRegexLike(pattern, escape);
         return Pattern.matches(regex, s);
+    }
+
+    /** SQL {@code ILIKE} function with escape. */
+    public static boolean ilike(String s, String patternStr, String escape) {
+        final String regex = sqlToRegexLike(patternStr, escape);
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(s);
+        return matcher.matches();
     }
 
     /** SQL {@code SIMILAR} function. */

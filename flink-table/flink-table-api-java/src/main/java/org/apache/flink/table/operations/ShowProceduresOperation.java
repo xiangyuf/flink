@@ -89,7 +89,7 @@ public class ShowProceduresOperation implements ExecutableOperation {
                 // it's to show current_catalog.current_database
                 procedures =
                         catalogManager
-                                .getCatalogOrError(catalogManager.getCurrentCatalog())
+                                .getCatalogOrThrowException(catalogManager.getCurrentCatalog())
                                 .listProcedures(catalogManager.getCurrentDatabase());
             } else {
                 Catalog catalog = catalogManager.getCatalogOrThrowException(catalogName);
