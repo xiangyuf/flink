@@ -92,7 +92,8 @@ public class FlinkUserCodeClassLoaders {
             String[] alwaysParentFirstPatterns,
             Consumer<Throwable> classLoadingExceptionHandler,
             boolean checkClassLoaderLeak) {
-        URL[] finalUrls = replaceEnvVarInUrlIfRequired(urls);
+        URL[] finalUrls =
+                replaceEnvVarInUrlIfRequired(urls, DefaultEnvironmentVarQueryHelper.INSTANCE);
         LOG.info(
                 "created classloader with url: {} and resolveOrder: {}",
                 Arrays.toString(finalUrls),
@@ -122,19 +123,23 @@ public class FlinkUserCodeClassLoaders {
     }
 
     /**
-     * Replace the %ENV_VAR% to the actual env var value in URLs.
+     * Replace the %ENV_VAR% to the actual env var value in URLs. It will skip the env var if this
+     * env var doesn't exist.
      *
      * @param urls the urls waiting to parse and replace
+     * @param queryHelper env var query helper
      * @return the env var replaced urls
      */
-    private static URL[] replaceEnvVarInUrlIfRequired(URL[] urls) {
+    public static URL[] replaceEnvVarInUrlIfRequired(
+            URL[] urls, EnvironmentVarQueryHelper queryHelper) {
         URL[] finalUrls = new URL[urls.length];
         for (int i = 0; i < urls.length; i++) {
             String replacedUrl = urls[i].toString();
             Matcher matcher = parseEnvPattern.matcher(replacedUrl);
             while (matcher.find()) {
                 String matchedStr = matcher.group();
-                String envVar = System.getenv(matchedStr.substring(1, matchedStr.length() - 1));
+                String envVar =
+                        queryHelper.queryEnv(matchedStr.substring(1, matchedStr.length() - 1));
                 if (StringUtils.isNullOrWhitespaceOnly(envVar)) {
                     LOG.error("can not find given env var {} in this url {}", matchedStr, urls[i]);
                     continue;
@@ -263,6 +268,21 @@ public class FlinkUserCodeClassLoaders {
 
         static {
             ClassLoader.registerAsParallelCapable();
+        }
+    }
+
+    /** An interface to help querying environment variables. */
+    public interface EnvironmentVarQueryHelper {
+        String queryEnv(String name);
+    }
+
+    /** Default implementation of EnvironmentVarQueryHelper which queries from System. */
+    public enum DefaultEnvironmentVarQueryHelper implements EnvironmentVarQueryHelper {
+        INSTANCE;
+
+        @Override
+        public String queryEnv(String name) {
+            return System.getenv(name);
         }
     }
 }

@@ -18,8 +18,6 @@
 
 package org.apache.flink.util;
 
-import org.apache.flink.configuration.Configuration;
-
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -28,10 +26,11 @@ import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.apache.flink.util.FlinkUserCodeClassLoader.NOOP_EXCEPTION_HANDLER;
 import static org.assertj.core.api.Assertions.fail;
@@ -337,31 +336,29 @@ public class FlinkUserCodeClassLoadersTest extends TestLogger {
         final URL[] urls =
                 new URL[] {
                     new URL("file:file1.jar"),
-                    new URL("file:%JAVA_HOME%/file2.jar"),
-                    new URL("file:%JAVA_HOME%/%HOME%/file2.jar"),
-                    new URL("file:%JAVA_HOME%/%HOME2%/file2.jar"),
+                    new URL("file:%VAR1%/file2.jar"),
+                    new URL("file:%VAR1%/%VAR2%/file2.jar"),
+                    new URL("file:%VAR1%/%VAR3%/file2.jar"),
                 };
-        String javaHome = System.getenv("JAVA_HOME");
-        String home = System.getenv("HOME");
+        // VAR1 and VAR2 exist in environment while VAR3 does not exist.
+        MockEnvironmentVarQueryHelper mockEnvironmentVarQueryHelper =
+                new MockEnvironmentVarQueryHelper();
+        mockEnvironmentVarQueryHelper.addEnv("VAR1", "foo");
+        mockEnvironmentVarQueryHelper.addEnv("VAR2", "bar");
         final URL[] expectedUrls =
                 new URL[] {
                     new URL("file:file1.jar"),
-                    new URL("file:%JAVA_HOME%/file2.jar".replaceAll("%JAVA_HOME%", javaHome)),
+                    new URL("file:%VAR1%/file2.jar".replaceAll("%VAR1%", "foo")),
                     new URL(
-                            "file:%JAVA_HOME%/%HOME%/file2.jar"
-                                    .replaceAll("%JAVA_HOME%", javaHome)
-                                    .replaceAll("%HOME%", home)),
-                    new URL(
-                            "file:%JAVA_HOME%/%HOME2%/file2.jar"
-                                    .replaceAll("%JAVA_HOME%", javaHome)),
+                            "file:%VAR1%/%VAR2%/file2.jar"
+                                    .replaceAll("%VAR1%", "foo")
+                                    .replaceAll("%VAR2%", "bar")),
+                    new URL("file:%VAR1%/%VAR3%/file2.jar".replaceAll("%VAR1%", "foo")),
                 };
-        try (URLClassLoader urlClassLoader =
-                FlinkUserCodeClassLoaders.create(
-                        urls, getClass().getClassLoader(), new Configuration())) {
-            assertArrayEquals(expectedUrls, urlClassLoader.getURLs());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        URL[] finalUrls =
+                FlinkUserCodeClassLoaders.replaceEnvVarInUrlIfRequired(
+                        urls, mockEnvironmentVarQueryHelper);
+        assertArrayEquals(expectedUrls, finalUrls);
     }
 
     private void assertClassNotFoundException(
@@ -387,4 +384,19 @@ public class FlinkUserCodeClassLoadersTest extends TestLogger {
     }
 
     private static class ClassToLoad {}
+
+    private static class MockEnvironmentVarQueryHelper
+            implements FlinkUserCodeClassLoaders.EnvironmentVarQueryHelper {
+
+        private final Map<String, String> envMap = new HashMap<>();
+
+        public void addEnv(String name, String value) {
+            envMap.put(name, value);
+        }
+
+        @Override
+        public String queryEnv(String name) {
+            return envMap.get(name);
+        }
+    }
 }
