@@ -297,7 +297,7 @@ public class EventTimeAllWindowCheckpointingITCase extends TestLogger {
                                             numKeys, numElementsPerKey, windowSize)))
                     .setParallelism(1);
 
-            env.execute("Tumbling Window Test");
+            env.execute("PreAggregated Tumbling Window Test");
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
@@ -377,7 +377,7 @@ public class EventTimeAllWindowCheckpointingITCase extends TestLogger {
                                             numKeys, numElementsPerKey, windowSlide)))
                     .setParallelism(1);
 
-            env.execute("Tumbling Window Test");
+            env.execute("PreAggregated Sliding Window Test");
         } catch (Exception e) {
             e.printStackTrace();
             fail(e.getMessage());
