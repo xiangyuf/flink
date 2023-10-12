@@ -235,6 +235,16 @@ public class CoreOptions {
                                             "Java options to start the JVM of all Flink processes with.")
                                     .build());
 
+    public static final ConfigOption<String> FLINK_DEFAULT_JVM_OPTIONS =
+            ConfigOptions.key("env.java.default-opts.all")
+                    .stringType()
+                    .defaultValue("")
+                    .withDescription(
+                            Description.builder()
+                                    .text(
+                                            "Default Java options to start the JVM of all Flink processes with.")
+                                    .build());
+
     public static final ConfigOption<String> FLINK_JM_JVM_OPTIONS =
             ConfigOptions.key("env.java.opts.jobmanager")
                     .stringType()
@@ -244,6 +254,16 @@ public class CoreOptions {
                                     .text("Java options to start the JVM of the JobManager with.")
                                     .build());
 
+    public static final ConfigOption<String> FLINK_DEFAULT_JM_JVM_OPTIONS =
+            ConfigOptions.key("env.java.default-opts.jobmanager")
+                    .stringType()
+                    .defaultValue("")
+                    .withDescription(
+                            Description.builder()
+                                    .text(
+                                            "Default java options to start the JVM of the JobManager with.")
+                                    .build());
+
     public static final ConfigOption<String> FLINK_TM_JVM_OPTIONS =
             ConfigOptions.key("env.java.opts.taskmanager")
                     .stringType()
@@ -251,6 +271,16 @@ public class CoreOptions {
                     .withDescription(
                             Description.builder()
                                     .text("Java options to start the JVM of the TaskManager with.")
+                                    .build());
+
+    public static final ConfigOption<String> FLINK_DEFAULT_TM_JVM_OPTIONS =
+            ConfigOptions.key("env.java.default-opts.taskmanager")
+                    .stringType()
+                    .defaultValue("")
+                    .withDescription(
+                            Description.builder()
+                                    .text(
+                                            "Default Java options to start the JVM of the TaskManager with.")
                                     .build());
 
     public static final ConfigOption<String> FLINK_HS_JVM_OPTIONS =
