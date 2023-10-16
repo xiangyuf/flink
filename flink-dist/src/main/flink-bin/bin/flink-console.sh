@@ -105,7 +105,9 @@ log="${FLINK_LOG_PREFIX}.log"
 out="${FLINK_LOG_PREFIX}.out"
 err="${FLINK_LOG_PREFIX}.err"
 
-log_setting=("-Dlog.file=${log}" "-Dlog4j.configuration=file:${FLINK_CONF_DIR}/log4j-console.properties" "-Dlog4j.configurationFile=file:${FLINK_CONF_DIR}/log4j-console.properties" "-Dlogback.configurationFile=file:${FLINK_CONF_DIR}/logback-console.xml")
+log_level=$(readFromConfig "env.log.level" "INFO" "${YAML_CONF}")
+
+log_setting=("-Dlog.file=${log}" "-Dlog.level=${log_level}" "-Dlog4j.configuration=file:${FLINK_CONF_DIR}/log4j-console.properties" "-Dlog4j.configurationFile=file:${FLINK_CONF_DIR}/log4j-console.properties" "-Dlogback.configurationFile=file:${FLINK_CONF_DIR}/logback-console.xml")
 
 echo "Starting $SERVICE as a console application on host $HOSTNAME."
 

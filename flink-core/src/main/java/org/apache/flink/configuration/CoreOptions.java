@@ -347,6 +347,12 @@ public class CoreOptions {
                     .defaultValue(10)
                     .withDescription("The maximum number of old log files to keep.");
 
+    /** This option is here only for controlling the level of log. */
+    public static final ConfigOption<String> FLINK_LOG_LEVEL =
+            ConfigOptions.key("env.log.level")
+                    .defaultValue("INFO")
+                    .withDescription("Override the log.level property on log4j.properties");
+
     /**
      * This option is here only for documentation generation, it is only evaluated in the shell
      * scripts.
