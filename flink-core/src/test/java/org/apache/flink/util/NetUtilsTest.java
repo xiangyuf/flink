@@ -18,12 +18,14 @@
 
 package org.apache.flink.util;
 
+import org.assertj.core.api.Assertions;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.MalformedURLException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketTimeoutException;
@@ -33,6 +35,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import static org.apache.flink.util.NetUtils.socketToUrl;
 import static org.hamcrest.core.IsCollectionContaining.hasItems;
 import static org.hamcrest.core.IsNot.not;
 import static org.junit.Assert.assertEquals;
@@ -335,5 +338,29 @@ public class NetUtilsTest extends TestLogger {
                     host.toLowerCase() + ":" + port,
                     NetUtils.unresolvedHostAndPortToNormalizedString(host, port));
         }
+    }
+
+    @Test
+    public void testSocketToUrl() throws MalformedURLException {
+        InetSocketAddress socketAddress = new InetSocketAddress("foo.com", 8080);
+        URL expectedResult = new URL("http://foo.com:8080");
+
+        Assertions.assertThat(socketToUrl(socketAddress)).isEqualTo(expectedResult);
+    }
+
+    @Test
+    public void testIpv6SocketToUrl() throws MalformedURLException {
+        InetSocketAddress socketAddress = new InetSocketAddress("[2001:1db8::ff00:42:8329]", 8080);
+        URL expectedResult = new URL("http://[2001:1db8::ff00:42:8329]:8080");
+
+        Assertions.assertThat(socketToUrl(socketAddress)).isEqualTo(expectedResult);
+    }
+
+    @Test
+    public void testIpv4SocketToUrl() throws MalformedURLException {
+        InetSocketAddress socketAddress = new InetSocketAddress("192.168.0.1", 8080);
+        URL expectedResult = new URL("http://192.168.0.1:8080");
+
+        Assertions.assertThat(socketToUrl(socketAddress)).isEqualTo(expectedResult);
     }
 }
