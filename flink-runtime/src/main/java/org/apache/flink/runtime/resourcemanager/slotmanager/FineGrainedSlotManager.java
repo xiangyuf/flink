@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +91,7 @@ public class FineGrainedSlotManager implements SlotManager {
 
     private final SlotManagerMetricGroup slotManagerMetricGroup;
 
-    private final Map<JobID, String> jobMasterTargetAddresses = new HashMap<>();
+    private final Map<JobID, String> jobMasterTargetAddresses = new LinkedHashMap<>();
 
     /**
      * Release task executor only when each produced result partition is either consumed or failed.
@@ -616,7 +617,7 @@ public class FineGrainedSlotManager implements SlotManager {
         if (!started) {
             return;
         }
-        Map<JobID, Collection<ResourceRequirement>> missingResources =
+        final Map<JobID, Collection<ResourceRequirement>> missingResources =
                 resourceTracker.getMissingResources();
         if (missingResources.isEmpty()) {
             if (resourceAllocator.isSupported()
@@ -629,15 +630,20 @@ public class FineGrainedSlotManager implements SlotManager {
         }
 
         LOG.info("Matching resource requirements against available resources.");
-        missingResources =
-                missingResources.entrySet().stream()
-                        .collect(
-                                Collectors.toMap(
-                                        Map.Entry::getKey, e -> new ArrayList<>(e.getValue())));
+        Map<JobID, Collection<ResourceRequirement>> missingResourcesInOrder = new LinkedHashMap<>();
+        jobMasterTargetAddresses
+                .keySet()
+                .forEach(
+                        jobId -> {
+                            if (missingResources.containsKey(jobId)) {
+                                missingResourcesInOrder.put(
+                                        jobId, new ArrayList<>(missingResources.get(jobId)));
+                            }
+                        });
 
         final ResourceAllocationResult result =
                 resourceAllocationStrategy.tryFulfillRequirements(
-                        missingResources, taskManagerTracker, this::isBlockedTaskManager);
+                        missingResourcesInOrder, taskManagerTracker, this::isBlockedTaskManager);
 
         // Allocate slots according to the result
         allocateSlotsAccordingTo(result.getAllocationsOnRegisteredResources());

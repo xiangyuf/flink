@@ -51,6 +51,36 @@
             <td>Semicolon separated list of pairs of class names and Kryo serializers class names to be used as Kryo default serializers<br /><br />Example:<br /><code class="highlighter-rouge">class:org.example.ExampleClass,serializer:org.example.ExampleSerializer1; class:org.example.ExampleClass2,serializer:org.example.ExampleSerializer2</code></td>
         </tr>
         <tr>
+            <td><h5>pipeline.dependencies-mounted-path</h5></td>
+            <td style="word-wrap: break-word;">"/opt/tiger/venv"</td>
+            <td>String</td>
+            <td>For k8s application mode, Flink will download remote files to this path in container</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.download-template</h5></td>
+            <td style="word-wrap: break-word;">"flink download -src '%files%' -dest %target%"</td>
+            <td>String</td>
+            <td>For k8s application mode, use this template to download external files. The %files% will be replaced by the file list which is a string where each file is separated by semicolon.The %target% will be replaced by the saved path in container.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.external-dependencies</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>List&lt;String&gt;</td>
+            <td>A list of PyFlink Python third-part dependencies separated by semicolon. In k8s application mode, these files will need to be downloaded to JM/TM container.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.external-resources</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>List&lt;String&gt;</td>
+            <td>A list of external files (hdfs, local disk, local container) separated by semicolon. In k8s application mode, these files will need to be downloaded to JM/TM container.In session mode, files will be added into pipeline.jars and then be uploaded to JM blob server</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.file-mounted-path</h5></td>
+            <td style="word-wrap: break-word;">"/opt/tiger/workdir"</td>
+            <td>String</td>
+            <td>For k8s application mode, Flink will download remote files to this path in container</td>
+        </tr>
+        <tr>
             <td><h5>pipeline.force-avro</h5></td>
             <td style="word-wrap: break-word;">false</td>
             <td>Boolean</td>
@@ -121,6 +151,12 @@
             <td style="word-wrap: break-word;">(none)</td>
             <td>List&lt;String&gt;</td>
             <td>Semicolon separated list of types to be registered with the serialization stack. If the type is eventually serialized as a POJO, then the type is registered with the POJO serializer. If the type ends up being serialized with Kryo, then it will be registered at Kryo to make sure that only tags are written.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.upload-remote-dir</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>For k8s application mode, for those files that stores in the disk, Flink need to upload them to this remote directory. After that, JM/TM pod init-container could download remote files from this directory.</td>
         </tr>
         <tr>
             <td><h5>pipeline.vertex-description-mode</h5></td>

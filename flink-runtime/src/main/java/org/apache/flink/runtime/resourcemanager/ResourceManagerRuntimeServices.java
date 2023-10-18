@@ -27,6 +27,8 @@ import org.apache.flink.runtime.resourcemanager.slotmanager.DefaultSlotStatusSyn
 import org.apache.flink.runtime.resourcemanager.slotmanager.DefaultSlotTracker;
 import org.apache.flink.runtime.resourcemanager.slotmanager.FineGrainedSlotManager;
 import org.apache.flink.runtime.resourcemanager.slotmanager.FineGrainedTaskManagerTracker;
+import org.apache.flink.runtime.resourcemanager.slotmanager.OlapResourceAllocationStrategy;
+import org.apache.flink.runtime.resourcemanager.slotmanager.ResourceAllocationStrategy;
 import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManager;
 import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManagerConfiguration;
 import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManagerUtils;
@@ -86,15 +88,7 @@ public class ResourceManagerRuntimeServices {
                     new FineGrainedTaskManagerTracker(),
                     new DefaultSlotStatusSyncer(
                             slotManagerConfiguration.getTaskManagerRequestTimeout()),
-                    new DefaultResourceAllocationStrategy(
-                            SlotManagerUtils.generateTaskManagerTotalResourceProfile(
-                                    slotManagerConfiguration.getDefaultWorkerResourceSpec()),
-                            slotManagerConfiguration.getNumSlotsPerWorker(),
-                            slotManagerConfiguration.isEvenlySpreadOutSlots(),
-                            slotManagerConfiguration.getTaskManagerTimeout(),
-                            slotManagerConfiguration.getRedundantTaskManagerNum(),
-                            slotManagerConfiguration.getMinTotalCpu(),
-                            slotManagerConfiguration.getMinTotalMem()));
+                    createResourceAllocationStrategy(slotManagerConfiguration));
         } else {
             return new DeclarativeSlotManager(
                     scheduledExecutor,
@@ -102,6 +96,34 @@ public class ResourceManagerRuntimeServices {
                     slotManagerMetricGroup,
                     new DefaultResourceTracker(),
                     new DefaultSlotTracker());
+        }
+    }
+
+    private static ResourceAllocationStrategy createResourceAllocationStrategy(
+            SlotManagerConfiguration slotManagerConfiguration) {
+        switch (slotManagerConfiguration.getResourceAllocationStrategyType()) {
+            case DEFAULT:
+                return new DefaultResourceAllocationStrategy(
+                        SlotManagerUtils.generateTaskManagerTotalResourceProfile(
+                                slotManagerConfiguration.getDefaultWorkerResourceSpec()),
+                        slotManagerConfiguration.getNumSlotsPerWorker(),
+                        slotManagerConfiguration.isEvenlySpreadOutSlots(),
+                        slotManagerConfiguration.getTaskManagerTimeout(),
+                        slotManagerConfiguration.getRedundantTaskManagerNum(),
+                        slotManagerConfiguration.getMinTotalCpu(),
+                        slotManagerConfiguration.getMinTotalMem());
+            case OLAP:
+                return new OlapResourceAllocationStrategy(
+                        SlotManagerUtils.generateTaskManagerTotalResourceProfile(
+                                slotManagerConfiguration.getDefaultWorkerResourceSpec()),
+                        slotManagerConfiguration.getNumSlotsPerWorker(),
+                        slotManagerConfiguration.isEvenlySpreadOutSlots(),
+                        slotManagerConfiguration.getTaskManagerTimeout(),
+                        slotManagerConfiguration.getMinSlotNum());
+            default:
+                throw new IllegalArgumentException(
+                        "Unknown resource allocation strategy "
+                                + slotManagerConfiguration.getResourceAllocationStrategyType());
         }
     }
 }

@@ -71,6 +71,12 @@ This check should only be disabled if such a leak prevents further jobs from run
             <td>Directories for temporary files, separated by",", "|", or the system's java.io.File.pathSeparator.</td>
         </tr>
         <tr>
+            <td><h5>job.work.dir</h5></td>
+            <td style="word-wrap: break-word;">"hdfs://haruna/flink/"</td>
+            <td>String</td>
+            <td>The base folder used as job work dir. Flink application will create its own folder under this directory.</td>
+        </tr>
+        <tr>
             <td><h5>parallelism.default</h5></td>
             <td style="word-wrap: break-word;">1</td>
             <td>Integer</td>

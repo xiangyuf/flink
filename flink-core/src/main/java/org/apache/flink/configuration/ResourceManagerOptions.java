@@ -202,6 +202,15 @@ public class ResourceManagerOptions {
                     .defaultValue(Duration.ofMillis(50))
                     .withDescription("The delay of the declare needed resources.");
 
+    @Documentation.ExcludeFromDocumentation(
+            "This is an expert option, that we do not want to expose in the documentation")
+    public static final ConfigOption<ResourceAllocationStrategyType> RESOURCE_ALLOCATION_STRATEGY =
+            ConfigOptions.key("slotmanager.resource-allocation.strategy")
+                    .enumType(ResourceAllocationStrategyType.class)
+                    .defaultValue(ResourceAllocationStrategyType.DEFAULT)
+                    .withDescription(
+                            "Strategy for allocating slots and task managers to fulfill the unfulfilled requirements.");
+
     /**
      * Time in milliseconds of the start-up period of a standalone cluster. During this time,
      * resource manager of the standalone cluster expects new task executors to be registered, and
@@ -312,6 +321,12 @@ public class ResourceManagerOptions {
                                     + " resource manager will handle new resource requests by requesting new workers."
                                     + " If you would like to reuse the previous workers as much as possible, you should"
                                     + " configure a longer timeout time to wait for previous workers to register.");
+
+    /** Resource allocation strategy types. */
+    public enum ResourceAllocationStrategyType {
+        DEFAULT,
+        OLAP
+    }
 
     // ---------------------------------------------------------------------------------------------
 

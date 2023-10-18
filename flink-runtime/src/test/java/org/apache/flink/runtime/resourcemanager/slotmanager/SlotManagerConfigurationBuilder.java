@@ -44,6 +44,7 @@ public class SlotManagerConfigurationBuilder {
     private MemorySize maxTotalMem;
     private int redundantTaskManagerNum;
     private boolean evenlySpreadOutSlots;
+    private ResourceManagerOptions.ResourceAllocationStrategyType resourceAllocationStrategyType;
 
     private SlotManagerConfigurationBuilder() {
         this.taskManagerRequestTimeout = TestingUtils.infiniteTime();
@@ -63,6 +64,8 @@ public class SlotManagerConfigurationBuilder {
         this.redundantTaskManagerNum =
                 ResourceManagerOptions.REDUNDANT_TASK_MANAGER_NUM.defaultValue();
         this.evenlySpreadOutSlots = false;
+        this.resourceAllocationStrategyType =
+                ResourceManagerOptions.ResourceAllocationStrategyType.DEFAULT;
     }
 
     public static SlotManagerConfigurationBuilder newBuilder() {
@@ -146,6 +149,12 @@ public class SlotManagerConfigurationBuilder {
         return this;
     }
 
+    public SlotManagerConfigurationBuilder setResourceAllocationStrategyType(
+            ResourceManagerOptions.ResourceAllocationStrategyType resourceAllocationStrategyType) {
+        this.resourceAllocationStrategyType = resourceAllocationStrategyType;
+        return this;
+    }
+
     public SlotManagerConfiguration build() {
         return new SlotManagerConfiguration(
                 taskManagerRequestTimeout,
@@ -165,6 +174,7 @@ public class SlotManagerConfigurationBuilder {
                 maxTotalCpu,
                 minTotalMem,
                 maxTotalMem,
-                redundantTaskManagerNum);
+                redundantTaskManagerNum,
+                resourceAllocationStrategyType);
     }
 }

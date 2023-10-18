@@ -171,7 +171,8 @@ public class DeclarativeSlotManagerBuilder {
                         new CPUResource(Double.MAX_VALUE),
                         MemorySize.ZERO,
                         MemorySize.MAX_VALUE,
-                        redundantTaskManagerNum);
+                        redundantTaskManagerNum,
+                        ResourceManagerOptions.ResourceAllocationStrategyType.DEFAULT);
 
         return new DeclarativeSlotManager(
                 scheduledExecutor,

@@ -15,6 +15,84 @@
             <td>If configured, Flink will add "resources.limits.&lt;config-key&gt;" and "resources.requests.&lt;config-key&gt;" to the main container of TaskExecutor and set the value to the value of external-resource.&lt;resource_name&gt;.amount.</td>
         </tr>
         <tr>
+            <td><h5>kubernetes.arcee.admission-config.account</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>PSM/AccountId the application to use.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.admission-config.group</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Group that owns the application.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.admission-config.user</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>User who owns the application.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.annotations</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>Map</td>
+            <td>The user-specified annotations that are set to the Arcee Application. The value could be in the form of a1:v1,a2:v2</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.app-name</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The job name used for printing and logging.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.enabled</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Whether using Arcee operator.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.restart-policy.interval-second</h5></td>
+            <td style="word-wrap: break-word;">5</td>
+            <td>Long</td>
+            <td>the interval in seconds between retries runs, the default value is 5(s)</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.restart-policy.max-retries</h5></td>
+            <td style="word-wrap: break-word;">0</td>
+            <td>Integer</td>
+            <td>The number of times to retry running an application before giving up, the default is 0 which means the restarting times is unlimited.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.restart-policy.max-schedule-failures</h5></td>
+            <td style="word-wrap: break-word;">0</td>
+            <td>Integer</td>
+            <td>The number of times to retry scheduling an application before giving up, the default is 0 which means the scheduling retry times is unlimited.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.restart-policy.type</h5></td>
+            <td style="word-wrap: break-word;">"Always"</td>
+            <td>String</td>
+            <td>The policy of if and in which conditions should the application be restarted, supported value is among "Always", "Never" and "OnFailure" and the default policy is Always</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.scheduling-config.priority-class-name</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Priority of the application, used for scheduling.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.scheduling-config.queue</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Queue the Arcee Application to use.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.arcee.scheduling-config.schedule-timeout-seconds</h5></td>
+            <td style="word-wrap: break-word;">120</td>
+            <td>Integer</td>
+            <td>Application scheduling timeout seconds, default to 120(s)</td>
+        </tr>
+        <tr>
             <td><h5>kubernetes.client.io-pool.size</h5></td>
             <td style="word-wrap: break-word;">4</td>
             <td>Integer</td>
@@ -63,6 +141,24 @@
             <td>The desired context from your Kubernetes config file used to configure the Kubernetes client for interacting with the cluster. This could be helpful if one has multiple contexts configured and wants to administrate different Flink clusters on different Kubernetes clusters/contexts.</td>
         </tr>
         <tr>
+            <td><h5>kubernetes.csi-disk-resource-key</h5></td>
+            <td style="word-wrap: break-word;">"bytedance.com/local-disk"</td>
+            <td>String</td>
+            <td>The key to indicate the disk resource for container. CSI driver need to set this key to let device plugin allocate special disk for file downloading.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.csi-disk-resource-value</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The value to indicate the disk resource for container. 1 means enable the disk resource guarantee and 0 means disable.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.csi-driver</h5></td>
+            <td style="word-wrap: break-word;">"localpath.csi.bytedance.com"</td>
+            <td>String</td>
+            <td>The driver name required by csi volume to download resources.</td>
+        </tr>
+        <tr>
             <td><h5>kubernetes.decorator.hadoop-conf-mount.enabled</h5></td>
             <td style="word-wrap: break-word;">true</td>
             <td>Boolean</td>
@@ -87,16 +183,46 @@
             <td>The user-specified secrets to set env variables in Flink container. The value should be in the form of <code class="highlighter-rouge">env:FOO_ENV,secret:foo_secret,key:foo_key;env:BAR_ENV,secret:bar_secret,key:bar_key</code>.</td>
         </tr>
         <tr>
+            <td><h5>kubernetes.file-download-mode</h5></td>
+            <td style="word-wrap: break-word;">INIT_CONTAINER</td>
+            <td><p>Enum</p></td>
+            <td>The way to download user external files to Job manager and task manager container.<br /><br />Possible values:<ul><li>"CSI"</li><li>"INIT_CONTAINER"</li></ul></td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.file-download-volume.size</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The volume size for user downloaded resources.</td>
+        </tr>
+        <tr>
             <td><h5>kubernetes.flink.conf.dir</h5></td>
             <td style="word-wrap: break-word;">"/opt/flink/conf"</td>
             <td>String</td>
             <td>The flink conf directory that will be mounted in pod. The flink-conf.yaml, log4j.properties, logback.xml in this path will be overwritten from config map.</td>
         </tr>
         <tr>
+            <td><h5>kubernetes.flink.jobmanager-user-ports</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>List&lt;String&gt;</td>
+            <td>List of user defined ports, separated by semicolon, E.g. port0:8080;port1:8081.</td>
+        </tr>
+        <tr>
             <td><h5>kubernetes.flink.log.dir</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
             <td>The directory that logs of jobmanager and taskmanager be saved in the pod. The default value is $FLINK_HOME/log.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.flink.taskmanager-user-ports</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>List&lt;String&gt;</td>
+            <td>List of user defined ports, separated by semicolon, E.g. port0:8080;port1:8081.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.gdpr-secret.name-template</h5></td>
+            <td style="word-wrap: break-word;">"deployment-%cluster-id%"</td>
+            <td>String</td>
+            <td>The name template for GDPR secret. The secret should be created by Arcee or Kubernetes.The name of the secret must follow this template.</td>
         </tr>
         <tr>
             <td><h5>kubernetes.hadoop.conf.config-map.name</h5></td>
@@ -109,6 +235,24 @@
             <td style="word-wrap: break-word;">false</td>
             <td>Boolean</td>
             <td>Whether to enable HostNetwork mode. The HostNetwork allows the pod could use the node network namespace instead of the individual pod network namespace. Please note that the JobManager service account should have the permission to update Kubernetes service.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.ingress.annotations</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>Map</td>
+            <td>The user-specified annotations that are set to the Ingress. The value could be in the form of a1:v1,a2:v2</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.ingress.enable</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Whether to enable ingress in kubernetes.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.ingress.host</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The user-specified host that are set to the Ingress. e.g. lf-cloudnative.byted.org</td>
         </tr>
         <tr>
             <td><h5>kubernetes.jobmanager.annotations</h5></td>
@@ -183,6 +327,12 @@
             <td>The namespace that will be used for running the jobmanager and taskmanager pods.</td>
         </tr>
         <tr>
+            <td><h5>kubernetes.pod-address.from-env.enabled</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Whether to enable the use of the pod address from environment as the exposed address. This configuration takes effect only if kubernetes.hostnetwork.enabled is enabled.</td>
+        </tr>
+        <tr>
             <td><h5>kubernetes.pod-template-file.default</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
@@ -229,6 +379,12 @@
             <td style="word-wrap: break-word;">"default"</td>
             <td>String</td>
             <td>Service account that is used by jobmanager and taskmanager within kubernetes cluster. Notice that this can be overwritten by config options 'kubernetes.jobmanager.service-account' and 'kubernetes.taskmanager.service-account' for jobmanager and taskmanager respectively.</td>
+        </tr>
+        <tr>
+            <td><h5>kubernetes.service_link.enable</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>whether to enable service link. If it is true, then kubernetes will inject the service related environment variables for all the service.</td>
         </tr>
         <tr>
             <td><h5>kubernetes.taskmanager.annotations</h5></td>

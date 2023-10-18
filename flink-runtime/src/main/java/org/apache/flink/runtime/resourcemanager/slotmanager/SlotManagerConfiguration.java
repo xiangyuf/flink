@@ -51,6 +51,8 @@ public class SlotManagerConfiguration {
     private final MemorySize minTotalMem;
     private final MemorySize maxTotalMem;
     private final int redundantTaskManagerNum;
+    private final ResourceManagerOptions.ResourceAllocationStrategyType
+            resourceAllocationStrategyType;
 
     public SlotManagerConfiguration(
             Time taskManagerRequestTimeout,
@@ -68,7 +70,8 @@ public class SlotManagerConfiguration {
             CPUResource maxTotalCpu,
             MemorySize minTotalMem,
             MemorySize maxTotalMem,
-            int redundantTaskManagerNum) {
+            int redundantTaskManagerNum,
+            ResourceManagerOptions.ResourceAllocationStrategyType resourceAllocationStrategyType) {
 
         this.taskManagerRequestTimeout = Preconditions.checkNotNull(taskManagerRequestTimeout);
         this.taskManagerTimeout = Preconditions.checkNotNull(taskManagerTimeout);
@@ -91,6 +94,7 @@ public class SlotManagerConfiguration {
         this.maxTotalMem = maxTotalMem;
         Preconditions.checkState(redundantTaskManagerNum >= 0);
         this.redundantTaskManagerNum = redundantTaskManagerNum;
+        this.resourceAllocationStrategyType = resourceAllocationStrategyType;
     }
 
     private void checkSlotNumResource(
@@ -239,6 +243,11 @@ public class SlotManagerConfiguration {
         return redundantTaskManagerNum;
     }
 
+    public ResourceManagerOptions.ResourceAllocationStrategyType
+            getResourceAllocationStrategyType() {
+        return resourceAllocationStrategyType;
+    }
+
     public static SlotManagerConfiguration fromConfiguration(
             Configuration configuration, WorkerResourceSpec defaultWorkerResourceSpec)
             throws ConfigurationException {
@@ -275,6 +284,9 @@ public class SlotManagerConfiguration {
         int redundantTaskManagerNum =
                 configuration.getInteger(ResourceManagerOptions.REDUNDANT_TASK_MANAGER_NUM);
 
+        ResourceManagerOptions.ResourceAllocationStrategyType resourceAllocationStrategyType =
+                configuration.get(ResourceManagerOptions.RESOURCE_ALLOCATION_STRATEGY);
+
         return new SlotManagerConfiguration(
                 rpcTimeout,
                 taskManagerTimeout,
@@ -291,7 +303,8 @@ public class SlotManagerConfiguration {
                 getMaxTotalCpu(configuration, defaultWorkerResourceSpec, maxSlotNum),
                 getMinTotalMem(configuration, defaultWorkerResourceSpec, minSlotNum),
                 getMaxTotalMem(configuration, defaultWorkerResourceSpec, maxSlotNum),
-                redundantTaskManagerNum);
+                redundantTaskManagerNum,
+                resourceAllocationStrategyType);
     }
 
     private static CPUResource getMinTotalCpu(
