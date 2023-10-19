@@ -59,7 +59,6 @@ env.java.default-opts.taskmanager: -Xlog:gc*:$FLINK_LOG_DIR/gc.log:time,uptime,l
 #==============================================================================
 # Fault tolerance
 #==============================================================================
-
 jobmanager.execution.failover-strategy: region
 restart-strategy: failure-rate
 restart-strategy.failure-rate.max-failures-per-interval: 100
@@ -69,7 +68,6 @@ restart-strategy.failure-rate.delay: 20 s
 #==============================================================================
 # Kubernetes
 #==============================================================================
-
 env.java.home: /usr/local/byteopenjdk/jdk-11
 containerized.master.env.FLINK_HOME: /opt/tiger/flink_deploy
 containerized.taskmanager.env.FLINK_HOME: /opt/tiger/flink_deploy
@@ -79,7 +77,6 @@ kubernetes.namespace: flink
 jobmanager.retrieve-taskmanager-hostname: false
 kubernetes.hostnetwork.enabled: true
 kubernetes.pod-address.from-env.enabled: true
-
 # ingress
 kubernetes.rest-service.exposed.type: ClusterIP
 kubernetes.ingress.annotations.nginx.ingress.kubernetes.io/proxy-body-size: "100m"
@@ -87,7 +84,6 @@ kubernetes.ingress.annotations.nginx.ingress.kubernetes.io/proxy-connect-timeout
 kubernetes.ingress.annotations.nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
 kubernetes.ingress.annotations.nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
 kubernetes.ingress.enable: true
-kubernetes.ingress.host: lq-koryn.byted.org
 
 # log
 kubernetes.flink.log.dir: /var/log/tiger
@@ -101,10 +97,6 @@ kubernetes.arcee.restart-policy.max-retries: 5
 kubernetes.arcee.restart-policy.interval-second: 5
 kubernetes.arcee.restart-policy.type: OnFailure
 
-# Configurations for hive permission check.
-table.exec.hive.permission-check.enabled: true
-table.exec.hive.permission-check.gemini-server-url: http://gemini.byted.org/api/query/default/verifyUsersPrivilege
-
 # Arcee will mount hadoop in host to pod and set the hadoop related environments
 kubernetes.decorator.hadoop-conf-mount.enabled: false
 
@@ -112,19 +104,15 @@ kubernetes.decorator.hadoop-conf-mount.enabled: false
 # High Availability
 #==============================================================================
 
-# Heartbeat Services
+## Heartbeat Services
 heartbeat.interval: 40000 # default 10000 ms
 heartbeat.timeout: 180000 # default 50000 ms
-
-# zk ha
-high-availability: zookeeper
 
 #==============================================================================
 # checkpointing
 #==============================================================================
 
 state.backend: rocksdb
-state.checkpoints.dir: hdfs://haruna/home/byte_flink_checkpoint_writer/1.17/flink/fs_checkpoint_dir/
 state.backend.incremental: true
 state.checkpoints.num-retained: 3
 state.backend.rocksdb.checkpoint.transfer.thread.num: 4
@@ -133,6 +121,13 @@ state.backend.rocksdb.memory.managed: false
 execution.checkpointing.mode: EXACTLY_ONCE
 execution.checkpointing.timeout: 10 min
 execution.checkpointing.externalized-checkpoint-retention: RETAIN_ON_CANCELLATION
+
+#==============================================================================
+# Hive
+#==============================================================================
+
+# Configurations for hive permission check.
+table.exec.hive.permission-check.enabled: true
 
 #==============================================================================
 # Rest & web frontend
@@ -155,10 +150,10 @@ containerized.taskmanager.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
 #==============================================================================
 # Metrics Report
 #==============================================================================
-
 metrics.reporters: opentsdb_reporter
 metrics.reporter.opentsdb_reporter.factory.class: org.apache.flink.metrics.opentsdb.OpentsdbReporterFactory
 metrics.reporter.opentsdb_reporter.interval: 20 SECONDS
+
 
 #==============================================================================
 # Flink Cluster Security Configuration

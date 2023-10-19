@@ -145,6 +145,36 @@ under the License.
 			<outputDirectory>conf</outputDirectory>
 			<fileMode>0644</fileMode>
 		</file>
+		<file>
+			<source>src/main/resources/flink-config-internal-streaming.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
+				<file>
+			<source>src/main/resources/flink-config-internal-batch.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
+				<file>
+			<source>src/main/resources/flink-config-internal-olap.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
+				<file>
+			<source>src/main/resources/flink-config-volcano-streaming.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
+				<file>
+			<source>src/main/resources/flink-config-volcano-batch.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
+				<file>
+			<source>src/main/resources/flink-config-volcano-olap.yaml</source>
+			<outputDirectory>conf</outputDirectory>
+			<fileMode>0644</fileMode>
+		</file>
 
 		<file>
 			<source>../LICENSE</source>

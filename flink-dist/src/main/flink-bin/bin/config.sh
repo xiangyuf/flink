@@ -232,7 +232,7 @@ FLINK_HOME_DIR_MANGLED=`manglePath "$FLINK_HOME"`
 if [ -z "$FLINK_CONF_DIR" ]; then FLINK_CONF_DIR=$FLINK_HOME_DIR_MANGLED/conf; fi
 FLINK_BIN_DIR=$FLINK_HOME_DIR_MANGLED/bin
 DEFAULT_FLINK_LOG_DIR=$FLINK_HOME_DIR_MANGLED/log
-FLINK_CONF_FILE="flink-conf.yaml"
+if [ -z "$FLINK_CONF_FILE" ]; then FLINK_CONF_FILE="flink-conf.yaml"; fi
 YAML_CONF=${FLINK_CONF_DIR}/${FLINK_CONF_FILE}
 
 ### Exported environment variables ###
