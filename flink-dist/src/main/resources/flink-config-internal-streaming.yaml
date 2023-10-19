@@ -108,6 +108,13 @@ kubernetes.decorator.hadoop-conf-mount.enabled: false
 heartbeat.interval: 40000 # default 10000 ms
 heartbeat.timeout: 180000 # default 50000 ms
 
+## ZooKeeper HA
+high-availability.zookeeper.client.max-retry-attempts: 20
+high-availability.zookeeper.client.connection-timeout: 60000
+high-availability.zookeeper.client.retry-wait: 20000
+high-availability.zookeeper.client.session-timeout: 180000
+high-availability.zookeeper.client.tolerate-suspended-connections: true
+
 #==============================================================================
 # checkpointing
 #==============================================================================
