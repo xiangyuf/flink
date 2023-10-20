@@ -133,7 +133,7 @@ under the License.
 		properly. Therefore, we will temporarily place this jar file into the lib directory and
 		wait for the metric team to identify and solve the issue before we remove it. -->
 		<file>
-			<source>../flink-metrics/flink-metric-opentsdb/target/flink-metrics-opentsdb-${project.version}.jar</source>
+			<source>../flink-metrics/flink-metrics-opentsdb/target/flink-metrics-opentsdb-${project.version}.jar</source>
 			<outputDirectory>lib/</outputDirectory>
 			<destName>flink-metrics-opentsdb-${project.version}.jar</destName>
 			<fileMode>0644</fileMode>

@@ -60,7 +60,7 @@
 		</file>
 
 		<file>
-			<source>../flink-metrics/flink-metric-opentsdb/target/flink-metrics-opentsdb-${project.version}.jar</source>
+			<source>../flink-metrics/flink-metrics-opentsdb/target/flink-metrics-opentsdb-${project.version}.jar</source>
 			<outputDirectory>plugins/metrics-opentsdb/</outputDirectory>
 			<destName>flink-metrics-opentsdb-${project.version}.jar</destName>
 			<fileMode>0644</fileMode>
