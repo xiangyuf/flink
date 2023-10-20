@@ -58,4 +58,4 @@ if [[ "$1" = *--help ]] || [[ "$1" = *-h ]]; then
   exit 0
 fi
 
-"${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT -Dsql-gateway.endpoint.rest.address=localhost -Dtable.catalog-store.kind=file -Dtable.catalog-store.file.path="${FLINK_BIN_DIR}"/../catalog -Dtable.builtin-catalog-name=paimon
+"${FLINK_BIN_DIR}"/flink-console.sh $ENTRYPOINT -Dsql-gateway.endpoint.rest.address=localhost -Dtable.catalog-store.kind=file -Dtable.catalog-store.file.path="${FLINK_BIN_DIR}"/../catalog -Dtable.builtin-catalog-name=paimon "${@}"
