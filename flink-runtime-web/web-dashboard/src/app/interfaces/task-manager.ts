@@ -31,6 +31,9 @@ export interface TaskManagerDetail {
   metrics: Metrics;
   memoryConfiguration: MemoryConfiguration;
   blocked?: boolean;
+  logUrl: string;
+  webshellUrl: string;
+  flameGraphUrl: string;
 }
 
 export interface TaskManagerLogItem {
@@ -53,6 +56,9 @@ export interface TaskManagersItem {
   freeSlots: number;
   hardware: Hardware;
   blocked?: boolean;
+  logUrl: string;
+  webshellUrl: string;
+  flameGraphUrl: string;
 }
 
 interface Hardware {

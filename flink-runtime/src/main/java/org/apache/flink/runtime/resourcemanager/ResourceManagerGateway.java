@@ -48,6 +48,7 @@ import org.apache.flink.runtime.taskexecutor.TaskExecutor;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorGateway;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorHeartbeatPayload;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorThreadInfoGateway;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 
 import javax.annotation.Nullable;
 
@@ -265,4 +266,15 @@ public interface ResourceManagerGateway
      */
     CompletableFuture<TaskExecutorThreadInfoGateway> requestTaskExecutorThreadInfoGateway(
             ResourceID taskManagerId, @RpcTimeout Time timeout);
+
+    /**
+     * Requests the JobManager external URLs to expose.
+     *
+     * @param timeout of the request
+     * @return the JobManager external URLs to expose.
+     */
+    default CompletableFuture<JobManagerExternalUrlInfo> requestJobManagerExternalUrls(
+            @RpcTimeout Time timeout) {
+        return CompletableFuture.completedFuture(JobManagerExternalUrlInfo.empty());
+    }
 }

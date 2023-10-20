@@ -28,6 +28,15 @@
     <thead>
       <tr>
         <th nzLeft [nzWidth]="'280px'">Path, ID</th>
+        <ng-container *ngIf="logUrlEnabled">
+          <th [nzWidth]="'40px'">Log</th>
+        </ng-container>
+        <ng-container *ngIf="webshellUrlEnabled">
+          <th [nzWidth]="'80px'">Webshell</th>
+        </ng-container>
+        <ng-container *ngIf="flameGraphUrlEnabled">
+          <th [nzWidth]="'100px'">Flame Graph</th>
+        </ng-container>
         <th [nzSortFn]="sortDataPortFn" [nzWidth]="'100px'">Data Port</th>
         <th [nzSortFn]="sortHeartBeatFn" [nzWidth]="'160px'">Last Heartbeat</th>
         <th [nzSortFn]="sortSlotsNumberFn" [nzWidth]="'90px'">All Slots</th>
@@ -49,6 +58,15 @@
             <em class="break-word">{{ manager.path }}</em>
             <flink-blocked-badge size="small" *ngIf="manager.blocked"></flink-blocked-badge>
           </td>
+          <ng-container *ngIf="logUrlEnabled">
+            <td><a (click)="navigateToUrl(manager.logUrl, $event)">Log</a></td>
+          </ng-container>
+          <ng-container *ngIf="webshellUrlEnabled">
+            <td><a (click)="navigateToUrl(manager.webshellUrl, $event)">WebShell</a></td>
+          </ng-container>
+          <ng-container *ngIf="flameGraphUrlEnabled">
+            <td><a (click)="navigateToUrl(manager.flameGraphUrl, $event)">FlameGraph</a></td>
+          </ng-container>
           <td>{{ manager.dataPort }}</td>
           <td>{{ manager.timeSinceLastHeartbeat | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
           <td>{{ manager.slotsNumber }}</td>

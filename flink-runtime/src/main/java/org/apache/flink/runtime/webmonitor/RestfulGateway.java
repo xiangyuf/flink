@@ -43,6 +43,7 @@ import org.apache.flink.runtime.rest.messages.ThreadDumpInfo;
 import org.apache.flink.runtime.rpc.RpcGateway;
 import org.apache.flink.runtime.rpc.RpcTimeout;
 import org.apache.flink.runtime.scheduler.ExecutionGraphInfo;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 import org.apache.flink.util.SerializedValue;
 import org.apache.flink.util.concurrent.FutureUtils;
 
@@ -277,5 +278,16 @@ public interface RestfulGateway extends RpcGateway {
     default CompletableFuture<Void> reportJobClientHeartbeat(
             JobID jobId, long expiredTimestamp, Time timeout) {
         return FutureUtils.completedVoidFuture();
+    }
+
+    /**
+     * Requests the JobManager external URLs to expose.
+     *
+     * @param timeout of the request
+     * @return the JobManager external URLs to expose.
+     */
+    default CompletableFuture<JobManagerExternalUrlInfo> requestJobManagerExternalUrls(
+            @RpcTimeout Time timeout) {
+        return CompletableFuture.completedFuture(JobManagerExternalUrlInfo.empty());
     }
 }

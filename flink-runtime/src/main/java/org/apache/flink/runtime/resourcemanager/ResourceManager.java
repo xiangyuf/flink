@@ -80,6 +80,7 @@ import org.apache.flink.runtime.taskexecutor.TaskExecutorRegistrationRejection;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorRegistrationSuccess;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorThreadInfoGateway;
 import org.apache.flink.runtime.taskexecutor.partition.ClusterPartitionReport;
+import org.apache.flink.runtime.util.TaskManagerExternalUrlInfo;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.FlinkExpectedException;
@@ -660,6 +661,9 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                 taskExecutors.entrySet()) {
             final ResourceID resourceId = taskExecutorEntry.getKey();
             final WorkerRegistration<WorkerType> taskExecutor = taskExecutorEntry.getValue();
+            final String hostName = taskExecutor.getTaskExecutorGateway().getHostname();
+            final TaskManagerExternalUrlInfo taskManagerExternalUrlInfo =
+                    getTaskManagerExternalUrls(resourceId, hostName);
 
             taskManagerInfos.add(
                     new TaskManagerInfo(
@@ -674,7 +678,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                             slotManager.getFreeResourceOf(taskExecutor.getInstanceID()),
                             taskExecutor.getHardwareDescription(),
                             taskExecutor.getMemoryConfiguration(),
-                            blocklistHandler.isBlockedTaskManager(taskExecutor.getResourceID())));
+                            blocklistHandler.isBlockedTaskManager(taskExecutor.getResourceID()),
+                            taskManagerExternalUrlInfo));
         }
 
         return CompletableFuture.completedFuture(taskManagerInfos);
@@ -690,6 +695,9 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
             return FutureUtils.completedExceptionally(new UnknownTaskExecutorException(resourceId));
         } else {
             final InstanceID instanceId = taskExecutor.getInstanceID();
+            final String hostName = taskExecutor.getTaskExecutorGateway().getHostname();
+            final TaskManagerExternalUrlInfo taskManagerExternalUrlInfo =
+                    getTaskManagerExternalUrls(resourceId, hostName);
             final TaskManagerInfoWithSlots taskManagerInfoWithSlots =
                     new TaskManagerInfoWithSlots(
                             new TaskManagerInfo(
@@ -705,7 +713,8 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
                                     taskExecutor.getHardwareDescription(),
                                     taskExecutor.getMemoryConfiguration(),
                                     blocklistHandler.isBlockedTaskManager(
-                                            taskExecutor.getResourceID())),
+                                            taskExecutor.getResourceID()),
+                                    taskManagerExternalUrlInfo),
                             slotManager.getAllocatedSlotsOf(instanceId));
 
             return CompletableFuture.completedFuture(taskManagerInfoWithSlots);
@@ -1199,6 +1208,11 @@ public abstract class ResourceManager<WorkerType extends ResourceIDRetrievable>
         }
 
         return worker;
+    }
+
+    protected TaskManagerExternalUrlInfo getTaskManagerExternalUrls(
+            ResourceID resourceID, String hostName) {
+        return TaskManagerExternalUrlInfo.empty();
     }
 
     private enum ResourceRequirementHandling {

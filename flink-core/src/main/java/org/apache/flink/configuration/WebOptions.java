@@ -203,6 +203,43 @@ public class WebOptions {
                     .withDescription(
                             "Timeout for asynchronous operations by the web monitor in milliseconds.");
 
+    /** Config parameter indicating whether the log URL shall be displayed in the web-frontend. */
+    public static final ConfigOption<Boolean> LOG_URL_ENABLED =
+            key("web.log-url.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Flag indicating whether the log URL shall be displayed in the web-frontend.");
+
+    /**
+     * Config parameter indicating whether the webshell URL shall be displayed in the web-frontend.
+     */
+    public static final ConfigOption<Boolean> WEBSHELL_URL_ENABLED =
+            key("web.webshell-url.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Flag indicating whether the webshell URL shall be displayed in the web-frontend.");
+
+    /**
+     * Config parameter indicating whether the flame graph URL shall be displayed in the
+     * web-frontend.
+     */
+    public static final ConfigOption<Boolean> FLAME_GRAPH_URL_ENABLED =
+            key("web.flamegraph-url.enabled")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Flag indicating whether the flame graph URL shall be displayed in the web-frontend.");
+
+    /** The base URL for accessing the online profiling toolbox provided by ByteDog. */
+    public static final ConfigOption<String> BYTEDOG_BASE_URL =
+            key("web.bytedog.base-url")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The base URL for accessing the online profiling toolbox provided by ByteDog.");
+
     // ------------------------------------------------------------------------
 
     /** Not meant to be instantiated. */

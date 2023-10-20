@@ -85,6 +85,7 @@ import org.apache.flink.runtime.rpc.FencedRpcEndpoint;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.rpc.RpcServiceUtils;
 import org.apache.flink.runtime.scheduler.ExecutionGraphInfo;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 import org.apache.flink.runtime.webmonitor.retriever.GatewayRetriever;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
@@ -1089,6 +1090,14 @@ public abstract class Dispatcher extends FencedRpcEndpoint<DispatcherId>
             jobClientExpiredTimestamp.put(jobId, expiredTimestamp);
         }
         return FutureUtils.completedVoidFuture();
+    }
+
+    @Override
+    public CompletableFuture<JobManagerExternalUrlInfo> requestJobManagerExternalUrls(
+            Time timeout) {
+        return runResourceManagerCommand(
+                resourceManagerGateway ->
+                        resourceManagerGateway.requestJobManagerExternalUrls(timeout));
     }
 
     private void checkJobClientAliveness() {

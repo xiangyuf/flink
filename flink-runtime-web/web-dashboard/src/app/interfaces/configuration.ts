@@ -38,9 +38,15 @@ export interface Configuration {
   'timezone-offset': number;
   'flink-version': string;
   'flink-revision': string;
+  'jm-log-url': string;
+  'jm-webshell-url': string;
+  'jm-flamegraph-url': string;
   features: {
     'web-history': boolean;
     'web-submit': boolean;
     'web-cancel': boolean;
+    'log-url': boolean;
+    'webshell-url': boolean;
+    'flamegraph-url': boolean;
   };
 }

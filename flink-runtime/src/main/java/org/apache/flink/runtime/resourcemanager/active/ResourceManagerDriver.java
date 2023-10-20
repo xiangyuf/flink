@@ -21,7 +21,10 @@ package org.apache.flink.runtime.resourcemanager.active;
 import org.apache.flink.runtime.blocklist.BlockedNodeRetriever;
 import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.clusterframework.TaskExecutorProcessSpec;
+import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.clusterframework.types.ResourceIDRetrievable;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
+import org.apache.flink.runtime.util.TaskManagerExternalUrlInfo;
 import org.apache.flink.util.concurrent.ScheduledExecutor;
 
 import javax.annotation.Nullable;
@@ -101,4 +104,25 @@ public interface ResourceManagerDriver<WorkerType extends ResourceIDRetrievable>
      * @param worker Worker node to be released, in the deployment specific type.
      */
     void releaseResource(WorkerType worker);
+
+    /**
+     * Get the JobManager external URLs to expose.
+     *
+     * @return the JobManager external URLs to expose.
+     * @throws Exception if failed fetching the external URLs.
+     */
+    default JobManagerExternalUrlInfo getJobManagerExternalUrls() throws Exception {
+        return JobManagerExternalUrlInfo.empty();
+    }
+
+    /**
+     * Get the TaskManager external URLs to expose.
+     *
+     * @return the TaskManager external URLs to expose.
+     * @throws Exception if failed fetching the external URLs.
+     */
+    default TaskManagerExternalUrlInfo getTaskManagerExternalUrls(
+            ResourceID resourceID, String hostName) throws Exception {
+        return TaskManagerExternalUrlInfo.empty();
+    }
 }

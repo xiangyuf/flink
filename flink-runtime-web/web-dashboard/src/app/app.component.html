@@ -94,6 +94,24 @@
         (click)="toggleCollapse()"
       ></i>
       <div class="right">
+        <ng-container *ngIf="logUrlEnabled">
+          <a href="{{ statusService.configuration['jm-log-url'] }}">
+            <strong>JMLog</strong>
+          </a>
+          <nz-divider nzType="vertical"></nz-divider>
+        </ng-container>
+        <ng-container *ngIf="webshellUrlEnabled">
+          <a href="{{ statusService.configuration['jm-webshell-url'] }}">
+            <strong>JMWebShell</strong>
+          </a>
+          <nz-divider nzType="vertical"></nz-divider>
+        </ng-container>
+        <ng-container *ngIf="flameGraphUrlEnabled">
+          <a href="{{ statusService.configuration['jm-flamegraph-url'] }}">
+            <strong>JMFlameGraph</strong>
+          </a>
+          <nz-divider nzType="vertical"></nz-divider>
+        </ng-container>
         <span>
           <strong>Version:</strong>
           {{ statusService.configuration['flink-version'] }}

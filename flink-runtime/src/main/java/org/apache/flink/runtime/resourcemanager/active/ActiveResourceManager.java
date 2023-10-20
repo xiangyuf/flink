@@ -45,6 +45,8 @@ import org.apache.flink.runtime.resourcemanager.slotmanager.SlotManager;
 import org.apache.flink.runtime.rpc.FatalErrorHandler;
 import org.apache.flink.runtime.rpc.RpcService;
 import org.apache.flink.runtime.security.token.DelegationTokenManager;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
+import org.apache.flink.runtime.util.TaskManagerExternalUrlInfo;
 import org.apache.flink.util.FlinkExpectedException;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.TimeUtils;
@@ -270,6 +272,29 @@ public class ActiveResourceManager<WorkerType extends ResourceIDRetrievable>
                 MetricNames.START_WORKER_FAILURE_RATE, startWorkerFailureRater);
         resourceManagerMetricGroup.gauge(
                 MetricNames.NUM_PENDING_TASK_MANAGERS, pendingWorkerCounter::getTotalNum);
+    }
+
+    @Override
+    public CompletableFuture<JobManagerExternalUrlInfo> requestJobManagerExternalUrls(
+            Time timeout) {
+        try {
+            return CompletableFuture.completedFuture(
+                    resourceManagerDriver.getJobManagerExternalUrls());
+        } catch (Throwable t) {
+            log.warn("Error getting the JobManager external URLs.", t);
+            return FutureUtils.completedExceptionally(t);
+        }
+    }
+
+    @Override
+    protected TaskManagerExternalUrlInfo getTaskManagerExternalUrls(
+            ResourceID resourceID, String hostName) {
+        try {
+            return resourceManagerDriver.getTaskManagerExternalUrls(resourceID, hostName);
+        } catch (Throwable t) {
+            log.warn("Error getting the TaskManager external URLs.", t);
+            return TaskManagerExternalUrlInfo.empty();
+        }
     }
 
     // ------------------------------------------------------------------------

@@ -19,12 +19,14 @@
 package org.apache.flink.runtime.rest.handler.cluster;
 
 import org.apache.flink.api.common.time.Time;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.runtime.rest.handler.AbstractRestHandler;
 import org.apache.flink.runtime.rest.handler.HandlerRequest;
 import org.apache.flink.runtime.rest.messages.DashboardConfiguration;
 import org.apache.flink.runtime.rest.messages.EmptyMessageParameters;
 import org.apache.flink.runtime.rest.messages.EmptyRequestBody;
 import org.apache.flink.runtime.rest.messages.MessageHeaders;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 import org.apache.flink.runtime.webmonitor.RestfulGateway;
 import org.apache.flink.runtime.webmonitor.retriever.GatewayRetriever;
 
@@ -39,7 +41,8 @@ public class DashboardConfigHandler
         extends AbstractRestHandler<
                 RestfulGateway, EmptyRequestBody, DashboardConfiguration, EmptyMessageParameters> {
 
-    private final DashboardConfiguration dashboardConfiguration;
+    private DashboardConfiguration dashboardConfiguration;
+    private boolean jobManagerExternalUrlReady;
 
     public DashboardConfigHandler(
             GatewayRetriever<? extends RestfulGateway> leaderRetriever,
@@ -49,7 +52,8 @@ public class DashboardConfigHandler
                     messageHeaders,
             long refreshInterval,
             boolean webSubmitEnabled,
-            boolean webCancelEnabled) {
+            boolean webCancelEnabled,
+            Configuration clusterConfiguration) {
         super(leaderRetriever, timeout, responseHeaders, messageHeaders);
 
         dashboardConfiguration =
@@ -58,12 +62,32 @@ public class DashboardConfigHandler
                         ZonedDateTime.now(),
                         webSubmitEnabled,
                         webCancelEnabled,
-                        false);
+                        false,
+                        clusterConfiguration,
+                        JobManagerExternalUrlInfo.empty());
+        jobManagerExternalUrlReady = false;
     }
 
     @Override
     public CompletableFuture<DashboardConfiguration> handleRequest(
             @Nonnull HandlerRequest<EmptyRequestBody> request, @Nonnull RestfulGateway gateway) {
-        return CompletableFuture.completedFuture(dashboardConfiguration);
+        if (jobManagerExternalUrlReady) {
+            return CompletableFuture.completedFuture(dashboardConfiguration);
+        } else {
+            return gateway.requestJobManagerExternalUrls(timeout)
+                    .thenCompose(
+                            jobManagerExternalUrlInfo -> {
+                                dashboardConfiguration =
+                                        DashboardConfiguration.fromDashboardConfiguration(
+                                                dashboardConfiguration, jobManagerExternalUrlInfo);
+                                jobManagerExternalUrlReady = true;
+                                return CompletableFuture.completedFuture(dashboardConfiguration);
+                            })
+                    .exceptionally(
+                            e -> {
+                                jobManagerExternalUrlReady = false;
+                                return dashboardConfiguration;
+                            });
+        }
     }
 }

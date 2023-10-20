@@ -27,6 +27,7 @@ import org.apache.flink.runtime.rest.messages.json.ResourceIDDeserializer;
 import org.apache.flink.runtime.rest.messages.json.ResourceIDSerializer;
 import org.apache.flink.runtime.taskexecutor.TaskExecutor;
 import org.apache.flink.runtime.taskexecutor.TaskExecutorMemoryConfiguration;
+import org.apache.flink.runtime.util.TaskManagerExternalUrlInfo;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
@@ -69,6 +70,12 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
 
     public static final String FIELD_NAME_BLOCKED = "blocked";
 
+    public static final String FIELD_NAME_LOG_URL = "logUrl";
+
+    public static final String FIELD_NAME_WEBSHELL_URL = "webshellUrl";
+
+    public static final String FIELD_NAME_FLAME_GRAPH_URL = "flameGraphUrl";
+
     private static final long serialVersionUID = 1L;
 
     @JsonProperty(FIELD_NAME_RESOURCE_ID)
@@ -109,6 +116,15 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
     @JsonInclude(Include.NON_DEFAULT)
     private final boolean blocked;
 
+    @JsonProperty(FIELD_NAME_LOG_URL)
+    private final String logUrl;
+
+    @JsonProperty(FIELD_NAME_WEBSHELL_URL)
+    private final String webshellUrl;
+
+    @JsonProperty(FIELD_NAME_FLAME_GRAPH_URL)
+    private final String flameGraphUrl;
+
     @JsonCreator
     // blocked is Nullable since Jackson will assign null if the field is absent while parsing
     public TaskManagerInfo(
@@ -125,7 +141,10 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
             @JsonProperty(FIELD_NAME_AVAILABLE_RESOURCE) ResourceProfileInfo freeResource,
             @JsonProperty(FIELD_NAME_HARDWARE) HardwareDescription hardwareDescription,
             @JsonProperty(FIELD_NAME_MEMORY) TaskExecutorMemoryConfiguration memoryConfiguration,
-            @JsonProperty(FIELD_NAME_BLOCKED) @Nullable Boolean blocked) {
+            @JsonProperty(FIELD_NAME_BLOCKED) @Nullable Boolean blocked,
+            @JsonProperty(FIELD_NAME_LOG_URL) String logUrl,
+            @JsonProperty(FIELD_NAME_WEBSHELL_URL) String webshellUrl,
+            @JsonProperty(FIELD_NAME_FLAME_GRAPH_URL) String flameGraphUrl) {
         this.resourceId = Preconditions.checkNotNull(resourceId);
         this.address = Preconditions.checkNotNull(address);
         this.dataPort = dataPort;
@@ -138,6 +157,9 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
         this.hardwareDescription = Preconditions.checkNotNull(hardwareDescription);
         this.memoryConfiguration = Preconditions.checkNotNull(memoryConfiguration);
         this.blocked = (blocked != null) && blocked;
+        this.logUrl = logUrl;
+        this.webshellUrl = webshellUrl;
+        this.flameGraphUrl = flameGraphUrl;
     }
 
     public TaskManagerInfo(
@@ -161,11 +183,44 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
                 lastHeartbeat,
                 numberSlots,
                 numberAvailableSlots,
+                totalResource,
+                freeResource,
+                hardwareDescription,
+                memoryConfiguration,
+                blocked,
+                TaskManagerExternalUrlInfo.empty());
+    }
+
+    public TaskManagerInfo(
+            ResourceID resourceId,
+            String address,
+            int dataPort,
+            int jmxPort,
+            long lastHeartbeat,
+            int numberSlots,
+            int numberAvailableSlots,
+            ResourceProfile totalResource,
+            ResourceProfile freeResource,
+            HardwareDescription hardwareDescription,
+            TaskExecutorMemoryConfiguration memoryConfiguration,
+            @Nullable Boolean blocked,
+            TaskManagerExternalUrlInfo taskManagerExternalUrlInfo) {
+        this(
+                resourceId,
+                address,
+                dataPort,
+                jmxPort,
+                lastHeartbeat,
+                numberSlots,
+                numberAvailableSlots,
                 ResourceProfileInfo.fromResrouceProfile(totalResource),
                 ResourceProfileInfo.fromResrouceProfile(freeResource),
                 hardwareDescription,
                 memoryConfiguration,
-                blocked);
+                blocked,
+                taskManagerExternalUrlInfo.getLogUrl(),
+                taskManagerExternalUrlInfo.getWebshellUrl(),
+                taskManagerExternalUrlInfo.getFlameGraphUrl());
     }
 
     @JsonIgnore
@@ -228,6 +283,21 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
         return blocked;
     }
 
+    @JsonIgnore
+    public String getLogUrl() {
+        return logUrl;
+    }
+
+    @JsonIgnore
+    public String getWebshellUrl() {
+        return webshellUrl;
+    }
+
+    @JsonIgnore
+    public String getFlameGraphUrl() {
+        return flameGraphUrl;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {
@@ -248,7 +318,10 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
                 && Objects.equals(address, that.address)
                 && Objects.equals(hardwareDescription, that.hardwareDescription)
                 && Objects.equals(memoryConfiguration, that.memoryConfiguration)
-                && blocked == that.blocked;
+                && blocked == that.blocked
+                && Objects.equals(logUrl, that.logUrl)
+                && Objects.equals(webshellUrl, that.webshellUrl)
+                && Objects.equals(flameGraphUrl, that.flameGraphUrl);
     }
 
     @Override
@@ -265,6 +338,9 @@ public class TaskManagerInfo implements ResponseBody, Serializable {
                 freeResource,
                 hardwareDescription,
                 memoryConfiguration,
-                blocked);
+                blocked,
+                logUrl,
+                webshellUrl,
+                flameGraphUrl);
     }
 }

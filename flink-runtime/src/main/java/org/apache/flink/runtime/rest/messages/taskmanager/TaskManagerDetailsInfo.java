@@ -67,6 +67,9 @@ public class TaskManagerDetailsInfo extends TaskManagerInfo {
             @JsonProperty(FIELD_NAME_HARDWARE) HardwareDescription hardwareDescription,
             @JsonProperty(FIELD_NAME_MEMORY) TaskExecutorMemoryConfiguration memoryConfiguration,
             @JsonProperty(FIELD_NAME_BLOCKED) @Nullable Boolean blocked,
+            @JsonProperty(FIELD_NAME_LOG_URL) String logUrl,
+            @JsonProperty(FIELD_NAME_WEBSHELL_URL) String webshellUrl,
+            @JsonProperty(FIELD_NAME_FLAME_GRAPH_URL) String flameGraphUrl,
             @JsonProperty(FIELD_NAME_ALLOCATED_SLOTS) Collection<SlotInfo> allocatedSlots,
             @JsonProperty(FIELD_NAME_METRICS) TaskManagerMetricsInfo taskManagerMetrics) {
         super(
@@ -81,7 +84,10 @@ public class TaskManagerDetailsInfo extends TaskManagerInfo {
                 freeResource,
                 hardwareDescription,
                 memoryConfiguration,
-                blocked);
+                blocked,
+                logUrl,
+                webshellUrl,
+                flameGraphUrl);
 
         this.taskManagerMetrics = Preconditions.checkNotNull(taskManagerMetrics);
         this.allocatedSlots = Preconditions.checkNotNull(allocatedSlots);
@@ -103,6 +109,9 @@ public class TaskManagerDetailsInfo extends TaskManagerInfo {
                 taskManagerInfoWithSlots.getTaskManagerInfo().getHardwareDescription(),
                 taskManagerInfoWithSlots.getTaskManagerInfo().getMemoryConfiguration(),
                 taskManagerInfoWithSlots.getTaskManagerInfo().getBlocked(),
+                taskManagerInfoWithSlots.getTaskManagerInfo().getLogUrl(),
+                taskManagerInfoWithSlots.getTaskManagerInfo().getWebshellUrl(),
+                taskManagerInfoWithSlots.getTaskManagerInfo().getFlameGraphUrl(),
                 taskManagerInfoWithSlots.getAllocatedSlots(),
                 taskManagerMetrics);
     }

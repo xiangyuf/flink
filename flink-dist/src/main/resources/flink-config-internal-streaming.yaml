@@ -146,9 +146,11 @@ rest.await-leader-timeout: 300000
 rest.retry.max-attempts: 30
 rest.retry.delay: 10000
 
-# Web function close
 web.cancel.enable: false
 web.submit.enable: false
+web.log-url.enabled: true
+web.webshell-url.enabled: true
+web.flamegraph-url.enabled: true
 
 #remove after Arcee support HADOOP_HOME
 containerized.master.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop

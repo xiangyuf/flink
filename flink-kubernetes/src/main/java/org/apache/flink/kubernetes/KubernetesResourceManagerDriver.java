@@ -24,6 +24,7 @@ import org.apache.flink.configuration.GlobalConfiguration;
 import org.apache.flink.configuration.JobManagerOptions;
 import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.configuration.TaskManagerOptions;
+import org.apache.flink.configuration.WebOptions;
 import org.apache.flink.core.fs.FileSystem;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.kubernetes.configuration.KubernetesConfigOptions;
@@ -49,13 +50,18 @@ import org.apache.flink.runtime.jobmanager.HighAvailabilityMode;
 import org.apache.flink.runtime.resourcemanager.active.AbstractResourceManagerDriver;
 import org.apache.flink.runtime.resourcemanager.active.ResourceManagerDriver;
 import org.apache.flink.runtime.resourcemanager.exceptions.ResourceManagerException;
+import org.apache.flink.runtime.util.ByteDogUtils;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 import org.apache.flink.runtime.util.ResourceManagerUtils;
+import org.apache.flink.runtime.util.TaskManagerExternalUrlInfo;
 import org.apache.flink.runtime.util.config.memory.ProcessMemoryUtils;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 import org.apache.flink.util.concurrent.FutureUtils;
+
+import com.bytedance.openplatform.arcee.ArceeUtils;
 
 import javax.annotation.Nullable;
 
@@ -85,6 +91,14 @@ public class KubernetesResourceManagerDriver
     /** Request resource futures, keyed by pod names. */
     private final Map<String, CompletableFuture<KubernetesWorkerNode>> requestResourceFutures;
 
+    private final boolean arceeEnabled;
+
+    private final boolean logUrlEnabled;
+
+    private final boolean webshellUrlEnabled;
+
+    private final boolean flameGraphUrlEnabled;
+
     /** When ResourceManager failover, the max attempt should recover. */
     private long currentMaxAttemptId = 0;
 
@@ -106,6 +120,10 @@ public class KubernetesResourceManagerDriver
         this.webInterfaceUrl = configuration.getWebInterfaceUrl();
         this.flinkKubeClient = Preconditions.checkNotNull(flinkKubeClient);
         this.requestResourceFutures = new HashMap<>();
+        this.arceeEnabled = flinkConfig.getBoolean(KubernetesConfigOptions.ARCEE_ENABLED);
+        this.logUrlEnabled = flinkConfig.getBoolean(WebOptions.LOG_URL_ENABLED);
+        this.webshellUrlEnabled = flinkConfig.getBoolean(WebOptions.WEBSHELL_URL_ENABLED);
+        this.flameGraphUrlEnabled = flinkConfig.getBoolean(WebOptions.FLAME_GRAPH_URL_ENABLED);
         this.running = false;
     }
 
@@ -266,6 +284,70 @@ public class KubernetesResourceManagerDriver
         log.info("Stopping TaskManager pod {}.", podName);
 
         stopPod(podName);
+    }
+
+    @Override
+    public JobManagerExternalUrlInfo getJobManagerExternalUrls() throws Exception {
+        final String logUrl;
+        final String webshellUrl;
+        final String flameGraphUrl;
+
+        if (arceeEnabled && logUrlEnabled) {
+            logUrl = ArceeUtils.getJMLogUrl();
+        } else {
+            logUrl = "";
+        }
+
+        if (arceeEnabled && webshellUrlEnabled) {
+            webshellUrl = ArceeUtils.getJMWebShell();
+        } else {
+            webshellUrl = "";
+        }
+
+        if (flameGraphUrlEnabled) {
+            final String jmAddress = flinkConfig.getString(JobManagerOptions.ADDRESS);
+            flameGraphUrl =
+                    ByteDogUtils.getByteDogCpuFlameGraphBigDataUrl(
+                            flinkConfig, jmAddress, clusterId);
+        } else {
+            flameGraphUrl = "";
+        }
+
+        return new JobManagerExternalUrlInfo(logUrl, webshellUrl, flameGraphUrl);
+    }
+
+    @Override
+    public TaskManagerExternalUrlInfo getTaskManagerExternalUrls(
+            ResourceID resourceID, String hostName) throws Exception {
+        final String logUrl;
+        final String webshellUrl;
+        final String flameGraphUrl;
+        final String podName = resourceID.getResourceIdString();
+
+        if (arceeEnabled && logUrlEnabled) {
+            logUrl = ArceeUtils.getWorkerLogUrl(podName, hostName);
+        } else {
+            logUrl = "";
+        }
+
+        if (arceeEnabled && webshellUrlEnabled) {
+            String namespace = flinkConfig.getString(KubernetesConfigOptions.NAMESPACE);
+            webshellUrl =
+                    ArceeUtils.getTMWebShell(
+                            namespace, clusterId, podName, Constants.MAIN_CONTAINER_NAME);
+        } else {
+            webshellUrl = "";
+        }
+
+        if (flameGraphUrlEnabled) {
+            flameGraphUrl =
+                    ByteDogUtils.getByteDogCpuFlameGraphBigDataUrl(
+                            flinkConfig, hostName, clusterId);
+        } else {
+            flameGraphUrl = "";
+        }
+
+        return new TaskManagerExternalUrlInfo(logUrl, webshellUrl, flameGraphUrl);
     }
 
     // ------------------------------------------------------------------------

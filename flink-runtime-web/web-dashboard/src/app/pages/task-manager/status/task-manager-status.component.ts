@@ -56,6 +56,9 @@ export class TaskManagerStatusComponent implements OnInit, OnDestroy {
   ];
   public taskManagerDetail?: TaskManagerDetail;
   public loading = true;
+  public logUrlEnabled = this.statusService.configuration.features['log-url'];
+  public webshellUrlEnabled = this.statusService.configuration.features['webshell-url'];
+  public flameGraphUrlEnabled = this.statusService.configuration.features['flamegraph-url'];
 
   private readonly destroy$ = new Subject<void>();
 

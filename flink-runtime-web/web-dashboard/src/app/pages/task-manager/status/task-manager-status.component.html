@@ -46,6 +46,21 @@
     <nz-descriptions-item [nzSpan]="1" nzTitle="Flink Managed Memory">
       {{ taskManagerDetail.hardware.managedMemory | humanizeBytes }}
     </nz-descriptions-item>
+    <ng-container *ngIf="logUrlEnabled">
+      <nz-descriptions-item [nzSpan]="1" nzTitle="Log">
+        <a href="{{ taskManagerDetail.logUrl }}">Log</a>
+      </nz-descriptions-item>
+    </ng-container>
+    <ng-container *ngIf="webshellUrlEnabled">
+      <nz-descriptions-item [nzSpan]="1" nzTitle="Webshell">
+        <a href="{{ taskManagerDetail.webshellUrl }}">Webshell</a>
+      </nz-descriptions-item>
+    </ng-container>
+    <ng-container *ngIf="flameGraphUrlEnabled">
+      <nz-descriptions-item [nzSpan]="1" nzTitle="Flame Graph">
+        <a href="{{ taskManagerDetail.flameGraphUrl }}">FlameGraph</a>
+      </nz-descriptions-item>
+    </ng-container>
   </nz-descriptions>
   <flink-navigation [listOfNavigation]="listOfNavigation"></flink-navigation>
 </ng-container>

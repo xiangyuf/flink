@@ -18,8 +18,11 @@
 
 package org.apache.flink.runtime.rest.messages;
 
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.WebOptions;
 import org.apache.flink.runtime.rest.handler.cluster.DashboardConfigHandler;
 import org.apache.flink.runtime.util.EnvironmentInformation;
+import org.apache.flink.runtime.util.JobManagerExternalUrlInfo;
 import org.apache.flink.util.Preconditions;
 
 import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.annotation.JsonCreator;
@@ -43,12 +46,21 @@ public class DashboardConfiguration implements ResponseBody {
     public static final String FIELD_NAME_FLINK_VERSION = "flink-version";
     public static final String FIELD_NAME_FLINK_REVISION = "flink-revision";
     public static final String FIELD_NAME_FLINK_FEATURES = "features";
+    public static final String FIELD_NAME_JM_LOG_URL = "jm-log-url";
+    public static final String FIELD_NAME_JM_WEBSHELL_URL = "jm-webshell-url";
+    public static final String FIELD_NAME_JM_FLAMEGRAPH_URL = "jm-flamegraph-url";
 
     public static final String FIELD_NAME_FEATURE_WEB_SUBMIT = "web-submit";
 
     public static final String FIELD_NAME_FEATURE_WEB_CANCEL = "web-cancel";
 
     public static final String FIELD_NAME_FEATURE_WEB_HISTORY = "web-history";
+
+    public static final String FIELD_NAME_FEATURE_LOG_URL = "log-url";
+
+    public static final String FIELD_NAME_FEATURE_WEBSHELL_URL = "webshell-url";
+
+    public static final String FIELD_NAME_FEATURE_FLAMEGRAPH_URL = "flamegraph-url";
 
     @JsonProperty(FIELD_NAME_REFRESH_INTERVAL)
     private final long refreshInterval;
@@ -65,8 +77,36 @@ public class DashboardConfiguration implements ResponseBody {
     @JsonProperty(FIELD_NAME_FLINK_REVISION)
     private final String flinkRevision;
 
+    @JsonProperty(FIELD_NAME_JM_LOG_URL)
+    private final String jmLogUrl;
+
+    @JsonProperty(FIELD_NAME_JM_WEBSHELL_URL)
+    private final String jmWebshellUrl;
+
+    @JsonProperty(FIELD_NAME_JM_FLAMEGRAPH_URL)
+    private final String jmFlameGraphUrl;
+
     @JsonProperty(FIELD_NAME_FLINK_FEATURES)
     private final Features features;
+
+    public DashboardConfiguration(
+            long refreshInterval,
+            String timeZoneName,
+            int timeZoneOffset,
+            String flinkVersion,
+            String flinkRevision,
+            Features features) {
+        this(
+                refreshInterval,
+                timeZoneName,
+                timeZoneOffset,
+                flinkVersion,
+                flinkRevision,
+                "",
+                "",
+                "",
+                features);
+    }
 
     @JsonCreator
     public DashboardConfiguration(
@@ -75,12 +115,18 @@ public class DashboardConfiguration implements ResponseBody {
             @JsonProperty(FIELD_NAME_TIMEZONE_OFFSET) int timeZoneOffset,
             @JsonProperty(FIELD_NAME_FLINK_VERSION) String flinkVersion,
             @JsonProperty(FIELD_NAME_FLINK_REVISION) String flinkRevision,
+            @JsonProperty(FIELD_NAME_JM_LOG_URL) String jmLogUrl,
+            @JsonProperty(FIELD_NAME_JM_WEBSHELL_URL) String jmWebshellUrl,
+            @JsonProperty(FIELD_NAME_JM_FLAMEGRAPH_URL) String jmFlameGraphUrl,
             @JsonProperty(FIELD_NAME_FLINK_FEATURES) Features features) {
         this.refreshInterval = refreshInterval;
         this.timeZoneName = Preconditions.checkNotNull(timeZoneName);
         this.timeZoneOffset = timeZoneOffset;
         this.flinkVersion = Preconditions.checkNotNull(flinkVersion);
         this.flinkRevision = Preconditions.checkNotNull(flinkRevision);
+        this.jmLogUrl = Preconditions.checkNotNull(jmLogUrl);
+        this.jmWebshellUrl = Preconditions.checkNotNull(jmWebshellUrl);
+        this.jmFlameGraphUrl = Preconditions.checkNotNull(jmFlameGraphUrl);
         this.features = features;
     }
 
@@ -110,6 +156,21 @@ public class DashboardConfiguration implements ResponseBody {
     }
 
     @JsonIgnore
+    public String getJmLogUrl() {
+        return jmLogUrl;
+    }
+
+    @JsonIgnore
+    public String getJmWebshellUrl() {
+        return jmWebshellUrl;
+    }
+
+    @JsonIgnore
+    public String getJmFlameGraphUrl() {
+        return jmFlameGraphUrl;
+    }
+
+    @JsonIgnore
     public Features getFeatures() {
         return features;
     }
@@ -126,14 +187,34 @@ public class DashboardConfiguration implements ResponseBody {
         @JsonProperty(FIELD_NAME_FEATURE_WEB_HISTORY)
         private final boolean isHistoryServer;
 
+        @JsonProperty(FIELD_NAME_FEATURE_LOG_URL)
+        private final boolean logUrlEnabled;
+
+        @JsonProperty(FIELD_NAME_FEATURE_WEBSHELL_URL)
+        private final boolean webshellUrlEnabled;
+
+        @JsonProperty(FIELD_NAME_FEATURE_FLAMEGRAPH_URL)
+        private final boolean flameGraphUrlEnabled;
+
+        public Features(
+                boolean webSubmitEnabled, boolean webCancelEnabled, boolean isHistoryServer) {
+            this(webSubmitEnabled, webCancelEnabled, isHistoryServer, false, false, false);
+        }
+
         @JsonCreator
         public Features(
                 @JsonProperty(FIELD_NAME_FEATURE_WEB_SUBMIT) boolean webSubmitEnabled,
                 @JsonProperty(FIELD_NAME_FEATURE_WEB_CANCEL) boolean webCancelEnabled,
-                @JsonProperty(FIELD_NAME_FEATURE_WEB_HISTORY) boolean isHistoryServer) {
+                @JsonProperty(FIELD_NAME_FEATURE_WEB_HISTORY) boolean isHistoryServer,
+                @JsonProperty(FIELD_NAME_FEATURE_LOG_URL) boolean logUrlEnabled,
+                @JsonProperty(FIELD_NAME_FEATURE_WEBSHELL_URL) boolean webshellUrlEnabled,
+                @JsonProperty(FIELD_NAME_FEATURE_FLAMEGRAPH_URL) boolean flameGraphUrlEnabled) {
             this.webSubmitEnabled = webSubmitEnabled;
             this.webCancelEnabled = webCancelEnabled;
             this.isHistoryServer = isHistoryServer;
+            this.logUrlEnabled = logUrlEnabled;
+            this.webshellUrlEnabled = webshellUrlEnabled;
+            this.flameGraphUrlEnabled = flameGraphUrlEnabled;
         }
 
         @JsonIgnore
@@ -151,6 +232,21 @@ public class DashboardConfiguration implements ResponseBody {
             return isHistoryServer;
         }
 
+        @JsonIgnore
+        public boolean isLogUrlEnabled() {
+            return logUrlEnabled;
+        }
+
+        @JsonIgnore
+        public boolean isWebshellUrlEnabled() {
+            return webshellUrlEnabled;
+        }
+
+        @JsonIgnore
+        public boolean isFlameGraphUrlEnabled() {
+            return flameGraphUrlEnabled;
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) {
@@ -162,12 +258,21 @@ public class DashboardConfiguration implements ResponseBody {
             Features features = (Features) o;
             return webSubmitEnabled == features.webSubmitEnabled
                     && webCancelEnabled == features.webCancelEnabled
-                    && isHistoryServer == features.isHistoryServer;
+                    && isHistoryServer == features.isHistoryServer
+                    && logUrlEnabled == features.logUrlEnabled
+                    && webshellUrlEnabled == features.webshellUrlEnabled
+                    && flameGraphUrlEnabled == features.flameGraphUrlEnabled;
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(webSubmitEnabled, webCancelEnabled, isHistoryServer);
+            return Objects.hash(
+                    webSubmitEnabled,
+                    webCancelEnabled,
+                    isHistoryServer,
+                    logUrlEnabled,
+                    webshellUrlEnabled,
+                    flameGraphUrlEnabled);
         }
     }
 
@@ -185,6 +290,9 @@ public class DashboardConfiguration implements ResponseBody {
                 && Objects.equals(timeZoneName, that.timeZoneName)
                 && Objects.equals(flinkVersion, that.flinkVersion)
                 && Objects.equals(flinkRevision, that.flinkRevision)
+                && Objects.equals(jmLogUrl, that.jmLogUrl)
+                && Objects.equals(jmWebshellUrl, that.jmWebshellUrl)
+                && Objects.equals(jmFlameGraphUrl, that.jmFlameGraphUrl)
                 && Objects.equals(features, that.features);
     }
 
@@ -196,6 +304,9 @@ public class DashboardConfiguration implements ResponseBody {
                 timeZoneOffset,
                 flinkVersion,
                 flinkRevision,
+                jmLogUrl,
+                jmWebshellUrl,
+                jmFlameGraphUrl,
                 features);
     }
 
@@ -205,6 +316,24 @@ public class DashboardConfiguration implements ResponseBody {
             boolean webSubmitEnabled,
             boolean webCancelEnabled,
             boolean isHistoryServer) {
+        return from(
+                refreshInterval,
+                zonedDateTime,
+                webSubmitEnabled,
+                webCancelEnabled,
+                isHistoryServer,
+                new Configuration(),
+                JobManagerExternalUrlInfo.empty());
+    }
+
+    public static DashboardConfiguration from(
+            long refreshInterval,
+            ZonedDateTime zonedDateTime,
+            boolean webSubmitEnabled,
+            boolean webCancelEnabled,
+            boolean isHistoryServer,
+            Configuration clusterConfiguration,
+            JobManagerExternalUrlInfo jobManagerExternalUrlInfo) {
 
         final String flinkVersion = EnvironmentInformation.getVersion();
 
@@ -218,6 +347,12 @@ public class DashboardConfiguration implements ResponseBody {
             flinkRevision = "unknown revision";
         }
 
+        final boolean logUrlEnabled = clusterConfiguration.getBoolean(WebOptions.LOG_URL_ENABLED);
+        final boolean webshellUrlEnabled =
+                clusterConfiguration.getBoolean(WebOptions.WEBSHELL_URL_ENABLED);
+        final boolean flameGraphUrlEnabled =
+                clusterConfiguration.getBoolean(WebOptions.FLAME_GRAPH_URL_ENABLED);
+
         return new DashboardConfiguration(
                 refreshInterval,
                 zonedDateTime.getZone().getDisplayName(TextStyle.FULL, Locale.getDefault()),
@@ -226,6 +361,30 @@ public class DashboardConfiguration implements ResponseBody {
                 zonedDateTime.toOffsetDateTime().getOffset().getTotalSeconds() * 1000,
                 flinkVersion,
                 flinkRevision,
-                new Features(webSubmitEnabled, webCancelEnabled, isHistoryServer));
+                jobManagerExternalUrlInfo.getLogUrl(),
+                jobManagerExternalUrlInfo.getWebshellUrl(),
+                jobManagerExternalUrlInfo.getFlameGraphUrl(),
+                new Features(
+                        webSubmitEnabled,
+                        webCancelEnabled,
+                        isHistoryServer,
+                        logUrlEnabled,
+                        webshellUrlEnabled,
+                        flameGraphUrlEnabled));
+    }
+
+    public static DashboardConfiguration fromDashboardConfiguration(
+            DashboardConfiguration dashboardConfiguration,
+            JobManagerExternalUrlInfo jobManagerExternalUrlInfo) {
+        return new DashboardConfiguration(
+                dashboardConfiguration.getRefreshInterval(),
+                dashboardConfiguration.getTimeZoneName(),
+                dashboardConfiguration.getTimeZoneOffset(),
+                dashboardConfiguration.getFlinkVersion(),
+                dashboardConfiguration.getFlinkRevision(),
+                jobManagerExternalUrlInfo.getLogUrl(),
+                jobManagerExternalUrlInfo.getWebshellUrl(),
+                jobManagerExternalUrlInfo.getFlameGraphUrl(),
+                dashboardConfiguration.getFeatures());
     }
 }

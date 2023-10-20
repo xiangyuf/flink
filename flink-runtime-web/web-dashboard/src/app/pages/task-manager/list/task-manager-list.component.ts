@@ -58,6 +58,9 @@ export class TaskManagerListComponent implements OnInit, OnDestroy {
 
   public listOfTaskManager: TaskManagersItem[] = [];
   public isLoading = true;
+  public logUrlEnabled = this.statusService.configuration.features['log-url'];
+  public webshellUrlEnabled = this.statusService.configuration.features['webshell-url'];
+  public flameGraphUrlEnabled = this.statusService.configuration.features['flamegraph-url'];
 
   private readonly destroy$ = new Subject<void>();
 
@@ -65,6 +68,14 @@ export class TaskManagerListComponent implements OnInit, OnDestroy {
     this.router
       .navigate([taskManager.id, 'metrics'], { relativeTo: this.activatedRoute, queryParamsHandling: 'preserve' })
       .then();
+  }
+
+  navigateToUrl(url: string, $event?: MouseEvent | null): void {
+    if ($event) {
+      $event.preventDefault();
+      $event.stopPropagation();
+    }
+    window.open(url, '_blank');
   }
 
   constructor(

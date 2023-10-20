@@ -63,6 +63,9 @@ export class AppComponent {
 
   historyServerEnv = this.statusService.configuration.features['web-history'];
   webSubmitEnabled = this.statusService.configuration.features['web-submit'];
+  logUrlEnabled = this.statusService.configuration.features['log-url'];
+  webshellUrlEnabled = this.statusService.configuration.features['webshell-url'];
+  flameGraphUrlEnabled = this.statusService.configuration.features['flamegraph-url'];
 
   showMessage(): void {
     if (this.statusService.listOfErrorMessage.length) {
