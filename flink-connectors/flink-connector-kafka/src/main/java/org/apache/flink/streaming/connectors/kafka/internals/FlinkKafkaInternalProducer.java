@@ -26,6 +26,7 @@ import org.apache.flink.shaded.guava30.com.google.common.base.Joiner;
 
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
@@ -61,7 +62,7 @@ import java.util.concurrent.Future;
 public class FlinkKafkaInternalProducer<K, V> implements Producer<K, V> {
     private static final Logger LOG = LoggerFactory.getLogger(FlinkKafkaInternalProducer.class);
 
-    protected final KafkaProducer<K, V> kafkaProducer;
+    protected final BytedKafkaProducer<K, V> kafkaProducer;
 
     // This lock and closed flag are introduced to workaround KAFKA-6635. Because the bug is only
     // fixed in
@@ -76,7 +77,7 @@ public class FlinkKafkaInternalProducer<K, V> implements Producer<K, V> {
 
     public FlinkKafkaInternalProducer(Properties properties) {
         transactionalId = properties.getProperty(ProducerConfig.TRANSACTIONAL_ID_CONFIG);
-        kafkaProducer = new KafkaProducer<>(properties);
+        kafkaProducer = new BytedKafkaProducer<>(properties);
         producerClosingLock = new Object();
         closed = false;
     }

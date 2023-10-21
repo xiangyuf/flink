@@ -22,7 +22,7 @@ import org.apache.flink.streaming.examples.statemachine.event.Event;
 import org.apache.flink.streaming.examples.statemachine.generator.StandaloneThreadedGenerator;
 import org.apache.flink.util.Collector;
 
-import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
@@ -57,7 +57,7 @@ public class KafkaStandaloneGenerator extends StandaloneThreadedGenerator {
 
     private static class KafkaCollector implements Collector<Event>, AutoCloseable {
 
-        private final KafkaProducer<Object, byte[]> producer;
+        private final BytedKafkaProducer<Object, byte[]> producer;
 
         private final EventDeSerializationSchema serializer;
 
@@ -79,7 +79,7 @@ public class KafkaStandaloneGenerator extends StandaloneThreadedGenerator {
             properties.put(
                     ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
                     ByteArraySerializer.class.getCanonicalName());
-            this.producer = new KafkaProducer<>(properties);
+            this.producer = new BytedKafkaProducer<>(properties);
         }
 
         @Override

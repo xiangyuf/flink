@@ -709,13 +709,6 @@ public class FlinkKafkaProducer<IN>
                     ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
         }
 
-        // eagerly ensure that bootstrap servers are set.
-        if (!this.producerConfig.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-            throw new IllegalArgumentException(
-                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG
-                            + " must be supplied in the producer config properties.");
-        }
-
         if (!producerConfig.containsKey(ProducerConfig.TRANSACTION_TIMEOUT_CONFIG)) {
             long timeout = DEFAULT_KAFKA_TRANSACTION_TIMEOUT.toMilliseconds();
             checkState(

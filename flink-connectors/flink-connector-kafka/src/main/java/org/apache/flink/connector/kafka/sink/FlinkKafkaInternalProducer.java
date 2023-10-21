@@ -170,10 +170,11 @@ class FlinkKafkaInternalProducer<K, V> extends BytedKafkaProducer<K, V> {
     }
 
     /**
-     * Besides committing {@link org.apache.kafka.clients.producer.KafkaProducer#commitTransaction}
-     * is also adding new partitions to the transaction. flushNewPartitions method is moving this
-     * logic to pre-commit/flush, to make resumeTransaction simpler. Otherwise resumeTransaction
-     * would require to restore state of the not yet added/"in-flight" partitions.
+     * Besides committing {@link
+     * org.apache.kafka.clients.producer.BytedKafkaProducer#commitTransaction} is also adding new
+     * partitions to the transaction. flushNewPartitions method is moving this logic to
+     * pre-commit/flush, to make resumeTransaction simpler. Otherwise resumeTransaction would
+     * require to restore state of the not yet added/"in-flight" partitions.
      */
     private void flushNewPartitions() {
         LOG.info("Flushing new partitions");

@@ -37,8 +37,8 @@ import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
 import org.apache.flink.util.NetUtils;
 import org.apache.flink.util.SerializableObject;
 
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -108,7 +108,7 @@ public abstract class FlinkKafkaProducerBase<IN> extends RichSinkFunction<IN>
     // -------------------------------- Runtime fields ------------------------------------------
 
     /** KafkaProducer instance. */
-    protected transient KafkaProducer<byte[], byte[]> producer;
+    protected transient BytedKafkaProducer<byte[], byte[]> producer;
 
     /** The callback than handles error propagation or logging callbacks. */
     protected transient Callback callback;
@@ -171,13 +171,6 @@ public abstract class FlinkKafkaProducerBase<IN> extends RichSinkFunction<IN>
                     ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG);
         }
 
-        // eagerly ensure that bootstrap servers are set.
-        if (!this.producerConfig.containsKey(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG)) {
-            throw new IllegalArgumentException(
-                    ProducerConfig.BOOTSTRAP_SERVERS_CONFIG
-                            + " must be supplied in the producer config properties.");
-        }
-
         this.topicPartitionsMap = new HashMap<>();
     }
 
@@ -207,8 +200,8 @@ public abstract class FlinkKafkaProducerBase<IN> extends RichSinkFunction<IN>
 
     /** Used for testing only. */
     @VisibleForTesting
-    protected <K, V> KafkaProducer<K, V> getKafkaProducer(Properties props) {
-        return new KafkaProducer<>(props);
+    protected <K, V> BytedKafkaProducer<K, V> getKafkaProducer(Properties props) {
+        return new BytedKafkaProducer<>(props);
     }
 
     // ----------------------------------- Utilities --------------------------
@@ -410,7 +403,7 @@ public abstract class FlinkKafkaProducerBase<IN> extends RichSinkFunction<IN>
     }
 
     protected static int[] getPartitionsByTopic(
-            String topic, KafkaProducer<byte[], byte[]> producer) {
+            String topic, BytedKafkaProducer<byte[], byte[]> producer) {
         // the fetched list is immutable, so we're creating a mutable copy in order to sort it
         List<PartitionInfo> partitionsList = new ArrayList<>(producer.partitionsFor(topic));
 

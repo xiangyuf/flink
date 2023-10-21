@@ -34,8 +34,8 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord;
 import org.apache.flink.streaming.util.OneInputStreamOperatorTestHarness;
 import org.apache.flink.streaming.util.serialization.KeyedSerializationSchema;
 
+import org.apache.kafka.clients.producer.BytedKafkaProducer;
 import org.apache.kafka.clients.producer.Callback;
-import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
@@ -119,7 +119,7 @@ public class FlinkKafkaProducerBaseTest {
                         mockPartitioner);
         producer.setRuntimeContext(mockRuntimeContext);
 
-        final KafkaProducer mockProducer = producer.getMockKafkaProducer();
+        final BytedKafkaProducer mockProducer = producer.getMockKafkaProducer();
         when(mockProducer.partitionsFor(anyString())).thenReturn(mockPartitionsList);
         when(mockProducer.metrics()).thenReturn(null);
 
@@ -228,7 +228,7 @@ public class FlinkKafkaProducerBaseTest {
                         null);
         producer.setFlushOnCheckpoint(true);
 
-        final KafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
+        final BytedKafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
 
         final OneInputStreamOperatorTestHarness<String, Object> testHarness =
                 new OneInputStreamOperatorTestHarness<>(new StreamSink<>(producer));
@@ -289,7 +289,7 @@ public class FlinkKafkaProducerBaseTest {
                         null);
         producer.setFlushOnCheckpoint(true);
 
-        final KafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
+        final BytedKafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
 
         final OneInputStreamOperatorTestHarness<String, Object> testHarness =
                 new OneInputStreamOperatorTestHarness<>(new StreamSink<>(producer));
@@ -362,7 +362,7 @@ public class FlinkKafkaProducerBaseTest {
                         null);
         producer.setFlushOnCheckpoint(false);
 
-        final KafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
+        final BytedKafkaProducer<?, ?> mockProducer = producer.getMockKafkaProducer();
 
         final OneInputStreamOperatorTestHarness<String, Object> testHarness =
                 new OneInputStreamOperatorTestHarness<>(new StreamSink<>(producer));
@@ -387,7 +387,7 @@ public class FlinkKafkaProducerBaseTest {
 
         private static final String DUMMY_TOPIC = "dummy-topic";
 
-        private transient KafkaProducer<?, ?> mockProducer;
+        private transient BytedKafkaProducer<?, ?> mockProducer;
         private transient List<Callback> pendingCallbacks;
         private transient MultiShotLatch flushLatch;
         private boolean isFlushed;
@@ -400,7 +400,7 @@ public class FlinkKafkaProducerBaseTest {
 
             super(DUMMY_TOPIC, schema, producerConfig, partitioner);
 
-            this.mockProducer = mock(KafkaProducer.class);
+            this.mockProducer = mock(BytedKafkaProducer.class);
             when(mockProducer.send(any(ProducerRecord.class), any(Callback.class)))
                     .thenAnswer(
                             new Answer<Object>() {
@@ -432,7 +432,7 @@ public class FlinkKafkaProducerBaseTest {
             return pendingCallbacks;
         }
 
-        KafkaProducer<?, ?> getMockKafkaProducer() {
+        BytedKafkaProducer<?, ?> getMockKafkaProducer() {
             return mockProducer;
         }
 
@@ -456,8 +456,8 @@ public class FlinkKafkaProducerBaseTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        protected <K, V> KafkaProducer<K, V> getKafkaProducer(Properties props) {
-            return (KafkaProducer<K, V>) mockProducer;
+        protected <K, V> BytedKafkaProducer<K, V> getKafkaProducer(Properties props) {
+            return (BytedKafkaProducer<K, V>) mockProducer;
         }
 
         @Override
