@@ -40,6 +40,7 @@ import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
@@ -61,6 +62,7 @@ import static org.mockito.Mockito.when;
 public class FlinkKafkaProducerBaseTest {
 
     /** Tests that the constructor eagerly checks bootstrap servers are set in config. */
+    @Ignore("Disabled since bootstrap servers are not required in internal SDK")
     @Test(expected = IllegalArgumentException.class)
     public void testInstantiationFailsWhenBootstrapServersMissing() throws Exception {
         // no bootstrap servers set in props
