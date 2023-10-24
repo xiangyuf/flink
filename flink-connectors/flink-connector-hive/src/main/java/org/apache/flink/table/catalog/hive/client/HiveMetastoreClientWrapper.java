@@ -322,10 +322,19 @@ public class HiveMetastoreClientWrapper implements AutoCloseable {
         }
     }
 
+    public void alter_table(
+            String databaseName, String tableName, Table table, boolean onlyChangeStats)
+            throws InvalidOperationException, MetaException, TException {
+        // Only change stats of table is not dangerous, so we skip modification check
+        if (!onlyChangeStats) {
+            checkPermissionsOfHiveMetaModifications();
+        }
+        hiveShim.alterTable(client, databaseName, tableName, table);
+    }
+
     public void alter_table(String databaseName, String tableName, Table table)
             throws InvalidOperationException, MetaException, TException {
-        checkPermissionsOfHiveMetaModifications();
-        hiveShim.alterTable(client, databaseName, tableName, table);
+        alter_table(databaseName, tableName, table, false);
     }
 
     public void alter_partition(String databaseName, String tableName, Partition partition)

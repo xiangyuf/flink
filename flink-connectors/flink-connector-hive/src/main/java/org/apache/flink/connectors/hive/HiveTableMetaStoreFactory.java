@@ -165,7 +165,7 @@ public class HiveTableMetaStoreFactory implements TableMetaStoreFactory {
                 Map<String, String> newStats = gatherStats(tablePath, false);
                 if (HiveStatsUtil.tableStatsChanged(newStats, table.getParameters())) {
                     table.getParameters().putAll(newStats);
-                    client.alter_table(database, tableName, table);
+                    client.alter_table(database, tableName, table, true);
                 }
             }
         }
