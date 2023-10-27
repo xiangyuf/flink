@@ -83,6 +83,8 @@ public class ResultPartitionFactory {
 
     private final int maxOverdraftBuffersPerGate;
 
+    private final boolean isFixedLocalBufferPool;
+
     public ResultPartitionFactory(
             ResultPartitionManager partitionManager,
             FileChannelManager channelManager,
@@ -101,7 +103,8 @@ public class ResultPartitionFactory {
             boolean sslEnabled,
             int maxOverdraftBuffersPerGate,
             int hybridShuffleSpilledIndexSegmentSize,
-            long hybridShuffleNumRetainedInMemoryRegionsMax) {
+            long hybridShuffleNumRetainedInMemoryRegionsMax,
+            boolean isFixedLocalBufferPool) {
 
         this.partitionManager = partitionManager;
         this.channelManager = channelManager;
@@ -122,6 +125,7 @@ public class ResultPartitionFactory {
         this.hybridShuffleSpilledIndexSegmentSize = hybridShuffleSpilledIndexSegmentSize;
         this.hybridShuffleNumRetainedInMemoryRegionsMax =
                 hybridShuffleNumRetainedInMemoryRegionsMax;
+        this.isFixedLocalBufferPool = isFixedLocalBufferPool;
     }
 
     public ResultPartition create(
@@ -338,9 +342,17 @@ public class ResultPartitionFactory {
                             numberOfSubpartitions,
                             type);
 
+            final Integer min;
+            final Integer max;
+            if (isFixedLocalBufferPool) {
+                max = min = type.canBePipelinedConsumed() ? pair.getRight() : pair.getLeft();
+            } else {
+                min = pair.getLeft();
+                max = pair.getRight();
+            }
             return bufferPoolFactory.createBufferPool(
-                    pair.getLeft(),
-                    pair.getRight(),
+                    min,
+                    max,
                     numberOfSubpartitions,
                     maxBuffersPerChannel,
                     isOverdraftBufferNeeded(type) ? maxOverdraftBuffersPerGate : 0);

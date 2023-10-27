@@ -91,6 +91,8 @@ public class SingleInputGateFactory {
 
     private final BufferDebloatConfiguration debloatConfiguration;
 
+    private final boolean isFixedLocalBufferPool;
+
     public SingleInputGateFactory(
             @Nonnull ResourceID taskExecutorResourceId,
             @Nonnull NettyShuffleEnvironmentConfiguration networkConfig,
@@ -114,6 +116,7 @@ public class SingleInputGateFactory {
         this.taskEventPublisher = taskEventPublisher;
         this.networkBufferPool = networkBufferPool;
         this.debloatConfiguration = networkConfig.getDebloatConfiguration();
+        this.isFixedLocalBufferPool = networkConfig.isFixedLocalBufferPool();
     }
 
     /** Creates an input gate and all of its input channels. */
@@ -136,7 +139,8 @@ public class SingleInputGateFactory {
                 createBufferPoolFactory(
                         networkBufferPool,
                         gateBuffersSpec.getRequiredFloatingBuffers(),
-                        gateBuffersSpec.getTotalFloatingBuffers());
+                        gateBuffersSpec.getTotalFloatingBuffers(),
+                        isFixedLocalBufferPool);
 
         BufferDecompressor bufferDecompressor = null;
         if (igdd.getConsumedPartitionType().supportCompression()
@@ -325,9 +329,18 @@ public class SingleInputGateFactory {
     static SupplierWithException<BufferPool, IOException> createBufferPoolFactory(
             BufferPoolFactory bufferPoolFactory,
             int minFloatingBuffersPerGate,
-            int maxFloatingBuffersPerGate) {
+            int maxFloatingBuffersPerGate,
+            boolean isFixedLocalBufferPool) {
         Pair<Integer, Integer> pair = Pair.of(minFloatingBuffersPerGate, maxFloatingBuffersPerGate);
-        return () -> bufferPoolFactory.createBufferPool(pair.getLeft(), pair.getRight());
+        final Integer min;
+        final Integer max;
+        if (isFixedLocalBufferPool) {
+            max = min = pair.getRight();
+        } else {
+            min = pair.getLeft();
+            max = pair.getRight();
+        }
+        return () -> bufferPoolFactory.createBufferPool(min, max);
     }
 
     /** Statistics of input channels. */

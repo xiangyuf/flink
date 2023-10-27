@@ -188,5 +188,11 @@
             <td>Boolean</td>
             <td>Whether to reuse tcp connections across multi jobs. If set to true, tcp connections will not be released after job finishes. The subsequent jobs will be free from the overhead of the connection re-establish. However, this may lead to an increase in the total number of connections on your machine. When it reaches the upper limit, you can set it to false to release idle connections. Note that to avoid connection leak, you must set taskmanager.network.max-num-tcp-connections to a smaller value before you enable tcp connection reuse.</td>
         </tr>
+        <tr>
+            <td><h5>taskmanager.network.fixed-local-buffer-pool-size.enable</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Whether to use a fixed local buffer size. Using a fixed local buffer size can avoid redistributing the network buffer pool and reduce the initialization time of tasks. This is mainly targeted for scenarios where the local buffer pool is frequently created in OLAP. For canBePipelined shuffle, in order to avoid backpressure, the local buffer pool should be set to its maximum size. For block shuffle, backpressure will not occur and floating buffers can be recycled in time, so it can be set to its minimum size.</td>
+        </tr>
     </tbody>
 </table>

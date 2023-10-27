@@ -108,6 +108,8 @@ public class NettyShuffleEnvironmentConfiguration {
 
     private final long hybridShuffleNumRetainedInMemoryRegionsMax;
 
+    private final boolean isFixedLocalBufferPool;
+
     public NettyShuffleEnvironmentConfiguration(
             int numNetworkBuffers,
             int networkBufferSize,
@@ -132,7 +134,8 @@ public class NettyShuffleEnvironmentConfiguration {
             boolean connectionReuseEnabled,
             int maxOverdraftBuffersPerGate,
             int hybridShuffleSpilledIndexSegmentSize,
-            long hybridShuffleNumRetainedInMemoryRegionsMax) {
+            long hybridShuffleNumRetainedInMemoryRegionsMax,
+            boolean isFixedLocalBufferPool) {
 
         this.numNetworkBuffers = numNetworkBuffers;
         this.networkBufferSize = networkBufferSize;
@@ -159,6 +162,7 @@ public class NettyShuffleEnvironmentConfiguration {
         this.hybridShuffleSpilledIndexSegmentSize = hybridShuffleSpilledIndexSegmentSize;
         this.hybridShuffleNumRetainedInMemoryRegionsMax =
                 hybridShuffleNumRetainedInMemoryRegionsMax;
+        this.isFixedLocalBufferPool = isFixedLocalBufferPool;
     }
 
     // ------------------------------------------------------------------------
@@ -261,6 +265,10 @@ public class NettyShuffleEnvironmentConfiguration {
 
     public int getHybridShuffleSpilledIndexSegmentSize() {
         return hybridShuffleSpilledIndexSegmentSize;
+    }
+
+    public boolean isFixedLocalBufferPool() {
+        return isFixedLocalBufferPool;
     }
 
     // ------------------------------------------------------------------------
@@ -374,6 +382,10 @@ public class NettyShuffleEnvironmentConfiguration {
                         NettyShuffleEnvironmentOptions
                                 .HYBRID_SHUFFLE_NUM_RETAINED_IN_MEMORY_REGIONS_MAX);
 
+        final Boolean isFixedLocalBufferPool =
+                configuration.get(
+                        NettyShuffleEnvironmentOptions.FIXED_LOCAL_BUFFER_POOL_SIZE_ENABLE);
+
         checkArgument(buffersPerChannel >= 0, "Must be non-negative.");
         checkArgument(
                 !maxRequiredBuffersPerGate.isPresent() || maxRequiredBuffersPerGate.get() >= 1,
@@ -411,7 +423,8 @@ public class NettyShuffleEnvironmentConfiguration {
                 connectionReuseEnabled,
                 maxOverdraftBuffersPerGate,
                 hybridShuffleSpilledIndexSegmentSize,
-                hybridShuffleNumRetainedInMemoryRegionsMax);
+                hybridShuffleNumRetainedInMemoryRegionsMax,
+                isFixedLocalBufferPool);
     }
 
     /**

@@ -416,6 +416,21 @@ public class NettyShuffleEnvironmentOptions {
                                     + " to a smaller value before you "
                                     + "enable tcp connection reuse.");
 
+    @Documentation.Section(Documentation.Sections.ALL_TASK_MANAGER_NETWORK)
+    public static final ConfigOption<Boolean> FIXED_LOCAL_BUFFER_POOL_SIZE_ENABLE =
+            key("taskmanager.network.fixed-local-buffer-pool-size.enable")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription(
+                            "Whether to use a fixed local buffer size. Using a fixed local buffer size "
+                                    + "can avoid redistributing the network buffer pool and reduce "
+                                    + "the initialization time of tasks. This is mainly targeted for "
+                                    + "scenarios where the local buffer pool is frequently created "
+                                    + "in OLAP. For canBePipelined shuffle, in order to avoid backpressure, "
+                                    + "the local buffer pool should be set to its maximum size. For "
+                                    + "block shuffle, backpressure will not occur and floating buffers "
+                                    + "can be recycled in time, so it can be set to its minimum size.");
+
     // ------------------------------------------------------------------------
     //  Netty Options
     // ------------------------------------------------------------------------
