@@ -50,6 +50,7 @@ import org.apache.flink.runtime.taskmanager.UnresolvedTaskManagerLocation;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
+import org.apache.flink.util.concurrent.ScheduledExecutor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -277,6 +278,7 @@ public class TaskManagerServices {
      * @param permanentBlobService permanentBlobService used by the services
      * @param taskManagerMetricGroup metric group of the task manager
      * @param ioExecutor executor for async IO operations
+     * @param scheduledExecutor scheduled executor in rpc service
      * @param fatalErrorHandler to handle class loading OOMs
      * @param workingDirectory the working directory of the process
      * @return task manager components
@@ -287,6 +289,7 @@ public class TaskManagerServices {
             PermanentBlobService permanentBlobService,
             MetricGroup taskManagerMetricGroup,
             ExecutorService ioExecutor,
+            ScheduledExecutor scheduledExecutor,
             FatalErrorHandler fatalErrorHandler,
             WorkingDirectory workingDirectory)
             throws Exception {
@@ -305,7 +308,8 @@ public class TaskManagerServices {
                         taskManagerServicesConfiguration,
                         taskEventDispatcher,
                         taskManagerMetricGroup,
-                        ioExecutor);
+                        ioExecutor,
+                        scheduledExecutor);
         final int listeningDataPort = shuffleEnvironment.start();
 
         final KvStateService kvStateService =
@@ -426,7 +430,8 @@ public class TaskManagerServices {
             TaskManagerServicesConfiguration taskManagerServicesConfiguration,
             TaskEventDispatcher taskEventDispatcher,
             MetricGroup taskManagerMetricGroup,
-            Executor ioExecutor)
+            Executor ioExecutor,
+            ScheduledExecutor scheduledExecutor)
             throws FlinkException {
 
         final ShuffleEnvironmentContext shuffleEnvironmentContext =
@@ -440,7 +445,8 @@ public class TaskManagerServices {
                         taskManagerServicesConfiguration.getTmpDirPaths(),
                         taskEventDispatcher,
                         taskManagerMetricGroup,
-                        ioExecutor);
+                        ioExecutor,
+                        scheduledExecutor);
 
         return ShuffleServiceLoader.loadShuffleServiceFactory(
                         taskManagerServicesConfiguration.getConfiguration())

@@ -355,9 +355,10 @@ public class RemoteInputChannelTest {
     }
 
     @Test
-    public void testPartitionRequestExponentialBackoff() throws Exception {
-        // Start with initial backoff, then keep doubling, and cap at max.
-        int[] expectedDelays = {500, 1000, 2000, 3000};
+    public void testPartitionRequestLinearBackoff() throws Exception {
+        // Start with initial backoff, then keep adding the partition request timeout, and cap at
+        // max.
+        int[] expectedDelays = {500, 1000, 1500, 2000};
 
         // Setup
         SingleInputGate inputGate = createSingleInputGate(1);
@@ -365,17 +366,16 @@ public class RemoteInputChannelTest {
         TestVerifyPartitionRequestClient client = new TestVerifyPartitionRequestClient();
         ConnectionManager connectionManager = new TestVerifyConnectionManager(client);
         RemoteInputChannel ch =
-                createRemoteInputChannel(inputGate, connectionManager, partitionId, 500, 3000);
+                createRemoteInputChannel(inputGate, connectionManager, partitionId, 500, 1000);
 
         // Initial request
         ch.requestSubpartition();
         client.verifyResult(partitionId, 0, 0);
 
-        // Request subpartition and verify that the actual requests are delayed.
+        // Request subpartition and verify that the actual back off.
         for (int expected : expectedDelays) {
             ch.retriggerSubpartitionRequest();
-
-            client.verifyResult(partitionId, 0, expected);
+            assertEquals(expected, ch.getCurrentBackoff());
         }
 
         // Exception after backoff is greater than the maximum backoff.
@@ -401,9 +401,9 @@ public class RemoteInputChannelTest {
         ch.requestSubpartition();
         client.verifyResult(partitionId, 0, 0);
 
-        // Initial delay for second request
+        // The current backoff for second request
         ch.retriggerSubpartitionRequest();
-        client.verifyResult(partitionId, 0, 500);
+        assertEquals(500, ch.getCurrentBackoff());
 
         // Exception after backoff is greater than the maximum backoff.
         try {
@@ -1743,11 +1743,11 @@ public class RemoteInputChannelTest {
     private RemoteInputChannel createRemoteInputChannel(
             SingleInputGate inputGate,
             int consumedSubpartitionIndex,
-            int initialBackoff,
+            int partitionRequestTimeout,
             int maxBackoff) {
         return InputChannelBuilder.newBuilder()
                 .setConsumedSubpartitionIndex(consumedSubpartitionIndex)
-                .setInitialBackoff(initialBackoff)
+                .setPartitionRequestListenerTimeout(partitionRequestTimeout)
                 .setMaxBackoff(maxBackoff)
                 .buildRemoteChannel(inputGate);
     }
@@ -1756,10 +1756,10 @@ public class RemoteInputChannelTest {
             SingleInputGate inputGate,
             ConnectionManager connectionManager,
             ResultPartitionID partitionId,
-            int initialBackoff,
+            int partitionRequestTimeout,
             int maxBackoff) {
         return InputChannelBuilder.newBuilder()
-                .setInitialBackoff(initialBackoff)
+                .setPartitionRequestListenerTimeout(partitionRequestTimeout)
                 .setMaxBackoff(maxBackoff)
                 .setPartitionId(partitionId)
                 .setConnectionManager(connectionManager)

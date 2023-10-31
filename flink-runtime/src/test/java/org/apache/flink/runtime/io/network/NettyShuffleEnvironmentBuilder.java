@@ -19,6 +19,7 @@
 package org.apache.flink.runtime.io.network;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.configuration.NettyShuffleEnvironmentOptions;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.runtime.clusterframework.types.ResourceID;
 import org.apache.flink.runtime.io.network.netty.NettyConfig;
@@ -53,6 +54,12 @@ public class NettyShuffleEnvironmentBuilder {
     private int partitionRequestInitialBackoff;
 
     private int partitionRequestMaxBackoff;
+
+    private int partitionRequestTimeout =
+            (int)
+                    NettyShuffleEnvironmentOptions.NETWORK_PARTITION_REQUEST_TIMEOUT
+                            .defaultValue()
+                            .toMillis();
 
     private int networkBuffersPerChannel = 2;
 
@@ -119,6 +126,11 @@ public class NettyShuffleEnvironmentBuilder {
     public NettyShuffleEnvironmentBuilder setPartitionRequestMaxBackoff(
             int partitionRequestMaxBackoff) {
         this.partitionRequestMaxBackoff = partitionRequestMaxBackoff;
+        return this;
+    }
+
+    public NettyShuffleEnvironmentBuilder setPartitionRequestTimeout(int partitionRequestTimeout) {
+        this.partitionRequestTimeout = partitionRequestTimeout;
         return this;
     }
 
@@ -237,6 +249,7 @@ public class NettyShuffleEnvironmentBuilder {
                         bufferSize,
                         partitionRequestInitialBackoff,
                         partitionRequestMaxBackoff,
+                        partitionRequestTimeout,
                         networkBuffersPerChannel,
                         floatingNetworkBuffersPerGate,
                         maxRequiredBuffersPerGate,
