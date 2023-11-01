@@ -20,6 +20,7 @@ package org.apache.flink.runtime.util;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.configuration.ConfigConstants;
+import org.apache.flink.runtime.configuration.HdfsConfigOptions;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 
@@ -47,10 +48,46 @@ public class HadoopUtils {
     static final Text HDFS_DELEGATION_TOKEN_KIND = new Text("HDFS_DELEGATION_TOKEN");
 
     /** The prefixes that Flink adds to the Hadoop config. */
-    private static final String[] FLINK_CONFIG_PREFIXES = {"flink.hadoop."};
+    private static final String[] FLINK_CONFIG_PREFIXES = {"flink.hadoop.", "flink.hdfs."};
+
+    private static final String[] HDFS_CHECKPOINT_KEY_PREFIX = {"flink.checkpoint.hdfs."};
 
     @SuppressWarnings("deprecation")
     public static Configuration getHadoopConfiguration(
+            org.apache.flink.configuration.Configuration flinkConfiguration) {
+
+        // Instantiate an HdfsConfiguration to load the hdfs-site.xml and hdfs-default.xml
+        Configuration result = initHadoopConfiguration(flinkConfiguration);
+
+        if (flinkConfiguration.contains(HdfsConfigOptions.HDFS_DEFAULT_FS)) {
+            // override fs.defaultFS
+            String defaultFS = flinkConfiguration.getString(HdfsConfigOptions.HDFS_DEFAULT_FS);
+            if (defaultFS.length() > 0) {
+                result.setStrings(HdfsConfigOptions.HDFS_DEFAULT_FS.key(), defaultFS);
+                LOG.info(
+                        "using hdfs param {}={}",
+                        HdfsConfigOptions.HDFS_DEFAULT_FS.key(),
+                        defaultFS);
+            }
+        }
+
+        getHadoopConfFromFlinkConf(flinkConfiguration, result, FLINK_CONFIG_PREFIXES);
+
+        return result;
+    }
+
+    public static Configuration getHadoopConfigForCheckpoint(
+            org.apache.flink.configuration.Configuration flinkConfiguration) {
+
+        Configuration result = initHadoopConfiguration(flinkConfiguration);
+
+        getHadoopConfFromFlinkConf(flinkConfiguration, result, HDFS_CHECKPOINT_KEY_PREFIX);
+
+        return result;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static Configuration initHadoopConfiguration(
             org.apache.flink.configuration.Configuration flinkConfiguration) {
 
         // Instantiate an HdfsConfiguration to load the hdfs-site.xml and hdfs-default.xml
@@ -117,10 +154,22 @@ public class HadoopUtils {
                     addHadoopConfIfFound(result, hadoopConfDir) || foundHadoopConfiguration;
         }
 
-        // Approach 4: Flink configuration
-        // add all configuration key with prefix 'flink.hadoop.' in flink conf to hadoop conf
+        if (!foundHadoopConfiguration) {
+            LOG.warn(
+                    "Could not find Hadoop configuration via any of the supported methods "
+                            + "(Flink configuration, environment variables).");
+        }
+
+        return result;
+    }
+
+    /** Add all configuration key with specific prefix in flink conf to hadoop conf. * */
+    private static void getHadoopConfFromFlinkConf(
+            org.apache.flink.configuration.Configuration flinkConfiguration,
+            Configuration result,
+            String[] flinkConfigPrefixes) {
         for (String key : flinkConfiguration.keySet()) {
-            for (String prefix : FLINK_CONFIG_PREFIXES) {
+            for (String prefix : flinkConfigPrefixes) {
                 if (key.startsWith(prefix)) {
                     String newKey = key.substring(prefix.length());
                     String value = flinkConfiguration.getString(key, null);
@@ -130,18 +179,9 @@ public class HadoopUtils {
                             key,
                             newKey,
                             value);
-                    foundHadoopConfiguration = true;
                 }
             }
         }
-
-        if (!foundHadoopConfiguration) {
-            LOG.warn(
-                    "Could not find Hadoop configuration via any of the supported methods "
-                            + "(Flink configuration, environment variables).");
-        }
-
-        return result;
     }
 
     public static boolean isKerberosSecurityEnabled(UserGroupInformation ugi) {
