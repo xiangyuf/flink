@@ -703,6 +703,7 @@ public abstract class StreamTask<OUT, OP extends StreamOperator<OUT>>
 
         // task specific initialization
         init();
+        configuration.clearInitialConfigs();
 
         // save the work of reloading state, etc, if the task is already canceled
         ensureNotCanceled();
