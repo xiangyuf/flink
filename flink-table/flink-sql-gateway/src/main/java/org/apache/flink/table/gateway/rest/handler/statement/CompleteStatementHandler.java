@@ -29,8 +29,12 @@ import org.apache.flink.table.gateway.rest.message.statement.CompleteStatementRe
 import org.apache.flink.table.gateway.rest.message.statement.CompleteStatementResponseBody;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -40,6 +44,8 @@ public class CompleteStatementHandler
                 CompleteStatementRequestBody,
                 CompleteStatementResponseBody,
                 SessionMessageParameters> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CompleteStatementHandler.class);
 
     public CompleteStatementHandler(
             SqlGatewayService service,
@@ -60,8 +66,7 @@ public class CompleteStatementHandler
         String statement = request.getRequestBody().getStatement();
         int position = request.getRequestBody().getPosition();
 
-        return CompletableFuture.completedFuture(
-                new CompleteStatementResponseBody(
-                        service.completeStatement(sessionHandle, statement, position)));
+        List<String> results = service.completeStatement(sessionHandle, statement, position);
+        return CompletableFuture.completedFuture(new CompleteStatementResponseBody(results));
     }
 }

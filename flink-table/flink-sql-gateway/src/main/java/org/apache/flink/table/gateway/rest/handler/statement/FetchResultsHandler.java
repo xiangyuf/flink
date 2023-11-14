@@ -42,6 +42,9 @@ import org.apache.flink.table.gateway.rest.serde.ResultInfo;
 import org.apache.flink.table.gateway.rest.util.RowFormat;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.util.Map;
@@ -51,6 +54,8 @@ import java.util.concurrent.CompletableFuture;
 public class FetchResultsHandler
         extends AbstractSqlGatewayRestHandler<
                 EmptyRequestBody, FetchResultsResponseBody, FetchResultsMessageParameters> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(FetchResultsHandler.class);
 
     public FetchResultsHandler(
             SqlGatewayService service,
@@ -94,6 +99,13 @@ public class FetchResultsHandler
                         operationHandle.getIdentifier().toString(),
                         nextToken,
                         rowFormat);
+
+        if (resultType.equals(ResultSet.ResultType.EOS)) {
+            LOG.info(
+                    "JobID {}, result type {}, fetch result finish.",
+                    resultSet.getJobID(),
+                    resultSet.getResultType());
+        }
 
         // Build the response
         if (resultType == ResultSet.ResultType.NOT_READY) {

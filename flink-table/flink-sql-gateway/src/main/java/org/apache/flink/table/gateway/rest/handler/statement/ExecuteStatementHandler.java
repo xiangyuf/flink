@@ -31,6 +31,9 @@ import org.apache.flink.table.gateway.rest.message.statement.ExecuteStatementReq
 import org.apache.flink.table.gateway.rest.message.statement.ExecuteStatementResponseBody;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.util.Map;
@@ -42,6 +45,8 @@ public class ExecuteStatementHandler
                 ExecuteStatementRequestBody,
                 ExecuteStatementResponseBody,
                 SessionMessageParameters> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ExecuteStatementHandler.class);
 
     public ExecuteStatementHandler(
             SqlGatewayService service,
@@ -59,6 +64,8 @@ public class ExecuteStatementHandler
             SqlGatewayRestAPIVersion version,
             @Nonnull HandlerRequest<ExecuteStatementRequestBody> request) {
         String statement = request.getRequestBody().getStatement();
+        LOG.info("Statement: {} execute start.", statement);
+
         Long timeout = request.getRequestBody().getTimeout();
         timeout = timeout == null ? 0L : timeout;
         SessionHandle sessionHandle = request.getPathParameter(SessionHandleIdPathParameter.class);
@@ -70,7 +77,6 @@ public class ExecuteStatementHandler
 
         OperationHandle operationHandle =
                 service.executeStatement(sessionHandle, statement, timeout, executionConfig);
-
         return CompletableFuture.completedFuture(
                 new ExecuteStatementResponseBody(operationHandle.getIdentifier().toString()));
     }

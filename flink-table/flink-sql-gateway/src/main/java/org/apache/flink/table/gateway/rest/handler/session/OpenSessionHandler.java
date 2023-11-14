@@ -29,6 +29,9 @@ import org.apache.flink.table.gateway.rest.message.session.OpenSessionRequestBod
 import org.apache.flink.table.gateway.rest.message.session.OpenSessionResponseBody;
 import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.util.Map;
@@ -38,6 +41,8 @@ import java.util.concurrent.CompletableFuture;
 public class OpenSessionHandler
         extends AbstractSqlGatewayRestHandler<
                 OpenSessionRequestBody, OpenSessionResponseBody, EmptyMessageParameters> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OpenSessionHandler.class);
 
     public OpenSessionHandler(
             SqlGatewayService service,
@@ -51,6 +56,8 @@ public class OpenSessionHandler
     protected CompletableFuture<OpenSessionResponseBody> handleRequest(
             SqlGatewayRestAPIVersion version,
             @Nonnull HandlerRequest<OpenSessionRequestBody> request) {
+        long startTime = System.currentTimeMillis();
+
         String sessionName = request.getRequestBody().getSessionName();
         Map<String, String> properties = request.getRequestBody().getProperties();
         SessionHandle sessionHandle =
@@ -60,6 +67,8 @@ public class OpenSessionHandler
                                 .setSessionName(sessionName)
                                 .addSessionConfig(properties)
                                 .build());
+        long endTime = System.currentTimeMillis();
+        LOG.info("Session {} open cost {} ms.", sessionName, endTime - startTime);
 
         return CompletableFuture.completedFuture(
                 new OpenSessionResponseBody(sessionHandle.getIdentifier().toString()));

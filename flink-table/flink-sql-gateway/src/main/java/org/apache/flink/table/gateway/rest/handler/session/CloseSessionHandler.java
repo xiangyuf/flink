@@ -33,6 +33,9 @@ import org.apache.flink.table.gateway.rest.util.SqlGatewayRestAPIVersion;
 
 import org.apache.flink.shaded.netty4.io.netty.handler.codec.http.HttpResponseStatus;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.Nonnull;
 
 import java.util.Map;
@@ -42,6 +45,7 @@ import java.util.concurrent.CompletableFuture;
 public class CloseSessionHandler
         extends AbstractSqlGatewayRestHandler<
                 EmptyRequestBody, CloseSessionResponseBody, SessionMessageParameters> {
+    private static final Logger LOG = LoggerFactory.getLogger(CloseSessionHandler.class);
 
     public static final String CLOSE_MESSAGE = "CLOSED";
 
@@ -58,9 +62,15 @@ public class CloseSessionHandler
             SqlGatewayRestAPIVersion version, @Nonnull HandlerRequest<EmptyRequestBody> request)
             throws RestHandlerException {
         try {
+            long startTime = System.currentTimeMillis();
+
             SessionHandle sessionHandle =
                     request.getPathParameter(SessionHandleIdPathParameter.class);
             this.service.closeSession(sessionHandle);
+
+            long endTime = System.currentTimeMillis();
+            LOG.info("Session {} close cost {} ms.", sessionHandle.toString(), endTime - startTime);
+
             return CompletableFuture.completedFuture(new CloseSessionResponseBody(CLOSE_MESSAGE));
         } catch (SqlGatewayException e) {
             throw new RestHandlerException(
