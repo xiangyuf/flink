@@ -157,6 +157,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RestClusterClient.class);
 
+    private final boolean sharedClient;
+
     private final RestClusterClientConfiguration restClusterClientConfiguration;
 
     private final Configuration configuration;
@@ -165,7 +167,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
     private final ExecutorService executorService =
             Executors.newFixedThreadPool(
-                    4, new ExecutorThreadFactory("Flink-RestClusterClient-IO"));
+                    Runtime.getRuntime().availableProcessors() * 2,
+                    new ExecutorThreadFactory("Flink-RestClusterClient-IO"));
 
     private final WaitStrategy waitStrategy;
 
@@ -188,13 +191,24 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                             .isPresent();
 
     public RestClusterClient(Configuration config, T clusterId) throws Exception {
-        this(config, clusterId, DefaultClientHighAvailabilityServicesFactory.INSTANCE);
+        this(config, clusterId, false);
+    }
+
+    public RestClusterClient(Configuration config, T clusterId, boolean sharedClient)
+            throws Exception {
+        this(
+                config,
+                null,
+                clusterId,
+                new ExponentialWaitStrategy(10L, 2000L),
+                DefaultClientHighAvailabilityServicesFactory.INSTANCE,
+                sharedClient);
     }
 
     public RestClusterClient(
             Configuration config, T clusterId, ClientHighAvailabilityServicesFactory factory)
             throws Exception {
-        this(config, null, clusterId, new ExponentialWaitStrategy(10L, 2000L), factory);
+        this(config, null, clusterId, new ExponentialWaitStrategy(10L, 2000L), factory, false);
     }
 
     @VisibleForTesting
@@ -209,7 +223,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
                 restClient,
                 clusterId,
                 waitStrategy,
-                DefaultClientHighAvailabilityServicesFactory.INSTANCE);
+                DefaultClientHighAvailabilityServicesFactory.INSTANCE,
+                false);
     }
 
     private RestClusterClient(
@@ -217,9 +232,11 @@ public class RestClusterClient<T> implements ClusterClient<T> {
             @Nullable RestClient restClient,
             T clusterId,
             WaitStrategy waitStrategy,
-            ClientHighAvailabilityServicesFactory clientHAServicesFactory)
+            ClientHighAvailabilityServicesFactory clientHAServicesFactory,
+            boolean sharedClient)
             throws Exception {
         this.configuration = checkNotNull(configuration);
+        this.sharedClient = sharedClient;
 
         this.restClusterClientConfiguration =
                 RestClusterClientConfiguration.fromConfiguration(configuration);
@@ -245,7 +262,8 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
         this.webMonitorRetrievalService = clientHAServices.getClusterRestEndpointLeaderRetriever();
         this.retryExecutorService =
-                Executors.newSingleThreadScheduledExecutor(
+                Executors.newScheduledThreadPool(
+                        Runtime.getRuntime().availableProcessors() * 2,
                         new ExecutorThreadFactory("Flink-RestClusterClient-Retry"));
         startLeaderRetrievers();
     }
@@ -261,26 +279,30 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
     @Override
     public void close() {
-        if (running.compareAndSet(true, false)) {
-            ExecutorUtils.gracefulShutdown(
-                    restClusterClientConfiguration.getRetryDelay(),
-                    TimeUnit.MILLISECONDS,
-                    retryExecutorService);
+        if (!sharedClient) {
+            if (running.compareAndSet(true, false)) {
+                ExecutorUtils.gracefulShutdown(
+                        restClusterClientConfiguration.getRetryDelay(),
+                        TimeUnit.MILLISECONDS,
+                        retryExecutorService);
 
-            this.restClient.shutdown(Time.seconds(5));
-            ExecutorUtils.gracefulShutdown(5, TimeUnit.SECONDS, this.executorService);
+                this.restClient.shutdown(Time.seconds(5));
+                ExecutorUtils.gracefulShutdown(5, TimeUnit.SECONDS, this.executorService);
 
-            try {
-                webMonitorRetrievalService.stop();
-            } catch (Exception e) {
-                LOG.error("An error occurred during stopping the WebMonitorRetrievalService", e);
-            }
+                try {
+                    webMonitorRetrievalService.stop();
+                } catch (Exception e) {
+                    LOG.error(
+                            "An error occurred during stopping the WebMonitorRetrievalService", e);
+                }
 
-            try {
-                clientHAServices.close();
-            } catch (Exception e) {
-                LOG.error(
-                        "An error occurred during stopping the ClientHighAvailabilityServices", e);
+                try {
+                    clientHAServices.close();
+                } catch (Exception e) {
+                    LOG.error(
+                            "An error occurred during stopping the ClientHighAvailabilityServices",
+                            e);
+                }
             }
         }
     }

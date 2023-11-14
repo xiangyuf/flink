@@ -27,9 +27,14 @@ import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 /** A deployment descriptor for an existing cluster. */
 public class StandaloneClusterDescriptor implements ClusterDescriptor<StandaloneClusterId> {
 
+    private static final ConcurrentHashMap<
+                    StandaloneClusterId, RestClusterClient<StandaloneClusterId>>
+            STANDALONE_CLUSTER_DESCRIPTOR_MAP = new ConcurrentHashMap<>();
     private final Configuration config;
 
     public StandaloneClusterDescriptor(Configuration config) {
@@ -46,13 +51,18 @@ public class StandaloneClusterDescriptor implements ClusterDescriptor<Standalone
     @Override
     public ClusterClientProvider<StandaloneClusterId> retrieve(
             StandaloneClusterId standaloneClusterId) throws ClusterRetrieveException {
-        return () -> {
-            try {
-                return new RestClusterClient<>(config, standaloneClusterId);
-            } catch (Exception e) {
-                throw new RuntimeException("Couldn't retrieve standalone cluster", e);
-            }
-        };
+        RestClusterClient<StandaloneClusterId> restClusterClient =
+                STANDALONE_CLUSTER_DESCRIPTOR_MAP.computeIfAbsent(
+                        standaloneClusterId,
+                        id -> {
+                            try {
+                                return new RestClusterClient<>(config, id, true);
+                            } catch (Exception e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
+
+        return () -> restClusterClient;
     }
 
     @Override
