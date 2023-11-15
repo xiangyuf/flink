@@ -44,7 +44,7 @@ public class SubtasksAllAccumulatorsInfoTest
         for (int i = 0; i < 3; ++i) {
             subtaskAccumulatorsInfos.add(
                     new SubtasksAllAccumulatorsInfo.SubtaskAccumulatorsInfo(
-                            i, i, "host-" + String.valueOf(i), userAccumulators));
+                            i, i, "host-" + i, "host-" + i + ":123", userAccumulators));
         }
         return new SubtasksAllAccumulatorsInfo(new JobVertexID(), 4, subtaskAccumulatorsInfos);
     }

@@ -190,6 +190,7 @@ public class SubtaskExecutionAttemptDetailsHandlerTest extends TestLogger {
                         expectedState,
                         attempt,
                         "(unassigned)",
+                        "(unassigned)",
                         -1L,
                         0L,
                         -1L,

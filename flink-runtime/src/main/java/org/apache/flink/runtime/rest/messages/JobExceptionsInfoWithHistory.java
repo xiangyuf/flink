@@ -175,7 +175,8 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
         public static final String FIELD_NAME_EXCEPTION_STACKTRACE = "stacktrace";
         public static final String FIELD_NAME_EXCEPTION_TIMESTAMP = "timestamp";
         public static final String FIELD_NAME_TASK_NAME = "taskName";
-        public static final String FIELD_NAME_LOCATION = "location";
+        @Deprecated public static final String FIELD_NAME_LOCATION = "location";
+        public static final String FIELD_NAME_ENDPOINT = "endpoint";
         public static final String FIELD_NAME_TASK_MANAGER_ID = "taskManagerId";
 
         @JsonProperty(FIELD_NAME_EXCEPTION_NAME)
@@ -192,10 +193,17 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
         @Nullable
         private final String taskName;
 
+        /** @deprecated Use {@link ExceptionInfo#endpoint} instead. */
+        @Deprecated
         @JsonInclude(NON_NULL)
         @JsonProperty(FIELD_NAME_LOCATION)
         @Nullable
         private final String location;
+
+        @JsonInclude(NON_NULL)
+        @JsonProperty(FIELD_NAME_ENDPOINT)
+        @Nullable
+        private final String endpoint;
 
         @JsonInclude(NON_NULL)
         @JsonProperty(FIELD_NAME_TASK_MANAGER_ID)
@@ -203,7 +211,7 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
         private final String taskManagerId;
 
         public ExceptionInfo(String exceptionName, String stacktrace, long timestamp) {
-            this(exceptionName, stacktrace, timestamp, null, null, null);
+            this(exceptionName, stacktrace, timestamp, null, null, null, null);
         }
 
         @JsonCreator
@@ -213,12 +221,14 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                 @JsonProperty(FIELD_NAME_EXCEPTION_TIMESTAMP) long timestamp,
                 @JsonProperty(FIELD_NAME_TASK_NAME) @Nullable String taskName,
                 @JsonProperty(FIELD_NAME_LOCATION) @Nullable String location,
+                @JsonProperty(FIELD_NAME_ENDPOINT) @Nullable String endpoint,
                 @JsonProperty(FIELD_NAME_TASK_MANAGER_ID) @Nullable String taskManagerId) {
             this.exceptionName = checkNotNull(exceptionName);
             this.stacktrace = checkNotNull(stacktrace);
             this.timestamp = timestamp;
             this.taskName = taskName;
             this.location = location;
+            this.endpoint = endpoint;
             this.taskManagerId = taskManagerId;
         }
 
@@ -243,10 +253,17 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
             return taskName;
         }
 
+        @Deprecated
         @JsonIgnore
         @Nullable
         public String getLocation() {
             return location;
+        }
+
+        @JsonIgnore
+        @Nullable
+        public String getEndpoint() {
+            return endpoint;
         }
 
         @JsonIgnore
@@ -270,12 +287,13 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                     && stacktrace.equals(that.stacktrace)
                     && Objects.equals(timestamp, that.timestamp)
                     && Objects.equals(taskName, that.taskName)
-                    && Objects.equals(location, that.location);
+                    && Objects.equals(location, that.location)
+                    && Objects.equals(location, that.endpoint);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(exceptionName, stacktrace, timestamp, taskName, location);
+            return Objects.hash(exceptionName, stacktrace, timestamp, taskName, location, endpoint);
         }
 
         @Override
@@ -285,7 +303,7 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                     .add("stacktrace='" + stacktrace + "'")
                     .add("timestamp=" + timestamp)
                     .add("taskName='" + taskName + "'")
-                    .add("location='" + location + "'")
+                    .add("endpoint='" + endpoint + "'")
                     .toString();
         }
     }
@@ -306,7 +324,15 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                 String stacktrace,
                 long timestamp,
                 Collection<ExceptionInfo> concurrentExceptions) {
-            this(exceptionName, stacktrace, timestamp, null, null, null, concurrentExceptions);
+            this(
+                    exceptionName,
+                    stacktrace,
+                    timestamp,
+                    null,
+                    null,
+                    null,
+                    null,
+                    concurrentExceptions);
         }
 
         @JsonCreator
@@ -316,10 +342,18 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                 @JsonProperty(FIELD_NAME_EXCEPTION_TIMESTAMP) long timestamp,
                 @JsonProperty(FIELD_NAME_TASK_NAME) @Nullable String taskName,
                 @JsonProperty(FIELD_NAME_LOCATION) @Nullable String location,
+                @JsonProperty(FIELD_NAME_ENDPOINT) @Nullable String endpoint,
                 @JsonProperty(FIELD_NAME_TASK_MANAGER_ID) @Nullable String taskManagerId,
                 @JsonProperty(FIELD_NAME_CONCURRENT_EXCEPTIONS)
                         Collection<ExceptionInfo> concurrentExceptions) {
-            super(exceptionName, stacktrace, timestamp, taskName, location, taskManagerId);
+            super(
+                    exceptionName,
+                    stacktrace,
+                    timestamp,
+                    taskName,
+                    location,
+                    endpoint,
+                    taskManagerId);
             this.concurrentExceptions = concurrentExceptions;
         }
 
@@ -354,7 +388,7 @@ public class JobExceptionsInfoWithHistory extends JobExceptionsInfo implements R
                     .add("stacktrace='" + getStacktrace() + "'")
                     .add("timestamp=" + getTimestamp())
                     .add("taskName='" + getTaskName() + "'")
-                    .add("location='" + getLocation() + "'")
+                    .add("endpoint='" + getEndpoint() + "'")
                     .add("concurrentExceptions=" + getConcurrentExceptions())
                     .toString();
         }

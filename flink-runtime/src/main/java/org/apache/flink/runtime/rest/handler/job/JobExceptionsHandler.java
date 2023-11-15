@@ -201,6 +201,7 @@ public class JobExceptionsHandler
                 historyEntry.getTimestamp(),
                 historyEntry.getFailingTaskName(),
                 toString(historyEntry.getTaskManagerLocation()),
+                toString(historyEntry.getTaskManagerLocation()),
                 toTaskManagerId(historyEntry.getTaskManagerLocation()),
                 concurrentExceptions);
     }
@@ -215,6 +216,7 @@ public class JobExceptionsHandler
                 exceptionHistoryEntry.getTimestamp(),
                 exceptionHistoryEntry.getFailingTaskName(),
                 toString(exceptionHistoryEntry.getTaskManagerLocation()),
+                toString(exceptionHistoryEntry.getTaskManagerLocation()),
                 toTaskManagerId(exceptionHistoryEntry.getTaskManagerLocation()));
     }
 
@@ -228,9 +230,7 @@ public class JobExceptionsHandler
     static String toString(@Nullable TaskManagerLocation location) {
         // '(unassigned)' being the default value is added to support backward-compatibility for the
         // deprecated fields
-        return location != null
-                ? taskManagerLocationToString(location.getFQDNHostname(), location.dataPort())
-                : "(unassigned)";
+        return location != null ? location.getEndpoint() : "(unassigned)";
     }
 
     @VisibleForTesting
@@ -243,18 +243,12 @@ public class JobExceptionsHandler
     @VisibleForTesting
     @Nullable
     static String toString(@Nullable ExceptionHistoryEntry.ArchivedTaskManagerLocation location) {
-        return location != null
-                ? taskManagerLocationToString(location.getFQDNHostname(), location.getPort())
-                : null;
+        return location != null ? location.getEndpoint() : null;
     }
 
     @VisibleForTesting
     static String toTaskManagerId(
             @Nullable ExceptionHistoryEntry.ArchivedTaskManagerLocation location) {
         return location != null ? String.format("%s", location.getResourceID()) : null;
-    }
-
-    private static String taskManagerLocationToString(String fqdnHostname, int port) {
-        return String.format("%s:%d", fqdnHostname, port);
     }
 }

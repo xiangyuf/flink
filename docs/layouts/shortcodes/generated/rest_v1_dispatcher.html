@@ -2520,6 +2520,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
         "type" : "object",
         "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:JobExceptionsInfo:ExecutionExceptionInfo",
         "properties" : {
+          "endpoint" : {
+            "type" : "string"
+          },
           "exception" : {
             "type" : "string"
           },
@@ -2554,6 +2557,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
                   "type" : "object",
                   "id" : "urn:jsonschema:org:apache:flink:runtime:rest:messages:JobExceptionsInfoWithHistory:ExceptionInfo",
                   "properties" : {
+                    "endpoint" : {
+                      "type" : "string"
+                    },
                     "exceptionName" : {
                       "type" : "string"
                     },
@@ -2574,6 +2580,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
                     }
                   }
                 }
+              },
+              "endpoint" : {
+                "type" : "string"
               },
               "exceptionName" : {
                 "type" : "string"
@@ -3493,6 +3502,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
           "end-time" : {
             "type" : "integer"
           },
+          "endpoint" : {
+            "type" : "string"
+          },
           "host" : {
             "type" : "string"
           },
@@ -3937,6 +3949,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
           "attempt" : {
             "type" : "integer"
           },
+          "endpoint" : {
+            "type" : "string"
+          },
           "host" : {
             "type" : "string"
           },
@@ -4079,6 +4094,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
     "end-time" : {
       "type" : "integer"
     },
+    "endpoint" : {
+      "type" : "string"
+    },
     "host" : {
       "type" : "string"
     },
@@ -4208,6 +4226,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
     },
     "end-time" : {
       "type" : "integer"
+    },
+    "endpoint" : {
+      "type" : "string"
     },
     "host" : {
       "type" : "string"
@@ -4479,6 +4500,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
           "duration" : {
             "type" : "integer"
           },
+          "endpoint" : {
+            "type" : "string"
+          },
           "host" : {
             "type" : "string"
           },
@@ -4586,6 +4610,9 @@ Using 'curl' you can upload a jar via 'curl -X POST -H "Expect:" -F "jarfile=@pa
           },
           "end-time" : {
             "type" : "integer"
+          },
+          "endpoint" : {
+            "type" : "string"
           },
           "host" : {
             "type" : "string"
