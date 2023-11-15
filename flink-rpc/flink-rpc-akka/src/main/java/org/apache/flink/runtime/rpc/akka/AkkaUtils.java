@@ -197,6 +197,8 @@ class AkkaUtils {
         addBaseRemoteAkkaConfig(builder, configuration, port, externalPort);
         addHostnameRemoteAkkaConfig(builder, bindAddress, externalHostname);
         addSslRemoteAkkaConfig(builder, configuration);
+        addRemoteForkJoinExecutorConfig(
+                builder, AkkaBootstrapTools.getRemoteForkJoinExecutorConfiguration(configuration));
 
         return builder.build();
     }
@@ -385,6 +387,27 @@ class AkkaUtils {
                 .add("    }")
                 .add("  }")
                 .add("}");
+    }
+
+    private static Config addRemoteForkJoinExecutorConfig(
+            AkkaConfigBuilder builder, RpcSystem.ForkJoinExecutorConfiguration configuration) {
+        final double parallelismFactor = configuration.getParallelismFactor();
+        final int minNumThreads = configuration.getMinParallelism();
+        final int maxNumThreads = configuration.getMaxParallelism();
+
+        return builder.add("akka {")
+                .add("  remote {")
+                .add("    default-remote-dispatcher {")
+                .add("      executor = fork-join-executor")
+                .add("      fork-join-executor {")
+                .add("          parallelism-factor = " + parallelismFactor)
+                .add("          parallelism-min = " + minNumThreads)
+                .add("          parallelism-max = " + maxNumThreads)
+                .add("      }")
+                .add("    }")
+                .add("  }")
+                .add("}")
+                .build();
     }
 
     /**

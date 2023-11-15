@@ -177,6 +177,15 @@ class AkkaUtilsTest {
     }
 
     @Test
+    void getConfigDefaultsToRemoteForkJoinExecutor() {
+        final Config config =
+                AkkaUtils.getAkkaConfig(new Configuration(), new HostAndPort("localhost", 1234));
+
+        assertThat(config.getString("akka.remote.default-remote-dispatcher.executor"))
+                .isEqualTo("fork-join-executor");
+    }
+
+    @Test
     void getAkkaConfigSetsExecutorWithThreadPriority() {
         final int threadPriority = 3;
         final int minThreads = 1;
