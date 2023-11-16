@@ -24,6 +24,7 @@ import org.apache.flink.metrics.Histogram;
 import org.apache.flink.metrics.HistogramStatistics;
 import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.Metric;
+import org.apache.flink.metrics.TagGauge;
 import org.apache.flink.metrics.TagGaugeStore;
 import org.apache.flink.metrics.opentsdb.utils.Utils;
 import org.apache.flink.util.StringUtils;
@@ -79,34 +80,40 @@ public class MetricEmitter {
                         double d = Double.parseDouble((String) gaugeValue);
                         emitValue(nonGlobalMetricName, globalMetricName, d, tags);
                     } else if (gaugeValue instanceof TagGaugeStore) {
-                        TagGaugeStore tagGaugeStoreValue = (TagGaugeStore) gaugeValue;
-                        final List<TagGaugeStore.TagGaugeMetric> tagGaugeMetrics =
-                                tagGaugeStoreValue.getMetricValuesList();
-                        final Map<Tags, Double> compositedMetrics = new HashMap<>();
-                        for (TagGaugeStore.TagGaugeMetric tagGaugeMetric : tagGaugeMetrics) {
-                            final Tags compositeTags =
-                                    Tags.merge(
-                                            tags,
-                                            Tags.keyValues(
-                                                    tagGaugeMetric.getTagValues().getTagValues()));
-                            compositedMetrics.put(compositeTags, tagGaugeMetric.getMetricValue());
-                        }
-
-                        // send composited metrics
-                        for (Map.Entry<Tags, Double> entry : compositedMetrics.entrySet()) {
-                            emitValue(
-                                    nonGlobalMetricName,
-                                    globalMetricName,
-                                    entry.getValue(),
-                                    entry.getKey());
-                        }
-                        tagGaugeStoreValue.metricReported();
+                        log.error(
+                                "The value of Metric {} is TagGaugeStore, but it's metricType is not TAG_GAUGE."
+                                        + " this metric will be ignored.",
+                                Utils.prefix(nonGlobalMetricName, globalMetricName));
                     } else {
                         log.warn(
                                 "can't handle the type guage, the gaugeValue type is {}, the gauge name is {}",
                                 gaugeValue.getClass(),
                                 Utils.prefix(nonGlobalMetricName, globalMetricName));
                     }
+                    return;
+                case TAG_GAUGE:
+                    TagGaugeStore tagGaugeStoreValue = ((TagGauge) metric).getValue();
+                    final List<TagGaugeStore.TagGaugeMetric> tagGaugeMetrics =
+                            tagGaugeStoreValue.getMetricValuesList();
+                    final Map<Tags, Double> compositedMetrics = new HashMap<>();
+                    for (TagGaugeStore.TagGaugeMetric tagGaugeMetric : tagGaugeMetrics) {
+                        final Tags compositeTags =
+                                Tags.merge(
+                                        tags,
+                                        Tags.keyValues(
+                                                tagGaugeMetric.getTagValues().getTagValues()));
+                        compositedMetrics.put(compositeTags, tagGaugeMetric.getMetricValue());
+                    }
+
+                    // send composited metrics
+                    for (Map.Entry<Tags, Double> entry : compositedMetrics.entrySet()) {
+                        emitValue(
+                                nonGlobalMetricName,
+                                globalMetricName,
+                                entry.getValue(),
+                                entry.getKey());
+                    }
+                    tagGaugeStoreValue.metricReported();
                     return;
                 case HISTOGRAM:
                     Histogram histogram = (Histogram) metric;

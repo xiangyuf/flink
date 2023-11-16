@@ -74,9 +74,9 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
 
     private static final char SCOPE_SEPARATOR = '.';
 
-    private Map<Metric, MetricEmitter> metricCollectorMap = new ConcurrentHashMap<>();
+    private final Map<Metric, MetricEmitter> metricCollectorMap = new ConcurrentHashMap<>();
 
-    private Set<String> noNeededScope =
+    private final Set<String> noNeededScope =
             Sets.newHashSet(
                     SCOPE_JOB_ID, SCOPE_TASK_VERTEX_ID, SCOPE_TASK_ATTEMPT_ID, SCOPE_OPERATOR_ID);
 

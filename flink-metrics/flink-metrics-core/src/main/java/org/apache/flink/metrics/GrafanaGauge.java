@@ -18,5 +18,9 @@
 
 package org.apache.flink.metrics;
 
-/** This is only for grafana reporter and will not be passed to warehouse. */
+/**
+ * This is only for grafana reporter and will not be passed to warehouse. It's deprecated, please
+ * use metric reporter filter to decide whether report to warehouse.
+ */
+@Deprecated
 public interface GrafanaGauge<T> extends Gauge<T> {}

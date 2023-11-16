@@ -18,6 +18,7 @@
 
 package org.apache.flink.metrics;
 
+import org.apache.flink.annotation.Internal;
 import org.apache.flink.annotation.Public;
 
 import java.util.Map;
@@ -98,6 +99,18 @@ public interface MetricGroup {
      * @return the given gauge
      */
     <T, G extends Gauge<T>> G gauge(String name, G gauge);
+
+    /**
+     * Register a new {@link TagGauge} with Flink. This used to clarify that Gauge type is TagGauge.
+     *
+     * @param name name of the Gauge
+     * @param tagGauge gauge to register
+     * @return the given gauge
+     */
+    @Internal
+    default <G extends TagGauge> G tagGauge(String name, G tagGauge) {
+        return gauge(name, tagGauge);
+    }
 
     /**
      * Registers a new {@link Histogram} with Flink.

@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-/** Interface of Store for {@link TagGauge}. */
+/** Interface of Store for {@link TagGaugeImpl}. */
 public interface TagGaugeStore {
 
     List<TagGaugeMetric> getMetricValuesList();

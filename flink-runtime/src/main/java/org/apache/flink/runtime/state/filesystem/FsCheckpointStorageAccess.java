@@ -27,6 +27,7 @@ import org.apache.flink.core.fs.Path;
 import org.apache.flink.metrics.GrafanaGauge;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.TagGauge;
+import org.apache.flink.metrics.TagGaugeImpl;
 import org.apache.flink.metrics.TagGaugeStore;
 import org.apache.flink.metrics.TagGaugeStoreImpl;
 import org.apache.flink.metrics.View;
@@ -50,7 +51,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static org.apache.flink.metrics.View.UPDATE_INTERVAL_SECONDS;
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
 
@@ -132,13 +132,13 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
     }
 
     public void registerMetrics(MetricGroup metricGroup) {
-        metricGroup.gauge(
+        metricGroup.tagGauge(
                 CHECKPOINT_WRITE_FILE_RATE_METRIC,
                 new CheckpointWriteFileRate(metricReference, currentPeriodStatistic));
-        metricGroup.gauge(
+        metricGroup.tagGauge(
                 CHECKPOINT_WRITE_FILE_LATENCY_METRIC,
                 new CheckpointWriteFileLatency(metricReference));
-        metricGroup.gauge(
+        metricGroup.tagGauge(
                 CHECKPOINT_CLOSE_FILE_LATENCY_METRIC,
                 new CheckpointCloseFileLatency(metricReference));
     }
@@ -445,7 +445,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         }
     }
 
-    private static class CheckpointWriteFileRate implements GrafanaGauge<TagGaugeStore>, View {
+    private static class CheckpointWriteFileRate
+            implements GrafanaGauge<TagGaugeStore>, View, TagGauge {
         public static final int DEFAULT_TIME_SPAN_IN_SECONDS = 60;
 
         /** The time-span over which the average is calculated. */
@@ -473,7 +474,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
                     new CheckpointWriteFileStatistic
                             [this.timeSpanInSeconds / UPDATE_INTERVAL_SECONDS + 1];
             this.statsStore =
-                    new TagGaugeStoreImpl(1024, true, false, TagGauge.MetricsReduceType.NO_REDUCE);
+                    new TagGaugeStoreImpl(
+                            1024, true, false, TagGaugeImpl.MetricsReduceType.NO_REDUCE);
             this.tag =
                     new TagGaugeStore.TagValuesBuilder()
                             .addTagValue(STORAGE_CLUSTER_TAG, metricReference.getStorageBaseDir())
@@ -503,7 +505,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         }
     }
 
-    private static class CheckpointWriteFileLatency implements GrafanaGauge<TagGaugeStore> {
+    private static class CheckpointWriteFileLatency
+            implements GrafanaGauge<TagGaugeStore>, TagGauge {
         /** Metric reference. */
         private final CheckpointWriteFileStatistic metricReference;
 
@@ -513,7 +516,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         public CheckpointWriteFileLatency(CheckpointWriteFileStatistic metricReference) {
             this.metricReference = metricReference;
             this.statsStore =
-                    new TagGaugeStoreImpl(1024, true, false, TagGauge.MetricsReduceType.NO_REDUCE);
+                    new TagGaugeStoreImpl(
+                            1024, true, false, TagGaugeImpl.MetricsReduceType.NO_REDUCE);
             this.tag =
                     new TagGaugeStore.TagValuesBuilder()
                             .addTagValue(STORAGE_CLUSTER_TAG, metricReference.getStorageBaseDir())
@@ -527,7 +531,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         }
     }
 
-    private static class CheckpointCloseFileLatency implements GrafanaGauge<TagGaugeStore> {
+    private static class CheckpointCloseFileLatency
+            implements GrafanaGauge<TagGaugeStore>, TagGauge {
         /** Metric reference. */
         private final CheckpointWriteFileStatistic metricReference;
 
@@ -537,7 +542,8 @@ public class FsCheckpointStorageAccess extends AbstractFsCheckpointStorageAccess
         public CheckpointCloseFileLatency(CheckpointWriteFileStatistic metricReference) {
             this.metricReference = metricReference;
             this.statsStore =
-                    new TagGaugeStoreImpl(1024, true, false, TagGauge.MetricsReduceType.NO_REDUCE);
+                    new TagGaugeStoreImpl(
+                            1024, true, false, TagGaugeImpl.MetricsReduceType.NO_REDUCE);
             this.tag =
                     new TagGaugeStore.TagValuesBuilder()
                             .addTagValue(STORAGE_CLUSTER_TAG, metricReference.getStorageBaseDir())

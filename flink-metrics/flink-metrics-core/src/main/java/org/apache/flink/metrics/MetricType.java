@@ -25,5 +25,6 @@ public enum MetricType {
     COUNTER,
     METER,
     GAUGE,
+    TAG_GAUGE,
     HISTOGRAM
 }

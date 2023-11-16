@@ -25,6 +25,10 @@ import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.Metric;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.metrics.SimpleCounter;
+import org.apache.flink.metrics.TagGauge;
+import org.apache.flink.metrics.TagGaugeImpl;
+import org.apache.flink.metrics.TagGaugeStore;
+import org.apache.flink.metrics.TagGaugeStoreImpl;
 import org.apache.flink.metrics.util.TestHistogram;
 import org.apache.flink.metrics.util.TestMeter;
 import org.apache.flink.util.NetUtils;
@@ -109,7 +113,7 @@ class PrometheusReporterTest {
     void nullGaugeDoesNotBreakReporter() throws UnirestException {
         Gauge<Integer> testGauge = () -> null;
 
-        assertThatGaugeIsExported(testGauge, "testGauge", "0.0");
+        assertThatGaugeIsExported(testGauge, "testGauge", String.valueOf(Double.MAX_VALUE));
     }
 
     @Test
@@ -212,7 +216,7 @@ class PrometheusReporterTest {
     /** Prometheus only supports numbers, so report non-numeric gauges as 0. */
     @Test
     void stringGaugeCannotBeConverted() {
-        assertThat(reporter.gaugeFrom(() -> "I am not a number").get()).isEqualTo(0.);
+        assertThat(reporter.gaugeFrom(() -> "I am not a number").get()).isEqualTo(Double.MAX_VALUE);
     }
 
     @Test
@@ -240,6 +244,71 @@ class PrometheusReporterTest {
                 Iterators.concat(
                         Iterators.singletonIterator(reporter.getPort()), portRangeProvider.next());
         new PrometheusReporter(portRange).close();
+    }
+
+    @Test
+    public void addingTagGauge() throws UnirestException {
+        TagGaugeImpl tagGauge =
+                new TagGaugeImpl.TagGaugeBuilder()
+                        .setClearAfterReport(true)
+                        .setClearWhenFull(true)
+                        .build();
+        reporter.notifyOfAddedMetric(tagGauge, "name", metricGroup);
+
+        tagGauge.addMetric(
+                1,
+                new TagGaugeStoreImpl.TagValuesBuilder()
+                        .addTagValue("key1", "test")
+                        .addTagValue("key2", "test")
+                        .build());
+
+        String response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).contains("flink_logical_scope_name");
+        assertThat(response).contains("key1=\"test\",key2=\"test\"");
+
+        // metric cleared after report
+        response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).contains("flink_logical_scope_name");
+        assertThat(response).doesNotContain("key1=\"test\",key2=\"test\"");
+
+        // metric removed
+        reporter.notifyOfRemovedMetric(tagGauge, "name", metricGroup);
+        response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).doesNotContain("flink_logical_scope_name");
+
+        // test nameless class
+        TagGauge tagGaugeInterface =
+                () ->
+                        () ->
+                                Arrays.asList(
+                                        new TagGaugeStore.TagGaugeMetric(
+                                                1,
+                                                new TagGaugeStore.TagValuesBuilder()
+                                                        .addTagValue("key1", "test1")
+                                                        .build()),
+                                        new TagGaugeStore.TagGaugeMetric(
+                                                1,
+                                                new TagGaugeStore.TagValuesBuilder()
+                                                        .addTagValue("key2", "test2")
+                                                        .build()));
+        reporter.notifyOfAddedMetric(tagGaugeInterface, "nameless", metricGroup);
+
+        // report with different tags
+        response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).contains("flink_logical_scope_nameless");
+        assertThat(response).contains("key1=\"test1\"");
+        assertThat(response).contains("key2=\"test2\"");
+
+        // not cleared after report
+        response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).contains("flink_logical_scope_nameless");
+        assertThat(response).contains("key1=\"test1\"");
+        assertThat(response).contains("key2=\"test2\"");
+
+        // metric removed
+        reporter.notifyOfRemovedMetric(tagGaugeInterface, "nameless", metricGroup);
+        response = pollMetrics(reporter.getPort()).getBody();
+        assertThat(response).doesNotContain("flink_logical_scope_nameless");
     }
 
     private String addMetricAndPollResponse(Metric metric, String metricName)

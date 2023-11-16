@@ -30,6 +30,8 @@ import org.apache.flink.metrics.Meter;
 import org.apache.flink.metrics.Metric;
 import org.apache.flink.metrics.MetricConfig;
 import org.apache.flink.metrics.MetricGroup;
+import org.apache.flink.metrics.TagGauge;
+import org.apache.flink.metrics.TagGaugeStore;
 import org.apache.flink.metrics.reporter.MetricReporter;
 
 import io.prometheus.client.Collector;
@@ -173,6 +175,9 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
                                 dimensionKeys,
                                 dimensionValues);
                 break;
+            case TAG_GAUGE:
+                collector = new TagGaugeCollector(scopedMetricName, helpString, dimensionKeys);
+                break;
             default:
                 log.warn(
                         "Cannot create collector for unknown metric type: {}. This indicates that the metric type is not supported by this reporter.",
@@ -199,6 +204,9 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
             case HISTOGRAM:
                 ((HistogramSummaryProxy) collector).addChild((Histogram) metric, dimensionValues);
                 break;
+            case TAG_GAUGE:
+                ((TagGaugeCollector) collector).addChild((TagGauge) metric, dimensionValues);
+                break;
             default:
                 log.warn(
                         "Cannot add unknown metric type: {}. This indicates that the metric type is not supported by this reporter.",
@@ -219,6 +227,9 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
                 break;
             case HISTOGRAM:
                 ((HistogramSummaryProxy) collector).remove(dimensionValues);
+                break;
+            case TAG_GAUGE:
+                ((TagGaugeCollector) collector).remove(dimensionValues);
                 break;
             default:
                 log.warn(
@@ -273,7 +284,7 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
                 final Object value = gauge.getValue();
                 if (value == null) {
                     log.debug("Gauge {} is null-valued, defaulting to 0.", gauge);
-                    return 0;
+                    return Double.MAX_VALUE;
                 }
                 if (value instanceof Double) {
                     return (double) value;
@@ -284,11 +295,18 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
                 if (value instanceof Boolean) {
                     return ((Boolean) value) ? 1 : 0;
                 }
-                log.debug(
-                        "Invalid type for Gauge {}: {}, only number types and booleans are supported by this reporter.",
-                        gauge,
-                        value.getClass().getName());
-                return 0;
+                if (value instanceof TagGaugeStore) {
+                    log.error(
+                            "The value of Gauge {} is TagGaugeStore, but it's metricType is not TAG_GAUGE."
+                                    + " this metric will be ignored.",
+                            gauge);
+                } else {
+                    log.debug(
+                            "Invalid type for Gauge {}: {}, only number types and booleans are supported by this reporter.",
+                            gauge,
+                            value.getClass().getName());
+                }
+                return Double.MAX_VALUE;
             }
         };
     }
@@ -378,6 +396,69 @@ public abstract class AbstractPrometheusReporter implements MetricReporter {
                                 addToList(labelValues, quantile.toString()),
                                 statistics.getQuantile(quantile)));
             }
+        }
+    }
+
+    private static class TagGaugeCollector extends Collector {
+        private final String metricName;
+        private final String helpString;
+        /** Common tags key. */
+        private final List<String> labelNames;
+        /** Tag Gauge to common tags value. */
+        private final Map<List<String>, TagGauge> tagGaugeByLabelValues = new HashMap<>();
+
+        public TagGaugeCollector(String metricName, String helpString, List<String> labelNames) {
+            this.metricName = metricName;
+            this.helpString = helpString;
+            this.labelNames = labelNames;
+        }
+
+        @Override
+        public List<MetricFamilySamples> collect() {
+            List<MetricFamilySamples.Sample> samples = new LinkedList<>();
+            for (Map.Entry<List<String>, TagGauge> labelValuesTagGauge :
+                    tagGaugeByLabelValues.entrySet()) {
+                TagGauge tagGauge = labelValuesTagGauge.getValue();
+
+                List<String> labelNames = new ArrayList<>(this.labelNames);
+                List<String> labelValues = new ArrayList<>(labelValuesTagGauge.getKey());
+
+                TagGaugeStore tagGaugeStore = tagGauge.getValue();
+                tagGaugeStore
+                        .getMetricValuesList()
+                        .forEach(
+                                metricValue -> {
+                                    List<String> labelNamesForMetric = new ArrayList<>(labelNames);
+                                    List<String> labelValuesForMetric =
+                                            new ArrayList<>(labelValues);
+                                    metricValue
+                                            .getTagValues()
+                                            .getTagValues()
+                                            .forEach(
+                                                    (tagKey, tagValue) -> {
+                                                        labelNamesForMetric.add(tagKey);
+                                                        labelValuesForMetric.add(tagValue);
+                                                    });
+                                    samples.add(
+                                            new MetricFamilySamples.Sample(
+                                                    metricName,
+                                                    labelNamesForMetric,
+                                                    labelValuesForMetric,
+                                                    metricValue.getMetricValue()));
+                                });
+
+                tagGaugeStore.metricReported();
+            }
+            return Collections.singletonList(
+                    new MetricFamilySamples(metricName, Type.GAUGE, helpString, samples));
+        }
+
+        void addChild(final TagGauge tagGauge, final List<String> labelValues) {
+            tagGaugeByLabelValues.put(labelValues, tagGauge);
+        }
+
+        void remove(final List<String> labelValues) {
+            tagGaugeByLabelValues.remove(labelValues);
         }
     }
 

@@ -29,7 +29,7 @@ import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.stream.Collectors;
 
-/** Store for {@link TagGauge}. */
+/** Store for {@link TagGaugeImpl}. */
 public class TagGaugeStoreImpl implements TagGaugeStore {
 
     private final int maxSize;
@@ -40,13 +40,13 @@ public class TagGaugeStoreImpl implements TagGaugeStore {
 
     private final boolean clearWhenFull;
 
-    private final TagGauge.MetricsReduceType metricsReduceType;
+    private final TagGaugeImpl.MetricsReduceType metricsReduceType;
 
     public TagGaugeStoreImpl(
             int maxSize,
             boolean clearAfterReport,
             boolean clearWhenFull,
-            TagGauge.MetricsReduceType metricsReduceType) {
+            TagGaugeImpl.MetricsReduceType metricsReduceType) {
         this.maxSize = maxSize;
         this.metricValuesList = new LinkedList<>();
         this.clearAfterReport = clearAfterReport;
@@ -77,7 +77,7 @@ public class TagGaugeStoreImpl implements TagGaugeStore {
         return clearAfterReport;
     }
 
-    public TagGauge.MetricsReduceType getMetricsReduceType() {
+    public TagGaugeImpl.MetricsReduceType getMetricsReduceType() {
         return metricsReduceType;
     }
 
