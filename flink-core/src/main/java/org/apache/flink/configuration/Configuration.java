@@ -967,7 +967,7 @@ public class Configuration extends ExecutionConfig.GlobalJobParameters
     @Override
     public int hashCode() {
         int hash = 0;
-        for (String s : this.confData.keySet()) {
+        for (Map.Entry<String, Object> s : this.confData.entrySet()) {
             hash ^= s.hashCode();
         }
         return hash;

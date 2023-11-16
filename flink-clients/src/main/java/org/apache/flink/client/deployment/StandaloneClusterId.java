@@ -18,13 +18,48 @@
 
 package org.apache.flink.client.deployment;
 
+import org.apache.flink.configuration.Configuration;
+
+import java.util.Objects;
+
 /** Identifier for standalone clusters. */
 public class StandaloneClusterId {
     private static final StandaloneClusterId INSTANCE = new StandaloneClusterId();
 
+    private String clusterId;
+
     private StandaloneClusterId() {}
+
+    private StandaloneClusterId(String clusterId) {
+        this.clusterId = clusterId;
+    }
 
     public static StandaloneClusterId getInstance() {
         return INSTANCE;
+    }
+
+    public static StandaloneClusterId getInstance(Configuration configuration) {
+        return new StandaloneClusterId(String.valueOf(configuration.hashCode()));
+    }
+
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        StandaloneClusterId that = (StandaloneClusterId) o;
+        return Objects.equals(clusterId, that.clusterId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clusterId);
     }
 }

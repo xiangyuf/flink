@@ -18,6 +18,7 @@
 
 package org.apache.flink.test.recovery;
 
+import org.apache.flink.api.common.ExecutionConfig;
 import org.apache.flink.api.common.ExecutionMode;
 import org.apache.flink.api.common.functions.ReduceFunction;
 import org.apache.flink.api.common.functions.RichMapFunction;
@@ -63,7 +64,7 @@ public class TaskManagerProcessFailureBatchRecoveryITCase
     @Override
     public void testTaskManagerFailure(Configuration configuration, final File coordinateDir)
             throws Exception {
-
+        configuration.setString("execution.mode", executionMode.name());
         ExecutionEnvironment env =
                 ExecutionEnvironment.createRemoteEnvironment("localhost", 1337, configuration);
         env.setParallelism(PARALLELISM);
