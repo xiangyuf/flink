@@ -1,0 +1,303 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+{
+	"collapsed": true,
+	"height": 250,
+	"panels": [{
+			"aliasColors": {},
+			"bars": false,
+			"dashLength": 10,
+			"dashes": false,
+			"datasource": "${datasource}",
+			"fill": 1,
+			"id": ${id},
+			"gridPos": {
+				"h": 7,
+				"w": 12,
+				"x": 0,
+				"y": ${rowOrder}
+			},
+			"legend": {
+				"avg": false,
+				"current": false,
+				"max": false,
+				"min": false,
+				"show": true,
+				"total": false,
+				"values": false
+			},
+			"lines": true,
+			"linewidth": 1,
+			"links": [],
+			"nullPointMode": "null",
+			"percentage": false,
+			"pointradius": 5,
+			"points": false,
+			"renderer": "flot",
+			"seriesOverrides": [],
+			"spaceLength": 10,
+			"span": 6,
+			"stack": false,
+			"steppedLine": false,
+			"targets": [{
+				"aggregator": "sum",
+				"alias": "numberOfFailedCheckpoints",
+				"currentTagKey": "",
+				"currentTagValue": "",
+				"downsampleAggregator": "avg",
+				"downsampleAggregatorDisabled": false,
+				"downsampleFillPolicy": "none",
+				"downsampleFillPolicyDisabled": false,
+				"metric": "flink.job.numberOfFailedCheckpoints",
+				"refId": "A",
+				"tags": {
+					"jobname": "${jobname}"
+				},
+				"tenant": "default",
+				"rateDownsampleType": "before_downsample"
+			}],
+			"thresholds": [],
+			"timeFrom": null,
+			"timeShift": null,
+			"links": [{
+				"title": "Checkpoint的失败数量",
+				"url": "https://bytedance.feishu.cn/docs/doccn4wi6UYmKAw5GduAhxfEDZe#YmzdoW",
+				"targetBlank": true
+			}],
+			"title": "Checkpoint Failures(关注连续失败次数)",
+			"tooltip": {
+				"shared": true,
+				"sort": 0,
+				"value_type": "individual"
+			},
+			"type": "graph",
+			"xaxis": {
+				"buckets": null,
+				"mode": "time",
+				"name": null,
+				"show": true,
+				"values": []
+			},
+			"yaxes": [{
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				},
+				{
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				}
+			]
+		},
+		{
+			"aliasColors": {},
+			"bars": false,
+			"dashLength": 10,
+			"dashes": false,
+			"datasource": "${datasource}",
+			"fill": 1,
+			"id": ${id},
+			"gridPos": {
+				"h": 7,
+				"w": 12,
+				"x": 12,
+				"y": ${rowOrder}
+			},
+			"legend": {
+				"avg": true,
+				"current": false,
+				"max": true,
+				"min": true,
+				"show": true,
+				"total": false,
+				"values": true
+			},
+			"lines": true,
+			"linewidth": 1,
+			"links": [],
+			"nullPointMode": "null",
+			"percentage": false,
+			"pointradius": 5,
+			"points": false,
+			"renderer": "flot",
+			"seriesOverrides": [],
+			"spaceLength": 10,
+			"span": 6,
+			"stack": false,
+			"steppedLine": false,
+			"targets": [{
+				"aggregator": "sum",
+				"alias": "lastCheckpointDuration",
+				"downsampleAggregator": "avg",
+				"downsampleFillPolicy": "none",
+				"metric": "flink.job.lastCheckpointDuration",
+				"refId": "B",
+				"tags": {
+					"jobname": "${jobname}"
+				}
+			}],
+			"thresholds": [],
+			"timeFrom": null,
+			"timeShift": null,
+			"links": [{
+				"title": "Checkpoint的制作时间",
+				"url": "https://bytedance.feishu.cn/docs/doccn4wi6UYmKAw5GduAhxfEDZe#Xw4d61",
+				"targetBlank": true
+			}],
+			"title": "Checkpoint Duration(关注Checkpoint耗时，正常在10分钟内)",
+			"tooltip": {
+				"shared": true,
+				"sort": 0,
+				"value_type": "individual"
+			},
+			"type": "graph",
+			"xaxis": {
+				"buckets": null,
+				"mode": "time",
+				"name": null,
+				"show": true,
+				"values": []
+			},
+			"yaxes": [{
+					"format": "ms",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				},
+				{
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				}
+			]
+		},
+		{
+			"aliasColors": {},
+			"bars": false,
+			"dashLength": 10,
+			"dashes": false,
+			"datasource": "${datasource}",
+			"fill": 1,
+			"id": ${id},
+			"gridPos": {
+				"h": 7,
+				"w": 12,
+				"x": 0,
+				"y": ${rowOrder}
+			},
+			"legend": {
+				"avg": true,
+				"current": false,
+				"max": true,
+				"min": true,
+				"show": true,
+				"total": false,
+				"values": true
+			},
+			"lines": true,
+			"linewidth": 1,
+			"nullPointMode": "null",
+			"percentage": false,
+			"pointradius": 5,
+			"points": false,
+			"renderer": "flot",
+			"seriesOverrides": [],
+			"spaceLength": 10,
+			"span": 6,
+			"stack": false,
+			"steppedLine": false,
+			"targets": [{
+				"aggregator": "sum",
+				"alias": "lastCheckpointSize",
+				"downsampleAggregator": "avg",
+				"downsampleAggregatorDisabled": false,
+				"downsampleFillPolicy": "none",
+				"downsampleFillPolicyDisabled": false,
+				"metric": "flink.${jobname}.jobmanager.job.lastCheckpointSize",
+				"refId": "D",
+				"tenant": "default"
+			}],
+			"thresholds": [],
+			"timeFrom": null,
+			"timeShift": null,
+			"links": [{
+				"title": "Checkpoint的增量大小和总大小",
+				"url": "https://bytedance.feishu.cn/docs/doccn4wi6UYmKAw5GduAhxfEDZe#eoHxL3",
+				"targetBlank": true
+			}],
+			"title": "Checkpoint State Size(关注状态大小和变化趋势)",
+			"tooltip": {
+				"shared": true,
+				"sort": 0,
+				"value_type": "individual"
+			},
+			"type": "graph",
+			"xaxis": {
+				"buckets": null,
+				"mode": "time",
+				"name": null,
+				"show": true,
+				"values": []
+			},
+			"yaxes": [{
+					"format": "decbytes",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				},
+				{
+					"format": "short",
+					"label": null,
+					"logBase": 1,
+					"max": null,
+					"min": null,
+					"show": true
+				}
+			]
+		}
+	],
+	"repeat": null,
+	"repeatIteration": null,
+	"repeatRowId": null,
+	"showTitle": false,
+	"title": "Checkpoint Overview",
+	"type": "row",
+	"id": ${id},
+	"gridPos": {
+		"h": 1,
+		"w": 24,
+		"x": 0,
+		"y": ${rowOrder}
+	},
+	"titleSize": "h6"
+}

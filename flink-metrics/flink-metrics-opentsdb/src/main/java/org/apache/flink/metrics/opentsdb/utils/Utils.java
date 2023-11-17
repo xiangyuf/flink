@@ -23,6 +23,8 @@ import org.apache.flink.util.StringUtils;
 /** Common utils for Metrics. */
 public class Utils {
 
+    public static final String METRIC_REGISTER_URL_TEMPLATE = "%s/api/dashboards/db";
+
     /**
      * Parse input to write metric. Replace the charset which didn't in [A-Za-z0-9-_] to '_'.
      * Because some characters metrics doesn't support. Example "flink-test$job" to

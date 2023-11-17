@@ -153,12 +153,13 @@ containerized.master.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
 containerized.taskmanager.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
 
 #==============================================================================
-# Metrics Report
+# Metrics Report & dashboard
 #==============================================================================
 
 metrics.reporters: opentsdb_reporter
 metrics.reporter.opentsdb_reporter.factory.class: org.apache.flink.metrics.opentsdb.OpentsdbReporterFactory
 metrics.reporter.opentsdb_reporter.interval: 20 SECONDS
+dashboard.register.factory.classes: org.apache.flink.metrics.opentsdb.GrafanaJobDashboardRegisterFactory
 
 #==============================================================================
 # Flink Cluster Security Configuration

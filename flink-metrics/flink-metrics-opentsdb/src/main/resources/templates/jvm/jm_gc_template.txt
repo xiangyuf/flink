@@ -1,0 +1,222 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "${datasource}",
+      "description": "JM JVM GC相关指标",
+  "fill": 1,
+  "id": ${id},
+  "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": ${rowOrder}
+          },
+  "legend": {
+    "alignAsTable": true,
+    "avg": true,
+    "current": true,
+    "max": true,
+    "min": false,
+    "rightSide": false,
+    "show": true,
+    "sort": null,
+    "sortDesc": null,
+    "total": false,
+    "values": true
+  },
+  "lines": true,
+  "linewidth": 1,
+  "links": [],
+  "nullPointMode": "null",
+  "percentage": false,
+  "pointradius": 5,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "span": 6,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "aggregator": "max",
+      "alias": "JM PS_YOUNG_GC.Count",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "isCounter": false,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.PS_Scavenge.Count",
+      "refId": "E",
+      "shouldComputeDelta": false,
+      "shouldComputeRate": true,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM PS_YOUNG_GC.Time",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "isCounter": false,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.PS_Scavenge.Time",
+      "refId": "F",
+      "shouldComputeDelta": false,
+      "shouldComputeRate": true,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM PS_FULL_GC.Count",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "isCounter": true,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.PS_MarkSweep.Count",
+      "refId": "G",
+      "shouldComputeDelta": true,
+      "shouldComputeRate": false,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM PS_FULL_GC.Time",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "isCounter": true,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.PS_MarkSweep.Time",
+      "refId": "H",
+      "shouldComputeDelta": true,
+      "shouldComputeRate": false,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM G1_YOUNG_GC.Count",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.G1_Young_Generation.Count",
+      "refId": "M",
+      "shouldComputeRate": true,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM G1_YOUNG_GC.Time",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.G1_Young_Generation.Time",
+      "refId": "N",
+      "shouldComputeRate": true,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM G1_FULL_GC.Count",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "isCounter": true,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.G1_Old_Generation.Count",
+      "refId": "O",
+      "shouldComputeDelta": true,
+      "shouldComputeRate": false,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "max",
+      "alias": "JM G1_FULL_GC.Time",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "isCounter": true,
+      "metric": "flink.jobmanager.Status.JVM.GarbageCollector.G1_Old_Generation.Time",
+      "refId": "P",
+      "shouldComputeDelta": true,
+      "shouldComputeRate": false,
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "JM GC",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ]
+}

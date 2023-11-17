@@ -123,6 +123,21 @@ public class TaskManagerMetricGroup extends ComponentMetricGroup<TaskManagerMetr
     protected void putVariables(Map<String, String> variables) {
         variables.put(ScopeFormat.SCOPE_HOST, hostname);
         variables.put(ScopeFormat.SCOPE_TASKMANAGER_ID, taskManagerId);
+        variables.put("tmid", pruneTmId(taskManagerId));
+    }
+
+    private String pruneTmId(String tmId) {
+        String[] tmIdParts = tmId.split("_");
+        if (tmIdParts.length == 6) {
+            return tmIdParts[5];
+        } else {
+            String[] podNameParts = tmId.split("-");
+            int length = podNameParts.length;
+            if (length > 2) {
+                return podNameParts[length - 2] + "-" + podNameParts[length - 1];
+            }
+        }
+        return tmId;
     }
 
     @Override

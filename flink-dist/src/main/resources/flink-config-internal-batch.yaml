@@ -163,6 +163,7 @@ containerized.taskmanager.env.HADOOP_HOME: /opt/tiger/yarn_deploy/hadoop
 metrics.reporters: opentsdb_reporter
 metrics.reporter.opentsdb_reporter.factory.class: org.apache.flink.metrics.opentsdb.OpentsdbReporterFactory
 metrics.reporter.opentsdb_reporter.interval: 20 SECONDS
+dashboard.register.factory.classes: org.apache.flink.metrics.opentsdb.GrafanaJobDashboardRegisterFactory
 
 
 #==============================================================================

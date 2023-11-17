@@ -1759,6 +1759,9 @@ public final class ConfigConstants {
     public static final String FILE_SCHEME = "file";
     public static final String LOCAL_SCHEME = "local";
 
+    // Name of flink cluster
+    public static final String CLUSTER_NAME_KEY = "clusterName";
+
     // ---------------------------- Encoding ------------------------------
 
     public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;

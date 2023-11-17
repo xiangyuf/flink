@@ -71,6 +71,8 @@ import org.apache.flink.core.execution.PipelineExecutor;
 import org.apache.flink.core.execution.PipelineExecutorFactory;
 import org.apache.flink.core.execution.PipelineExecutorServiceLoader;
 import org.apache.flink.core.fs.Path;
+import org.apache.flink.core.plugin.PluginManager;
+import org.apache.flink.core.plugin.PluginUtils;
 import org.apache.flink.runtime.clusterframework.types.ResourceProfile;
 import org.apache.flink.runtime.scheduler.ClusterDatasetCorruptedException;
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
@@ -100,6 +102,7 @@ import org.apache.flink.streaming.api.graph.StreamGraphGenerator;
 import org.apache.flink.streaming.api.operators.StreamSource;
 import org.apache.flink.streaming.api.operators.collect.CollectResultIterator;
 import org.apache.flink.streaming.api.transformations.CacheTransformation;
+import org.apache.flink.streaming.runtime.dashboard.DashboardUtils;
 import org.apache.flink.util.AbstractID;
 import org.apache.flink.util.DynamicCodeLoadingException;
 import org.apache.flink.util.ExceptionUtils;
@@ -231,6 +234,8 @@ public class StreamExecutionEnvironment implements AutoCloseable {
     // Records the slot sharing groups and their corresponding fine-grained ResourceProfile
     private final Map<String, ResourceProfile> slotSharingGroupResources = new HashMap<>();
 
+    private final PluginManager pluginManager;
+
     // --------------------------------------------------------------------------------------------
     // Constructor and Properties
     // --------------------------------------------------------------------------------------------
@@ -279,6 +284,7 @@ public class StreamExecutionEnvironment implements AutoCloseable {
         this.configuration = new Configuration(checkNotNull(configuration));
         this.userClassloader =
                 userClassloader == null ? getClass().getClassLoader() : userClassloader;
+        this.pluginManager = PluginUtils.createPluginManagerFromRootFolder(configuration);
 
         // the configuration of a job or an operator can be specified at the following places:
         //     i) at the operator level via e.g. parallelism by using the
@@ -2195,6 +2201,8 @@ public class StreamExecutionEnvironment implements AutoCloseable {
 
         CompletableFuture<JobClient> jobClientFuture =
                 executor.execute(streamGraph, configuration, userClassloader);
+
+        DashboardUtils.registerJobDashboard(streamGraph.getJobName(), configuration, pluginManager);
 
         try {
             JobClient jobClient = jobClientFuture.get();

@@ -408,6 +408,13 @@ public class MetricOptions {
                     .withDescription(
                             "The selection of job status metrics that should be reported.");
 
+    public static final ConfigOption<List<String>> DASHBOARD_REGISTER_FACTORY_CLASSES =
+            key("dashboard.register.factory.classes")
+                    .stringType()
+                    .asList()
+                    .defaultValues()
+                    .withDescription("The selection of job dashboard that should register.");
+
     /** Enum describing the different kinds of job status metrics. */
     public enum JobStatusMetrics implements DescribedEnum {
         STATE(

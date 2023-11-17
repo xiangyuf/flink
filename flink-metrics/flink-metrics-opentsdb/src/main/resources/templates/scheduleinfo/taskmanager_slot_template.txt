@@ -1,0 +1,144 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "${datasource}",
+  "fill": 1,
+  "id": ${id},
+    "description": "1.numRegisteredTaskManagers  \n申请的taskmanager数  \n2.taskSlotsTotal  \n总共的slot数  \n3.taskSlotsAvailable  \ntaskSlotsAvailable = 总slots - max{parallelism}  \n总slots = tm_slot * tm_num  \ntaskSlotsAvailable指的是没有使用的slot数，实际是浪费的slot数，如果这个值比较大，请调整slot总数，保证tm_slot * tm_num >= max{parallelism}即可，可以选择加大并发度，或者减小tm_num 或 tm_slot.   \n作业最大并发就是作业最大能利用的slot数。",
+  "gridPos": {
+            "h": 10,
+            "w": 12,
+            "x": 0,
+            "y": ${rowOrder}
+          },
+  "legend": {
+    "alignAsTable": true,
+    "avg": true,
+    "current": true,
+    "max": true,
+    "min": false,
+    "rightSide": false,
+    "show": true,
+    "total": false,
+    "values": true
+  },
+  "lines": true,
+  "linewidth": 1,
+  "links": [],
+  "nullPointMode": "null",
+  "percentage": false,
+  "pointradius": 5,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "span": 6,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleAggregatorDisabled": false,
+      "downsampleFillPolicy": "none",
+      "downsampleFillPolicyDisabled": false,
+      "metric": "flink.jobmanager.numRegisteredTaskManagers",
+      "refId": "A",
+      "tags": {
+        "jobname": "${jobname}"
+      },
+      "tenant": "default",
+      "rateDownsampleType": "before_downsample"
+    },
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleAggregatorDisabled": false,
+      "downsampleFillPolicy": "none",
+      "downsampleFillPolicyDisabled": false,
+      "downsampleInterval": "",
+      "metric": "flink.jobmanager.taskSlotsTotal",
+      "refId": "E",
+      "tags": {
+        "jobname": "${jobname}"
+      },
+      "tenant": "default",
+      "rateDownsampleType": "before_downsample"
+    },
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleAggregatorDisabled": false,
+      "downsampleFillPolicy": "none",
+      "downsampleFillPolicyDisabled": false,
+      "metric": "flink.jobmanager.taskSlotsAvailable",
+      "refId": "F",
+      "tags": {
+        "jobname": "${jobname}"
+      },
+      "tenant": "default",
+      "rateDownsampleType": "before_downsample"
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "SlotManager Info",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ]
+}

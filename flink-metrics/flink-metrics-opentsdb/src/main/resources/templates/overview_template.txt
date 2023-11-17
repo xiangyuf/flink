@@ -1,0 +1,271 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+{
+	"datasource": "${datasource}",
+	"description": "任务运行时间",
+	"fieldConfig": {
+		"defaults": {
+			"color": {
+				"mode": "thresholds"
+			},
+			"mappings": [],
+			"thresholds": {
+				"mode": "absolute",
+				"steps": [{
+					"color": "green",
+					"value": null
+				}]
+			},
+			"unit": "ms"
+		},
+		"overrides": []
+	},
+	"gridPos": {
+		"h": 4,
+		"w": 6,
+		"x": 0,
+		"y": ${rowOrder}
+	},
+	"id": ${id},
+	"span": 3,
+	"links": [],
+	"options": {
+		"colorMode": "value",
+		"graphMode": "none",
+		"justifyMode": "auto",
+		"orientation": "auto",
+		"reduceOptions": {
+			"calcs": [
+				"lastNotNull"
+			],
+			"fields": "",
+			"values": false
+		},
+		"text": {},
+		"textMode": "value"
+	},
+	"pluginVersion": "7.5.3",
+	"targets": [{
+		"aggregator": "avg",
+		"currentTagKey": "",
+		"currentTagValue": "",
+		"downsampleAggregator": "avg",
+		"downsampleFillPolicy": "none",
+		"metric": "flink.job.uptime",
+		"refId": "A",
+		"tags": {
+			"jobname": "${jobname}"
+		}
+	}],
+	"timeFrom": null,
+	"timeShift": null,
+	"title": "Job Uptime",
+	"type": "stat"
+}, {
+	"datasource": "${datasource}",
+	"description": "Full failover次数",
+	"fieldConfig": {
+		"defaults": {
+			"color": {
+				"mode": "thresholds"
+			},
+			"mappings": [],
+			"thresholds": {
+				"mode": "absolute",
+				"steps": [{
+						"color": "green",
+						"value": null
+					},
+					{
+						"color": "red",
+						"value": 80
+					}
+				]
+			}
+		},
+		"overrides": []
+	},
+	"gridPos": {
+		"h": 4,
+		"w": 6,
+		"x": 6,
+		"y": ${rowOrder}
+	},
+	"id": ${id},
+	"span": 3,
+	"options": {
+		"colorMode": "value",
+		"graphMode": "none",
+		"justifyMode": "auto",
+		"orientation": "auto",
+		"reduceOptions": {
+			"calcs": [
+				"lastNotNull"
+			],
+			"fields": "",
+			"values": false
+		},
+		"text": {},
+		"textMode": "auto"
+	},
+	"pluginVersion": "7.5.3",
+	"targets": [{
+		"aggregator": "sum",
+		"currentTagKey": "",
+		"currentTagValue": "",
+		"downsampleAggregator": "avg",
+		"downsampleFillPolicy": "none",
+		"metric": "flink.job.numRestarts",
+		"refId": "A",
+		"tags": {
+			"jobname": "${jobname}"
+		}
+	}],
+	"timeFrom": null,
+	"timeShift": null,
+	"title": "Num Restarts",
+	"type": "stat"
+}, {
+	"datasource": "${datasource}",
+	"description": "总共的slot",
+	"fieldConfig": {
+		"defaults": {
+			"color": {
+				"mode": "thresholds"
+			},
+			"mappings": [],
+			"thresholds": {
+				"mode": "absolute",
+				"steps": [{
+						"color": "green",
+						"value": null
+					},
+					{
+						"color": "red",
+						"value": 80
+					}
+				]
+			}
+		},
+		"overrides": []
+	},
+	"gridPos": {
+		"h": 4,
+		"w": 6,
+		"x": 0,
+		"y": ${rowOrder}
+	},
+	"id": ${id},
+	"span": 3,
+	"options": {
+		"colorMode": "value",
+		"graphMode": "none",
+		"justifyMode": "auto",
+		"orientation": "auto",
+		"reduceOptions": {
+			"calcs": [
+				"lastNotNull"
+			],
+			"fields": "",
+			"values": false
+		},
+		"text": {},
+		"textMode": "auto"
+	},
+	"pluginVersion": "7.5.3",
+	"targets": [{
+		"aggregator": "sum",
+		"currentTagKey": "",
+		"currentTagValue": "",
+		"downsampleAggregator": "avg",
+		"downsampleFillPolicy": "none",
+		"metric": "flink.jobmanager.taskSlotsTotal",
+		"refId": "A",
+		"tags": {
+			"jobname": "${jobname}"
+		}
+	}],
+	"timeFrom": null,
+	"timeShift": null,
+	"title": "TaskSlots Total",
+	"type": "stat"
+}, {
+	"datasource": "${datasource}",
+	"description": "可用空闲的slot",
+	"fieldConfig": {
+		"defaults": {
+			"color": {
+				"mode": "thresholds"
+			},
+			"mappings": [],
+			"thresholds": {
+				"mode": "absolute",
+				"steps": [{
+						"color": "green",
+						"value": null
+					},
+					{
+						"color": "red",
+						"value": 80
+					}
+				]
+			}
+		},
+		"overrides": []
+	},
+	"gridPos": {
+		"h": 4,
+		"w": 6,
+		"x": 6,
+		"y": ${rowOrder}
+	},
+	"id": ${id},
+	"span": 3,
+	"options": {
+		"colorMode": "value",
+		"graphMode": "none",
+		"justifyMode": "auto",
+		"orientation": "auto",
+		"reduceOptions": {
+			"calcs": [
+				"lastNotNull"
+			],
+			"fields": "",
+			"values": false
+		},
+		"text": {},
+		"textMode": "auto"
+	},
+	"pluginVersion": "7.5.3",
+	"targets": [{
+		"aggregator": "sum",
+		"currentTagKey": "",
+		"currentTagValue": "",
+		"downsampleAggregator": "avg",
+		"downsampleFillPolicy": "none",
+		"metric": "flink.jobmanager.taskSlotsAvailable",
+		"refId": "A",
+		"tags": {
+			"jobname": "${jobname}"
+		}
+	}],
+	"timeFrom": null,
+	"timeShift": null,
+	"title": "Task Slot Available",
+	"type": "stat"
+}

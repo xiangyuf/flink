@@ -192,6 +192,8 @@ public class TaskMetricGroup extends ComponentMetricGroup<TaskManagerJobMetricGr
         variables.put(ScopeFormat.SCOPE_TASK_ATTEMPT_ID, executionId.toString());
         variables.put(ScopeFormat.SCOPE_TASK_ATTEMPT_NUM, String.valueOf(attemptNumber));
         variables.put(ScopeFormat.SCOPE_TASK_SUBTASK_INDEX, String.valueOf(subtaskIndex));
+        // Compatible with 1.11.
+        variables.put("taskid", String.valueOf(subtaskIndex));
     }
 
     @Override

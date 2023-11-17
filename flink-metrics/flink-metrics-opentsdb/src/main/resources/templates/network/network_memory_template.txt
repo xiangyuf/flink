@@ -1,0 +1,151 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "fieldConfig": {
+    "defaults": {},
+    "overrides": []
+  },
+    "description": "TM network内存相关指标",
+  "fill": 1,
+  "fillGradient": 0,
+  "gridPos": {
+    "h": 7,
+    "w": 12,
+    "x": 0,
+    "y": ${rowOrder}
+  },
+  "hiddenSeries": false,
+  "id": ${id},
+  "gridPos": {
+            "h": 7,
+            "w": 12,
+            "x": 0,
+            "y": ${rowOrder}
+          },
+  "legend": {
+    "avg": false,
+    "current": false,
+    "max": false,
+    "min": false,
+    "show": true,
+    "total": false,
+    "values": false
+  },
+  "lines": true,
+  "linewidth": 1,
+  "nullPointMode": "null",
+  "options": {
+    "alertThreshold": true
+  },
+  "percentage": false,
+  "pluginVersion": "7.5.3",
+  "pointradius": 2,
+  "points": false,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "span": 6,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "metric": "flink.taskmanager.Status.Shuffle.Netty.TotalMemory",
+      "refId": "A",
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "metric": "flink.taskmanager.Status.Shuffle.Netty.AvailableMemory",
+      "refId": "B",
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "sum",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "metric": "flink.taskmanager.Status.Shuffle.Netty.UsedMemory",
+      "refId": "B",
+      "tags": {
+        "jobname": "${jobname}"
+      }
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeRegions": [],
+  "timeShift": null,
+  "title": "Network Memory",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "bytes",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ],
+  "yaxis": {
+    "align": false,
+    "alignLevel": null
+  },
+  "datasource": "${datasource}"
+}

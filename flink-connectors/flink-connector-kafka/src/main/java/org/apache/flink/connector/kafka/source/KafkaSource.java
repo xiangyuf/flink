@@ -50,7 +50,14 @@ import org.apache.flink.core.io.SimpleVersionedSerializer;
 import org.apache.flink.metrics.MetricGroup;
 import org.apache.flink.util.UserCodeClassLoader;
 
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.JsonNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ArrayNode;
+import org.apache.flink.shaded.jackson2.com.fasterxml.jackson.databind.node.ObjectNode;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 
@@ -87,6 +94,9 @@ import java.util.function.Supplier;
 public class KafkaSource<OUT>
         implements Source<OUT, KafkaPartitionSplit, KafkaSourceEnumState>,
                 ResultTypeQueryable<OUT> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaSource.class);
+
     private static final long serialVersionUID = -8755372893283732098L;
     // Users can choose only one of the following ways to specify the topics to consume from.
     private final KafkaSubscriber subscriber;
@@ -112,6 +122,40 @@ public class KafkaSource<OUT>
         this.boundedness = boundedness;
         this.deserializationSchema = deserializationSchema;
         this.props = props;
+        saveConfigurationToSystemProperties(props);
+    }
+
+    public static <T> void saveConfigurationToSystemProperties(Properties props) {
+        String kafkaClusterName = props.getProperty("cluster");
+        String groupId = props.getProperty("group.id");
+        String topic = props.getProperty("topic");
+        if (kafkaClusterName != null && !"".equals(kafkaClusterName)) {
+            String kafkaMetricsStr = System.getProperty("flink_kafka_metrics", "[]");
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            try {
+                final JsonNode kafkaMetrics = objectMapper.readTree(kafkaMetricsStr);
+                final ArrayNode arrayNode = objectMapper.createArrayNode();
+                for (JsonNode kafkaMetric : kafkaMetrics) {
+                    arrayNode.add(kafkaMetric);
+                    if (kafkaMetric.get("cluster").asText().equals(kafkaClusterName)
+                            && kafkaMetric.get("consumer").asText().equals(groupId)
+                            && kafkaMetric.get("topic").asText().equals(topic)) {
+                        return;
+                    }
+                }
+
+                ObjectNode jsonNode = objectMapper.createObjectNode();
+                jsonNode.put("cluster", kafkaClusterName);
+                jsonNode.put("topic", topic);
+                jsonNode.put("consumer", groupId);
+                arrayNode.add(jsonNode);
+                System.setProperty(
+                        "flink_kafka_metrics", objectMapper.writeValueAsString(arrayNode));
+            } catch (Exception e) {
+                LOG.error("Parse kafka metrics failed", e);
+            }
+        }
     }
 
     /**

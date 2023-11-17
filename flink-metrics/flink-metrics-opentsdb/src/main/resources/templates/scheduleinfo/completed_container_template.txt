@@ -1,0 +1,1114 @@
+################################################################################
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+################################################################################
+{
+  "aliasColors": {},
+  "bars": false,
+  "dashLength": 10,
+  "dashes": false,
+  "datasource": "${datasource}",
+  "fill": 1,
+    "gridPos": {
+      "h": 10,
+      "w": 12,
+      "x": 12,
+      "y": ${rowOrder}
+    },
+  "id": 24,
+  "description": "结束的container，包含exitCode信息",
+  "legend": {
+    "alignAsTable": true,
+    "avg": true,
+    "current": true,
+    "max": true,
+    "min": false,
+    "rightSide": false,
+    "show": true,
+    "sort": null,
+    "sortDesc": null,
+    "total": false,
+    "values": true
+  },
+  "lines": false,
+  "linewidth": 1,
+  "links": [
+    {
+      "title": "Flink 退出码详细说明",
+      "url": "${FLINK_EXIT_DOC_URL}",
+      "targetBlank": true
+    },
+    {
+     "title": "K8s 退出码详细说明",
+     "url": "${K8S_EXIT_DOC_URL}",
+     "targetBlank": true
+    }
+  ],
+  "nullPointMode": "null",
+  "percentage": false,
+  "pointradius": 5,
+  "points": true,
+  "renderer": "flot",
+  "seriesOverrides": [],
+  "spaceLength": 10,
+  "span": 12,
+  "stack": false,
+  "steppedLine": false,
+  "targets": [
+    {
+      "aggregator": "sum",
+      "alias": "$tag_exit_code",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "metric": "flink.jobmanager.completedContainer",
+      "refId": "A",
+      "tags": {
+        "exit_code": "not_literal_or(K*)",
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "refId": "B",
+      "hide": false,
+      "aggregator": "sum",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "metric": "flink.taskmanager.completedContainer",
+      "alias": "$tag_exit_code",
+      "currentTagKey": "",
+      "currentTagValue": "",
+      "tags": {
+        "exit_code": "*",
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "sum",
+      "alias": "Godel $tag_exit_code",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "metric": "flink.jobmanager.completedContainerGodel.tm",
+      "refId": "C",
+      "tags": {
+        "exit_code": "*",
+        "jobname": "${jobname}"
+      }
+    },
+    {
+      "aggregator": "sum",
+      "alias": "JM 退出 $tag_exit_code",
+      "downsampleAggregator": "avg",
+      "downsampleFillPolicy": "none",
+      "hide": false,
+      "metric": "flink.jobmanager.completedContainerGodel.jm",
+      "refId": "D",
+      "tags": {
+        "exit_code": "*",
+        "jobname": "${jobname}"
+      }
+    }
+  ],
+  "thresholds": [],
+  "timeFrom": null,
+  "timeShift": null,
+  "title": "(<--更多退出码介绍通过左边链接跳转) Completed Containers",
+  "tooltip": {
+    "shared": true,
+    "sort": 0,
+    "value_type": "individual"
+  },
+  "type": "graph",
+  "xaxis": {
+    "buckets": null,
+    "mode": "time",
+    "name": null,
+    "show": true,
+    "values": []
+  },
+  "yaxes": [
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    },
+    {
+      "format": "short",
+      "label": null,
+      "logBase": 1,
+      "max": null,
+      "min": null,
+      "show": true
+    }
+  ],
+  "fieldConfig": {
+    "defaults": {},
+    "overrides": [
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80001 (启动慢节点主动 kill，不会导致作业 Failover)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80002 (Container 启动失败)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80003 (心跳超时，请检查 JM、TM GC 是否过高 或者 机器是否宕机重启)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80004"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80004 (Flink 拉黑节点主动释放，一般是节点上 Task 频繁异常导致)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80005"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80005 (TM 空闲时间过长，不会导致作业 Failover)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80006"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80006 (TM 主动退出，可能是 JM GC 过长或者用户代码 hang 住，详情请检查TM的2XX错误码)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80007"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80007 (TM 数量过多，只应该在 Batch 场景出现)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80008"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80008 (Flink 与 YARN 之间通过心跳来申请 container，会导致多申请 container，这里主动释放多申请的 container)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80009"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80009 (task 长期处于 Canceling 状态，无法成功退出，Flink 主动杀死 TaskManager就进行兜底)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80010"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80010 (JobManager 重启后，TaskManager 长期未注册到 JobManager，触发超时)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80011"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80011 (严重故障导致节点拉黑，当前只应用于 State 状态卡住)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80012"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80012 (K8S POD 被 DELETED, 请查看 Godel 退出码)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80013"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80013 (K8S POD 处于 Terminated 状态，请查看 Godel 退出码)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-80015"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-80015 (TM 存在 SlowTask 问题而被迁移，一般因为单机问题，详情可以看 JM 日志)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "200"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "200 (无法启动TM)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "201"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "201 (释放或恢复partition失败)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "202"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "202 (申请slot出现异常之后无法释放slot)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "203"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "203 (申请slot出现异常之后释放slot，slot无法找到)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "204"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "204 (注册到RM超时)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "205"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "205 (发送更新状态信息到JM时发生RPC异常)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "206"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "206 (发送更新状态信息到JM时发生错误)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "207"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "207 (监听RM leadership出错)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "208"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "208 (监听JM leadership出错)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "209"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "209 (注册到RM失败)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "210"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "210 (TASK 退出超时)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "211"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "211 (TASK 结束流程出现异常)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "212"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "212 (TASK 故障清理资源时出现异常)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "213"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "213 (cancel Task 超时异常)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-103"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-103 (虚拟内存超限被 YARN 杀死，增加 TM 内存)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-104"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-104 (物理内存超限被 YARN 杀死，增加 TM 内存)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12011"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12011 (由于内存不足导致 cgroup 触发 OOM，增加 TM 内存)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10001 (占用磁盘空间过大被 YARN 杀死，请排查磁盘使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10002 (Load 过高被 YARN 杀死，请检查线程使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10003 (日志目录磁盘超限被 YARN 杀死，请排查磁盘使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10004"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10004 (工作目录磁盘超限被 YARN 杀死，请排查磁盘使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10005"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10005 (Shuffle 数据超限被 YARN 杀死，请排查磁盘使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10006"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10006 (总磁盘空间过大被 YARN 杀死，请排查磁盘使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10007"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10007 (线程数过多被 YARN 杀死，请排查线程使用)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-10008"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-10008 (节点 CPU 利用率过高被 kill，请增加cpu的slot数或增加tm个数)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-13001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-13001 (YARN 节点下线导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-13002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-13002 (YARN 运维导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-15001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-15001 (磁盘故障导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-15002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-15002 (工作目录盘故障或者磁盘满导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-15003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-15003 (日志目录盘故障或者磁盘满导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-15004"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-15004 (Token 所在盘故障或者磁盘满导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-11001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-11001 (Container Localization 失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12000"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12000 (Container Launch 阶段失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12001 (Container Launch 中被 kill，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12002 (Container 读取本地资源失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12003 (Container 创建日志目录失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12004"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12004 (Container 创建工作目录失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12005"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12005 (Container 启动失败，对于使用 Docker 场景一般是拉取镜像失败)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-12008"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-12008 (Container 写 Cgroup 失败，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-21017"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-21017 (YARN 节点故障下线导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-21018"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-21018 (YARN 节点主动下线导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-21019"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-21019 (YARN 节点心跳超时导致 TM 被杀死，一般是节点宕机)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-21020"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-21020 (YARN 节点重启导致 TM 被杀死)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "-21003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "-21003 (TM 启动超时，请联系 ONCALL 处理)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "2"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "2 (TM 异常主动退出，请联系 ONCALL 处理)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "137"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "137 (YARN 未拿到退出码，一般是被 Kill -9, 请检查是否内存超限被 OS kill, 否则请联系 ONCALL 处理)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "143"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "143 (TM 绕过 YARN 收到 SIGNAL 被 Kill, 请检查是否有人工运维操作，否则请联系 ONCALL 处理)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "154"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "154 (YARN 未找到进程 PID，否则请联系 ONCALL 处理)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "7"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "7 (YARN 节点 Docker 服务异常，请联系 YARN ONCALL)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byRegexp",
+          "options": "Godel 20.*"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (进程直接退出, 后三位为进程退出码)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 10001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 异常，原因位置，请咨询 oncall 排查)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 10003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Node 亲和性不满足导致 Pod 退出)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 10005"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (OOM Killed)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60001"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被驱逐，原因未知，请咨询 oncall 排查)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60002"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 由于磁盘压力驱逐)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60004"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 由于 CPU 压力驱逐)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60005"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 由于内存压力驱逐)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60010"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 GC 回收，一般是作业重启后清理 TM)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60016"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 SRE 主动驱逐)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60018"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Flink 主动删除 Pod，查看 -8XXXX 退出码确认具体原因)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60019"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 Arcee 主动删除,详情咨询 arcee oncall)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60020"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 SRE 主动驱逐，机器故障或者主动运维节点)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60021"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 Godel 主动驱逐，一般是机器故障)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 60022"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (Pod 被 Godel 主动驱逐, 一般是机器故障)"
+          }
+        ]
+      },
+      {
+        "matcher": {
+          "id": "byName",
+          "options": "Godel 70003"
+        },
+        "properties": [
+          {
+            "id": "displayName",
+            "value": "${__field.displayName} (K8S 节点故障 Pod 被删除)"
+          }
+        ]
+      }
+    ]
+  }
+}
