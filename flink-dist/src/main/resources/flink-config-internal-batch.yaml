@@ -52,7 +52,7 @@ akka.lookup.timeout: 60 s
 akka.tcp.timeout: 80 s
 
 # JVM and Logging
-env.java.default-opts.all: -DLog4jContextSelector=org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector -Dlog4j2.AsyncQueueFullPolicy=Discard
+env.java.default-opts.all: -DLog4jContextSelector=org.apache.logging.log4j.core.async.BasicAsyncLoggerContextSelector -Dlog4j2.AsyncQueueFullPolicy=Discard -Djava.net.preferIPv6Addresses=true
 env.java.default-opts.jobmanager: -Xlog:gc*:$FLINK_LOG_DIR/gc.log:time,uptime,level,tags
 env.java.default-opts.taskmanager: -Xlog:gc*:$FLINK_LOG_DIR/gc.log:time,uptime,level,tags
 
