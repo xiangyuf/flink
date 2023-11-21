@@ -204,7 +204,7 @@ public final class ReporterSetup {
         final Map<String, MetricReporterFactory> reporterFactories =
                 loadAvailableReporterFactories(pluginManager);
 
-        return setupReporters(reporterFactories, reporterConfigurations);
+        return setupReporters(reporterFactories, reporterConfigurations, configuration);
     }
 
     private static Set<String> findEnabledReportersInConfiguration(
@@ -315,7 +315,8 @@ public final class ReporterSetup {
 
     private static List<ReporterSetup> setupReporters(
             Map<String, MetricReporterFactory> reporterFactories,
-            List<Tuple2<String, Configuration>> reporterConfigurations) {
+            List<Tuple2<String, Configuration>> reporterConfigurations,
+            Configuration flinkConfiguration) {
         List<ReporterSetup> reporterSetups = new ArrayList<>(reporterConfigurations.size());
         for (Tuple2<String, Configuration> reporterConfiguration : reporterConfigurations) {
             String reporterName = reporterConfiguration.f0;
@@ -340,6 +341,9 @@ public final class ReporterSetup {
                 metricReporterOptional.ifPresent(
                         reporter -> {
                             MetricConfig metricConfig = new MetricConfig();
+                            // add all flink configuration to metric config
+                            flinkConfiguration.addAllToProperties(metricConfig);
+                            // add metric configuration later to override flink configuration
                             reporterConfig.addAllToProperties(metricConfig);
                             reporterSetups.add(
                                     createReporterSetup(

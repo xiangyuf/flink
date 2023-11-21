@@ -24,8 +24,11 @@ import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.time.Time;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.core.execution.CheckpointType;
 import org.apache.flink.core.execution.SavepointFormatType;
+import org.apache.flink.metrics.TagGaugeImpl;
+import org.apache.flink.metrics.TagGaugeStore;
 import org.apache.flink.queryablestate.KvStateID;
 import org.apache.flink.runtime.accumulators.AccumulatorSnapshot;
 import org.apache.flink.runtime.blob.BlobWriter;
@@ -51,8 +54,11 @@ import org.apache.flink.runtime.highavailability.HighAvailabilityServices;
 import org.apache.flink.runtime.io.network.partition.JobMasterPartitionTracker;
 import org.apache.flink.runtime.io.network.partition.PartitionTrackerFactory;
 import org.apache.flink.runtime.io.network.partition.ResultPartitionID;
+import org.apache.flink.runtime.jobgraph.DistributionPattern;
 import org.apache.flink.runtime.jobgraph.IntermediateDataSetID;
+import org.apache.flink.runtime.jobgraph.JobEdge;
 import org.apache.flink.runtime.jobgraph.JobGraph;
+import org.apache.flink.runtime.jobgraph.JobVertex;
 import org.apache.flink.runtime.jobgraph.JobVertexID;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.jobmanager.OnCompletionActions;
@@ -97,11 +103,13 @@ import org.apache.flink.runtime.taskmanager.TaskExecutionState;
 import org.apache.flink.runtime.taskmanager.TaskManagerLocation;
 import org.apache.flink.runtime.taskmanager.TaskManagerLocation.ResolutionMode;
 import org.apache.flink.runtime.taskmanager.UnresolvedTaskManagerLocation;
+import org.apache.flink.runtime.util.EnvironmentInformation;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.InstantiationUtil;
 import org.apache.flink.util.SerializedValue;
+import org.apache.flink.util.StringUtils;
 import org.apache.flink.util.concurrent.FutureUtils;
 
 import org.slf4j.Logger;
@@ -146,6 +154,20 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
     /** Default names for Flink's distributed components. */
     public static final String JOB_MANAGER_NAME = "jobmanager";
+
+    /** Metric tag name. */
+    private static final String JOB_VERSION_METRIC_NAME = "jobVersion";
+
+    private static final String SHUFFLE_SERVICE_TYPE_TAG_NAME = "shuffleServiceType";
+    private static final String SHUFFLE_SERVICE_TYPE_TAG_VALUE = "nettyShuffle";
+    private static final String JOB_EXECUTION_TYPE_TAG_NAME = "jobExecutionType";
+
+    // please sync this tag key with OpentsdbReporter.JOB_TYPE_METRIC_KEY
+    private static final String JOB_TYPE_TAG_KEY = "jobType";
+    private static final String COMMIT_DATE_TAG_NAME = "commitDate";
+    private static final String COMMIT_ID_TAG_NAME = "commitId";
+    private static final String VERSION_TAG_NAME = "version";
+    private static final String OWNER_TAG_NAME = "owner";
 
     // ------------------------------------------------------------------------
 
@@ -359,6 +381,7 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
         this.establishedResourceManagerConnection = null;
 
         this.accumulators = new HashMap<>();
+        registerMetrics();
     }
 
     private SchedulerNG createScheduler(
@@ -1251,6 +1274,85 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     @Override
     public JobMasterGateway getGateway() {
         return getSelfGateway(JobMasterGateway.class);
+    }
+
+    // ----------------------------------------------------------------------------------------------
+    // Job Metrics
+    // ----------------------------------------------------------------------------------------------
+    private void registerMetrics() {
+        try {
+            TagGaugeImpl jobVersionTagGauge = new TagGaugeImpl.TagGaugeBuilder().build();
+            jobVersionTagGauge.addMetric(1, createVersionTagValues());
+            jobManagerJobMetricGroup.tagGauge(JOB_VERSION_METRIC_NAME, jobVersionTagGauge);
+        } catch (Exception e) {
+            log.error("Failed to register metrics.", e);
+        }
+    }
+
+    /** create tags to custom metric flink.job.jobVersion. */
+    private TagGaugeStore.TagValues createVersionTagValues() {
+        TagGaugeStore.TagValuesBuilder tagValuesBuilder = new TagGaugeStore.TagValuesBuilder();
+
+        // ----------------------------- version info ----------------------------
+
+        EnvironmentInformation.RevisionInformation revisionInformation =
+                EnvironmentInformation.getRevisionInformation();
+        String version = EnvironmentInformation.getVersion();
+        String commitId = revisionInformation.commitId;
+        String commitDate = null;
+        if (revisionInformation.commitDate != null) {
+            commitDate = revisionInformation.commitDate.replaceAll(" |\\+", "_");
+        }
+        if (!StringUtils.isNullOrWhitespaceOnly(version)) {
+            tagValuesBuilder.addTagValue(VERSION_TAG_NAME, version);
+        }
+        if (!StringUtils.isNullOrWhitespaceOnly(commitId)) {
+            tagValuesBuilder.addTagValue(COMMIT_ID_TAG_NAME, commitId);
+        }
+        if (!StringUtils.isNullOrWhitespaceOnly(commitDate)) {
+            tagValuesBuilder.addTagValue(COMMIT_DATE_TAG_NAME, commitDate);
+        }
+
+        // ----------------------------- distribution pattern ----------------------------
+
+        Map<String, Integer> distributionPatternNumber = new HashMap<>();
+        for (JobVertex jobVertex : jobGraph.getVerticesSortedTopologicallyFromSources()) {
+            for (JobEdge input : jobVertex.getInputs()) {
+                distributionPatternNumber.merge(
+                        input.getDistributionPattern().name(), 1, Integer::sum);
+            }
+        }
+        // Add 0 for distribution pattern that not used because we can not query null tag in
+        // metrics.
+        for (DistributionPattern distributionPattern : DistributionPattern.values()) {
+            distributionPatternNumber.putIfAbsent(distributionPattern.name(), 0);
+        }
+        distributionPatternNumber.forEach(
+                (pattern, number) -> tagValuesBuilder.addTagValue(pattern, String.valueOf(number)));
+
+        // ----------------------------- job type ----------------------------
+
+        // Streaming or Batch
+        tagValuesBuilder.addTagValue(JOB_EXECUTION_TYPE_TAG_NAME, jobGraph.getJobType().name());
+
+        // SQL, JAR or Python
+        String flinkJobType =
+                jobMasterConfiguration.getConfiguration().get(PipelineOptions.FLINK_JOB_TYPE);
+        if (!StringUtils.isNullOrWhitespaceOnly(flinkJobType)) {
+            tagValuesBuilder.addTagValue(JOB_TYPE_TAG_KEY, flinkJobType);
+        }
+
+        // ----------------------------- Bytedance ----------------------------
+
+        // Currently we only support netty shuffle.
+        tagValuesBuilder.addTagValue(SHUFFLE_SERVICE_TYPE_TAG_NAME, SHUFFLE_SERVICE_TYPE_TAG_VALUE);
+
+        String owner = jobMasterConfiguration.getConfiguration().get(PipelineOptions.FLINK_OWNER);
+        if (!StringUtils.isNullOrWhitespaceOnly(owner)) {
+            tagValuesBuilder.addTagValue(OWNER_TAG_NAME, owner);
+        }
+
+        return tagValuesBuilder.build();
     }
 
     // ----------------------------------------------------------------------------------------------

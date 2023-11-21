@@ -45,6 +45,12 @@
             <td>Configures the mode in which the closure cleaner works.<br /><br />Possible values:<ul><li>"NONE": Disables the closure cleaner completely.</li><li>"TOP_LEVEL": Cleans only the top-level class without recursing into fields.</li><li>"RECURSIVE": Cleans all fields recursively.</li></ul></td>
         </tr>
         <tr>
+            <td><h5>pipeline.cluster</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The cluster of Flink job, such as Feins-HL.</td>
+        </tr>
+        <tr>
             <td><h5>pipeline.default-kryo-serializers</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>List&lt;String&gt;</td>
@@ -111,6 +117,18 @@
             <td>A semicolon-separated list of the jars to package with the job jars to be sent to the cluster. These have to be valid paths.</td>
         </tr>
         <tr>
+            <td><h5>pipeline.job-priority</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The priority of Flink job, such as D1,D2.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.job-type</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The type of Flink job, such as FLINK_STREAMING_SQL, FLINK_STREAMING_JAR.</td>
+        </tr>
+        <tr>
             <td><h5>pipeline.jobvertex-parallelism-overrides</h5></td>
             <td style="word-wrap: break-word;"></td>
             <td>Map</td>
@@ -139,6 +157,18 @@
             <td style="word-wrap: break-word;">true</td>
             <td>Boolean</td>
             <td>Operator chaining allows non-shuffle operations to be co-located in the same thread fully avoiding serialization and de-serialization.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.owner</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The owner of Flink job.</td>
+        </tr>
+        <tr>
+            <td><h5>pipeline.queue</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The queue of Flink job, such as root.xxx.</td>
         </tr>
         <tr>
             <td><h5>pipeline.registered-kryo-types</h5></td>

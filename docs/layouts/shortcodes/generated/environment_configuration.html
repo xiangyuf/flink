@@ -21,6 +21,24 @@
             <td>Path to hbase configuration directory. It is required to read HBASE configuration. You can also set it via environment variable.</td>
         </tr>
         <tr>
+            <td><h5>env.java.default-opts.all</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Default Java options to start the JVM of all Flink processes with.</td>
+        </tr>
+        <tr>
+            <td><h5>env.java.default-opts.jobmanager</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Default java options to start the JVM of the JobManager with.</td>
+        </tr>
+        <tr>
+            <td><h5>env.java.default-opts.taskmanager</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>Default Java options to start the JVM of the TaskManager with.</td>
+        </tr>
+        <tr>
             <td><h5>env.java.opts.all</h5></td>
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
@@ -61,6 +79,12 @@
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
             <td>Defines the directory where the Flink logs are saved. It has to be an absolute path. (Defaults to the log directory under Flink’s home)</td>
+        </tr>
+        <tr>
+            <td><h5>env.log.level</h5></td>
+            <td style="word-wrap: break-word;">"INFO"</td>
+            <td>String</td>
+            <td>Override the log.level property on log4j.properties</td>
         </tr>
         <tr>
             <td><h5>env.log.max</h5></td>

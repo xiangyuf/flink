@@ -15,6 +15,12 @@
             <td>Access-Control-Allow-Origin header for all responses from the web-frontend.</td>
         </tr>
         <tr>
+            <td><h5>web.bytedog.base-url</h5></td>
+            <td style="word-wrap: break-word;">(none)</td>
+            <td>String</td>
+            <td>The base URL for accessing the online profiling toolbox provided by ByteDog.</td>
+        </tr>
+        <tr>
             <td><h5>web.cancel.enable</h5></td>
             <td style="word-wrap: break-word;">true</td>
             <td>Boolean</td>
@@ -33,10 +39,22 @@
             <td>The maximum number of failures collected by the exception history per job.</td>
         </tr>
         <tr>
+            <td><h5>web.flamegraph-url.enabled</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Flag indicating whether the flame graph URL shall be displayed in the web-frontend.</td>
+        </tr>
+        <tr>
             <td><h5>web.history</h5></td>
             <td style="word-wrap: break-word;">5</td>
             <td>Integer</td>
             <td>Number of archived jobs for the JobManager.</td>
+        </tr>
+        <tr>
+            <td><h5>web.log-url.enabled</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Flag indicating whether the log URL shall be displayed in the web-frontend.</td>
         </tr>
         <tr>
             <td><h5>web.log.path</h5></td>
@@ -73,6 +91,12 @@
             <td style="word-wrap: break-word;">(none)</td>
             <td>String</td>
             <td>Local directory that is used by the REST API for storing uploaded jars. If not specified a dynamic directory will be created under <code class="highlighter-rouge">web.tmpdir</code>.</td>
+        </tr>
+        <tr>
+            <td><h5>web.webshell-url.enabled</h5></td>
+            <td style="word-wrap: break-word;">false</td>
+            <td>Boolean</td>
+            <td>Flag indicating whether the webshell URL shall be displayed in the web-frontend.</td>
         </tr>
     </tbody>
 </table>

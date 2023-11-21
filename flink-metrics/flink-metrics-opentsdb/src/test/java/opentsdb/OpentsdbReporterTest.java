@@ -32,6 +32,7 @@ import org.apache.flink.shaded.byted.com.bytedance.metrics2.api.Tags;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -81,7 +82,7 @@ public class OpentsdbReporterTest {
     public void testOpen() {
         OpentsdbReporter reporter = new OpentsdbReporter();
         MetricConfig config = new MetricConfig();
-        config.put("jobname", "HelloWorld");
+        config.put("pipeline.name", "HelloWorld");
         config.put("prefix", "flink");
         reporter.open(config);
         Assert.assertEquals("HelloWorld", reporter.getJobName());
@@ -104,7 +105,6 @@ public class OpentsdbReporterTest {
         Map<String, String> variableMap = new HashMap<>();
         variableMap.put("key", "value");
         String metricName = "downtime";
-        Tags except = Tags.merge(Tags.keyValues(variableMap), Tags.keyValues("jobname", "flink"));
         MetricGroup metricGroup =
                 TestMetricGroup.newBuilder()
                         .setLogicalScopeFunction(
@@ -114,6 +114,11 @@ public class OpentsdbReporterTest {
                         .build();
         Counter counter = new SimpleCounter();
         counter.inc(1);
+
+        for (String key : Arrays.asList("jobname", "jobType", "priority", "cluster", "queue")) {
+            variableMap.put(key, "Unknown");
+        }
+        Tags except = Tags.keyValues(variableMap);
         final MetricEmitter metricEmitter =
                 reporter.generateMetricEmitter(counter, metricName, metricGroup);
 

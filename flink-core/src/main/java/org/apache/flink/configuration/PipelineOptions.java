@@ -374,4 +374,35 @@ public class PipelineOptions {
                                     + "while still using watermark alignment, set this parameter to true. "
                                     + "The default value is false. Note: This parameter may be "
                                     + "removed in future releases.");
+
+    public static final ConfigOption<String> FLINK_JOB_TYPE =
+            key("pipeline.job-type")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "The type of Flink job, such as FLINK_STREAMING_SQL, FLINK_STREAMING_JAR.");
+
+    public static final ConfigOption<String> FLINK_JOB_PRIORITY =
+            key("pipeline.job-priority")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The priority of Flink job, such as D1,D2.");
+
+    public static final ConfigOption<String> FLINK_CLUSTER =
+            key("pipeline.cluster")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The cluster of Flink job, such as Feins-HL.");
+
+    public static final ConfigOption<String> FLINK_QUEUE =
+            key("pipeline.queue")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The queue of Flink job, such as root.xxx.");
+
+    public static final ConfigOption<String> FLINK_OWNER =
+            key("pipeline.owner")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription("The owner of Flink job.");
 }

@@ -28,6 +28,7 @@ global:
         fullRestartsRate,
         downtime,
         uptime,
+        jobVersion,
         currentOffsetsRate,
         consumerRecordsRate,
         numberOfFailedCheckpoints,
@@ -48,6 +49,7 @@ non-global:
         downtime,
         uptime,
         numRestarts,
+        jobVersion,
       # used in dorado platform
         fullRestarts,
         numRunningJobs,

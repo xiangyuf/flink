@@ -19,6 +19,7 @@
 package org.apache.flink.metrics.opentsdb;
 
 import org.apache.flink.annotation.VisibleForTesting;
+import org.apache.flink.configuration.PipelineOptions;
 import org.apache.flink.metrics.CharacterFilter;
 import org.apache.flink.metrics.LogicalScopeProvider;
 import org.apache.flink.metrics.Metric;
@@ -61,8 +62,20 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
 
     private final Logger log = LoggerFactory.getLogger(OpentsdbReporter.class);
 
+    private static final String UNKNOWN_VALUE = "Unknown";
+
+    private static final String JOB_NAME_METRIC_KEY = "jobname";
+    private static final String JOB_TYPE_METRIC_KEY = "jobType";
+    private static final String PRIORITY_METRIC_KEY = "priority";
+    private static final String CLUSTER_METRIC_KEY = "cluster";
+    private static final String QUEUE_METRIC_KEY = "queue";
+
     private SimpleByteTSDMetricsIntegration client;
     private String jobName;
+    private String jobType;
+    private String priority;
+    private String cluster;
+    private String queue;
     private String prefix; // It is the prefix of all metric and used in MetricsClient's constructor
     private static final String DEFAULT_METRICS_WHITELIST_FILE = "metrics-whitelist.yaml";
     private String whitelistFile;
@@ -92,8 +105,14 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
     @Override
     public void open(MetricConfig config) {
         this.prefix = config.getString("prefix", "flink");
+        this.jobName = config.getString(PipelineOptions.NAME.key(), UNKNOWN_VALUE);
+        this.jobType = config.getString(PipelineOptions.FLINK_JOB_TYPE.key(), UNKNOWN_VALUE);
+        this.priority = config.getString(PipelineOptions.FLINK_JOB_PRIORITY.key(), UNKNOWN_VALUE);
+        this.cluster = config.getString(PipelineOptions.FLINK_CLUSTER.key(), UNKNOWN_VALUE);
+        this.queue = config.getString(PipelineOptions.FLINK_QUEUE.key(), UNKNOWN_VALUE);
+
         this.client = createMetricClient();
-        this.jobName = config.getString("jobname", "flink");
+
         this.whitelistFile = config.getString("whitelist_file", DEFAULT_METRICS_WHITELIST_FILE);
         String tagString = config.getString("fixed_tags", null);
         loadFixedTags(tagString);
@@ -204,7 +223,13 @@ public class OpentsdbReporter implements MetricReporter, Scheduled {
             }
         }
         tagsMap.putAll(fixedTags);
-        tagsMap.put("jobname", this.jobName);
+
+        tagsMap.put(JOB_NAME_METRIC_KEY, this.jobName);
+        tagsMap.put(JOB_TYPE_METRIC_KEY, this.jobType);
+        tagsMap.put(PRIORITY_METRIC_KEY, this.priority);
+        tagsMap.put(CLUSTER_METRIC_KEY, this.cluster);
+        tagsMap.put(QUEUE_METRIC_KEY, this.queue);
+
         Tags tags = Tags.keyValues(tagsMap);
         // 2. Generate metric full name.
         boolean emitNonGlobal = nonGlobalNeededMetrics.contains(metricName);
