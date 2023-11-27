@@ -32,9 +32,11 @@ import org.apache.flink.runtime.dispatcher.Dispatcher;
 import org.apache.flink.runtime.highavailability.nonha.embedded.EmbeddedHaServices;
 import org.apache.flink.runtime.highavailability.nonha.standalone.StandaloneClientHAServices;
 import org.apache.flink.runtime.highavailability.nonha.standalone.StandaloneHaServices;
+import org.apache.flink.runtime.highavailability.nonha.standalone.StandaloneSharedClientHAServices;
 import org.apache.flink.runtime.highavailability.zookeeper.CuratorFrameworkWithUnhandledErrorListener;
 import org.apache.flink.runtime.highavailability.zookeeper.ZooKeeperClientHAServices;
 import org.apache.flink.runtime.highavailability.zookeeper.ZooKeeperMultipleComponentLeaderElectionHaServices;
+import org.apache.flink.runtime.highavailability.zookeeper.ZooKeeperSharedClientHAServices;
 import org.apache.flink.runtime.jobmanager.HighAvailabilityMode;
 import org.apache.flink.runtime.resourcemanager.ResourceManager;
 import org.apache.flink.runtime.rpc.AddressResolution;
@@ -42,6 +44,7 @@ import org.apache.flink.runtime.rpc.FatalErrorHandler;
 import org.apache.flink.runtime.rpc.RpcServiceUtils;
 import org.apache.flink.runtime.rpc.RpcSystemUtils;
 import org.apache.flink.runtime.util.ZooKeeperUtils;
+import org.apache.flink.runtime.webmonitor.retriever.LeaderRetriever;
 import org.apache.flink.util.ConfigurationException;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.InstantiationUtil;
@@ -171,6 +174,33 @@ public class HighAvailabilityServicesUtils {
                 return createCustomClientHAServices(configuration);
             default:
                 throw new Exception("Recovery mode " + highAvailabilityMode + " is not supported.");
+        }
+    }
+
+    public static SharedClientHAServices createSharedClientHAService(
+            Configuration configuration,
+            LeaderRetriever leaderRetriever,
+            FatalErrorHandler fatalErrorHandler)
+            throws Exception {
+        HighAvailabilityMode highAvailabilityMode = HighAvailabilityMode.fromConfig(configuration);
+        switch (highAvailabilityMode) {
+            case NONE:
+                final String webMonitorAddress =
+                        getWebMonitorAddress(
+                                configuration, AddressResolution.TRY_ADDRESS_RESOLUTION);
+                return new StandaloneSharedClientHAServices(webMonitorAddress, leaderRetriever);
+            case ZOOKEEPER:
+                return new ZooKeeperSharedClientHAServices(
+                        ZooKeeperUtils.startCuratorFramework(configuration, fatalErrorHandler),
+                        leaderRetriever,
+                        configuration);
+            case FACTORY_CLASS:
+                return createCustomSharedClientHAServices(configuration);
+            default:
+                throw new Exception(
+                        "Recovery mode "
+                                + highAvailabilityMode
+                                + " in SharedClientHAServices is not supported.");
         }
     }
 
@@ -319,10 +349,37 @@ public class HighAvailabilityServicesUtils {
                 classLoader);
     }
 
+    private static SharedClientHAServicesFactory loadCustomSharedClientHAServicesFactory(
+            String sharedClientHAServicesFactoryClassName) throws FlinkException {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+
+        return InstantiationUtil.instantiate(
+                sharedClientHAServicesFactoryClassName,
+                SharedClientHAServicesFactory.class,
+                classLoader);
+    }
+
     private static ClientHighAvailabilityServices createCustomClientHAServices(Configuration config)
             throws FlinkException {
         return createCustomClientHAServices(
                 config.getString(HighAvailabilityOptions.HA_MODE), config);
+    }
+
+    private static SharedClientHAServices createCustomSharedClientHAServices(Configuration config)
+            throws FlinkException {
+        final SharedClientHAServicesFactory sharedClientHAServicesFactory =
+                loadCustomSharedClientHAServicesFactory(
+                        config.getString(HighAvailabilityOptions.HA_MODE));
+
+        try {
+            return sharedClientHAServicesFactory.createSharedClientHAServices(config);
+        } catch (Exception e) {
+            throw new FlinkException(
+                    String.format(
+                            "Could not create the shared client ha services from the instantiated SharedClientHAServicesFactory %s.",
+                            sharedClientHAServicesFactory.getClass().getName()),
+                    e);
+        }
     }
 
     private static ClientHighAvailabilityServices createCustomClientHAServices(

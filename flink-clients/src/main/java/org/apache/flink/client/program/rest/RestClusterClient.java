@@ -37,6 +37,8 @@ import org.apache.flink.runtime.clusterframework.ApplicationStatus;
 import org.apache.flink.runtime.highavailability.ClientHighAvailabilityServices;
 import org.apache.flink.runtime.highavailability.ClientHighAvailabilityServicesFactory;
 import org.apache.flink.runtime.highavailability.DefaultClientHighAvailabilityServicesFactory;
+import org.apache.flink.runtime.highavailability.SharedClientHAServices;
+import org.apache.flink.runtime.highavailability.SharedClientHAServicesFactory;
 import org.apache.flink.runtime.jobgraph.IntermediateDataSetID;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.runtime.jobgraph.OperatorID;
@@ -175,9 +177,11 @@ public class RestClusterClient<T> implements ClusterClient<T> {
 
     private final LeaderRetrievalService webMonitorRetrievalService;
 
-    private final LeaderRetriever webMonitorLeaderRetriever = new LeaderRetriever();
+    private final LeaderRetriever webMonitorLeaderRetriever;
 
     private final AtomicBoolean running = new AtomicBoolean(true);
+
+    private final boolean usingSharedHAService;
 
     /** ExecutorService to run operations that can be retried on exceptions. */
     private final ScheduledExecutorService retryExecutorService;
@@ -230,24 +234,38 @@ public class RestClusterClient<T> implements ClusterClient<T> {
             this.restClient = new RestClient(configuration, executorService);
         }
 
-        this.waitStrategy = checkNotNull(waitStrategy);
-        this.clusterId = checkNotNull(clusterId);
-
-        this.clientHAServices =
-                clientHAServicesFactory.create(
-                        configuration,
-                        exception ->
-                                webMonitorLeaderRetriever.handleError(
-                                        new FlinkException(
-                                                "Fatal error happened with client HA "
-                                                        + "services.",
-                                                exception)));
-
-        this.webMonitorRetrievalService = clientHAServices.getClusterRestEndpointLeaderRetriever();
         this.retryExecutorService =
                 Executors.newSingleThreadScheduledExecutor(
                         new ExecutorThreadFactory("Flink-RestClusterClient-Retry"));
-        startLeaderRetrievers();
+
+        this.waitStrategy = checkNotNull(waitStrategy);
+        this.clusterId = checkNotNull(clusterId);
+
+        if (clientHAServicesFactory instanceof SharedClientHAServicesFactory) {
+            this.clientHAServices =
+                    ((SharedClientHAServicesFactory) clientHAServicesFactory)
+                            .createSharedClientHAServices(configuration);
+            this.usingSharedHAService = true;
+            this.webMonitorLeaderRetriever =
+                    ((SharedClientHAServices) clientHAServices).getLeaderRetriever();
+            this.webMonitorRetrievalService =
+                    clientHAServices.getClusterRestEndpointLeaderRetriever();
+        } else {
+            this.webMonitorLeaderRetriever = new LeaderRetriever();
+            this.clientHAServices =
+                    clientHAServicesFactory.create(
+                            configuration,
+                            exception ->
+                                    webMonitorLeaderRetriever.handleError(
+                                            new FlinkException(
+                                                    "Fatal error happened with client HA "
+                                                            + "services.",
+                                                    exception)));
+            this.usingSharedHAService = false;
+            this.webMonitorRetrievalService =
+                    clientHAServices.getClusterRestEndpointLeaderRetriever();
+            startLeaderRetrievers();
+        }
     }
 
     private void startLeaderRetrievers() throws Exception {
@@ -270,17 +288,21 @@ public class RestClusterClient<T> implements ClusterClient<T> {
             this.restClient.shutdown(Time.seconds(5));
             ExecutorUtils.gracefulShutdown(5, TimeUnit.SECONDS, this.executorService);
 
-            try {
-                webMonitorRetrievalService.stop();
-            } catch (Exception e) {
-                LOG.error("An error occurred during stopping the WebMonitorRetrievalService", e);
-            }
+            if (!usingSharedHAService) {
+                try {
+                    webMonitorRetrievalService.stop();
+                } catch (Exception e) {
+                    LOG.error(
+                            "An error occurred during stopping the WebMonitorRetrievalService", e);
+                }
 
-            try {
-                clientHAServices.close();
-            } catch (Exception e) {
-                LOG.error(
-                        "An error occurred during stopping the ClientHighAvailabilityServices", e);
+                try {
+                    clientHAServices.close();
+                } catch (Exception e) {
+                    LOG.error(
+                            "An error occurred during stopping the ClientHighAvailabilityServices",
+                            e);
+                }
             }
         }
     }

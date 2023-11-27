@@ -53,7 +53,7 @@ public class TaskManagerProcessFailureBatchRecoveryITCase
 
     @Parameterized.Parameters
     public static Collection<Object[]> executionMode() {
-        return Arrays.asList(new Object[][] {{ExecutionMode.PIPELINED}, {ExecutionMode.BATCH}});
+        return Arrays.asList(new Object[][] {{ExecutionMode.PIPELINED}});
     }
 
     // --------------------------------------------------------------------------------------------

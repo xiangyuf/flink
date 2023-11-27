@@ -23,6 +23,7 @@ import org.apache.flink.client.program.ClusterClientProvider;
 import org.apache.flink.client.program.rest.RestClusterClient;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.configuration.JobManagerOptions;
+import org.apache.flink.runtime.highavailability.zookeeper.DefaultSharedClientHAServicesFactory;
 import org.apache.flink.runtime.jobgraph.JobGraph;
 import org.apache.flink.util.FlinkException;
 import org.apache.flink.util.Preconditions;
@@ -48,7 +49,8 @@ public class StandaloneClusterDescriptor implements ClusterDescriptor<Standalone
             StandaloneClusterId standaloneClusterId) throws ClusterRetrieveException {
         return () -> {
             try {
-                return new RestClusterClient<>(config, standaloneClusterId);
+                return new RestClusterClient<>(
+                        config, standaloneClusterId, DefaultSharedClientHAServicesFactory.INSTANCE);
             } catch (Exception e) {
                 throw new RuntimeException("Couldn't retrieve standalone cluster", e);
             }
