@@ -145,17 +145,106 @@ public class AsyncRetryStrategies {
         }
     }
 
+    /** FixedIncrementalDelayRetryStrategy. */
+    public static class FixedIncrementalDelayRetryStrategy<OUT> implements AsyncRetryStrategy<OUT> {
+        private static final long serialVersionUID = 1L;
+        private final int maxAttempts;
+        private long initialDelay;
+        private final long maxRetryDelay;
+        private final long incremental;
+        private final Predicate<Collection<OUT>> resultPredicate;
+        private final Predicate<Throwable> exceptionPredicate;
+
+        private FixedIncrementalDelayRetryStrategy(
+                int maxAttempts,
+                long initialDelay,
+                long maxRetryDelay,
+                long incremental,
+                Predicate<Collection<OUT>> resultPredicate,
+                Predicate<Throwable> exceptionPredicate) {
+            this.maxAttempts = maxAttempts;
+            this.initialDelay = initialDelay;
+            this.maxRetryDelay = maxRetryDelay;
+            this.incremental = incremental;
+            this.resultPredicate = resultPredicate;
+            this.exceptionPredicate = exceptionPredicate;
+        }
+
+        @Override
+        public boolean canRetry(int currentAttempts) {
+            return currentAttempts <= maxAttempts;
+        }
+
+        @Override
+        public AsyncRetryPredicate<OUT> getRetryPredicate() {
+            return new RetryPredicate(resultPredicate, exceptionPredicate);
+        }
+
+        @Override
+        public long getBackoffTimeMillis(int currentAttempts) {
+            if (currentAttempts <= 1) {
+                // equivalent to initial delay
+                return initialDelay;
+            }
+            long backoff =
+                    Math.min(initialDelay + (currentAttempts - 1) * incremental, maxRetryDelay);
+            return backoff;
+        }
+    }
+
+    /**
+     * FixedIncrementalDelayRetryStrategyBuilder for building a FixedIncrementalDelayRetryStrategy.
+     */
+    public static class FixedIncrementalDelayRetryStrategyBuilder<OUT> {
+        private final int maxAttempts;
+        private final long initialDelay;
+        private final long maxRetryDelay;
+        private final long incremental;
+
+        private Predicate<Collection<OUT>> resultPredicate;
+        private Predicate<Throwable> exceptionPredicate;
+
+        public FixedIncrementalDelayRetryStrategyBuilder(
+                int maxAttempts, long initialDelay, long maxRetryDelay, long incremental) {
+            this.maxAttempts = maxAttempts;
+            this.initialDelay = initialDelay;
+            this.maxRetryDelay = maxRetryDelay;
+            this.incremental = incremental;
+        }
+
+        public FixedIncrementalDelayRetryStrategyBuilder<OUT> ifResult(
+                @Nonnull Predicate<Collection<OUT>> resultRetryPredicate) {
+            this.resultPredicate = resultRetryPredicate;
+            return this;
+        }
+
+        public FixedIncrementalDelayRetryStrategyBuilder<OUT> ifException(
+                @Nonnull Predicate<Throwable> exceptionRetryPredicate) {
+            this.exceptionPredicate = exceptionRetryPredicate;
+            return this;
+        }
+
+        public FixedIncrementalDelayRetryStrategy<OUT> build() {
+            return new FixedIncrementalDelayRetryStrategy<OUT>(
+                    maxAttempts,
+                    initialDelay,
+                    maxRetryDelay,
+                    incremental,
+                    resultPredicate,
+                    exceptionPredicate);
+        }
+    }
+
     /** ExponentialBackoffDelayRetryStrategy. */
     public static class ExponentialBackoffDelayRetryStrategy<OUT>
             implements AsyncRetryStrategy<OUT> {
         private static final long serialVersionUID = 1L;
         private final int maxAttempts;
+        private long initialDelay;
         private final long maxRetryDelay;
         private final double multiplier;
         private final Predicate<Collection<OUT>> resultPredicate;
         private final Predicate<Throwable> exceptionPredicate;
-
-        private long lastRetryDelay;
 
         public ExponentialBackoffDelayRetryStrategy(
                 int maxAttempts,
@@ -169,7 +258,7 @@ public class AsyncRetryStrategies {
             this.multiplier = multiplier;
             this.resultPredicate = resultPredicate;
             this.exceptionPredicate = exceptionPredicate;
-            this.lastRetryDelay = initialDelay;
+            this.initialDelay = initialDelay;
         }
 
         @Override
@@ -181,10 +270,12 @@ public class AsyncRetryStrategies {
         public long getBackoffTimeMillis(int currentAttempts) {
             if (currentAttempts <= 1) {
                 // equivalent to initial delay
-                return lastRetryDelay;
+                return initialDelay;
             }
-            long backoff = Math.min((long) (lastRetryDelay * multiplier), maxRetryDelay);
-            this.lastRetryDelay = backoff;
+            long backoff =
+                    Math.min(
+                            (long) (initialDelay * Math.pow(multiplier, currentAttempts - 1)),
+                            maxRetryDelay);
             return backoff;
         }
 

@@ -28,6 +28,8 @@ import org.apache.flink.runtime.dispatcher.UnavailableDispatcherOperationExcepti
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.runtime.messages.FlinkJobNotFoundException;
 import org.apache.flink.runtime.operators.coordination.CoordinationRequestGateway;
+import org.apache.flink.streaming.api.functions.async.AsyncRetryStrategy;
+import org.apache.flink.streaming.util.retryable.AsyncRetryStrategies;
 import org.apache.flink.util.ExceptionUtils;
 import org.apache.flink.util.Preconditions;
 
@@ -47,19 +49,16 @@ import java.util.concurrent.TimeoutException;
 /** A fetcher which fetches query results from sink and provides exactly-once semantics. */
 public class CollectResultFetcher<T> {
 
-    private static final int DEFAULT_RETRY_MILLIS = 100;
     private static final Logger LOG = LoggerFactory.getLogger(CollectResultFetcher.class);
 
     private final AbstractCollectResultBuffer<T> buffer;
 
     private final CompletableFuture<OperatorID> operatorIdFuture;
     private final String accumulatorName;
-    private final int retryMillis;
+    private final AsyncRetryStrategy<Void> retryStrategy;
     private final long resultFetchTimeout;
-
     @Nullable private JobClient jobClient;
     @Nullable private CoordinationRequestGateway gateway;
-
     private boolean jobTerminated;
     private boolean closed;
 
@@ -68,20 +67,27 @@ public class CollectResultFetcher<T> {
             CompletableFuture<OperatorID> operatorIdFuture,
             String accumulatorName,
             long resultFetchTimeout) {
-        this(buffer, operatorIdFuture, accumulatorName, DEFAULT_RETRY_MILLIS, resultFetchTimeout);
+        this(
+                buffer,
+                operatorIdFuture,
+                accumulatorName,
+                new AsyncRetryStrategies.FixedIncrementalDelayRetryStrategyBuilder<Void>(
+                                Integer.MAX_VALUE, 100, 1000, 100)
+                        .build(),
+                resultFetchTimeout);
     }
 
     CollectResultFetcher(
             AbstractCollectResultBuffer<T> buffer,
             CompletableFuture<OperatorID> operatorIdFuture,
             String accumulatorName,
-            int retryMillis,
+            AsyncRetryStrategy<Void> asyncRetryStrategy,
             long resultFetchTimeout) {
         this.buffer = buffer;
 
         this.operatorIdFuture = operatorIdFuture;
         this.accumulatorName = accumulatorName;
-        this.retryMillis = retryMillis;
+        this.retryStrategy = asyncRetryStrategy;
         this.resultFetchTimeout = resultFetchTimeout;
 
         this.jobTerminated = false;
@@ -101,8 +107,7 @@ public class CollectResultFetcher<T> {
             return null;
         }
 
-        // this is to avoid sleeping before first try
-        boolean beforeFirstTry = true;
+        int attempt = 0;
         do {
             T res = buffer.next();
             if (res != null) {
@@ -111,11 +116,9 @@ public class CollectResultFetcher<T> {
             } else if (jobTerminated) {
                 // no user-visible results, but job has terminated, we have to return
                 return null;
-            } else if (!beforeFirstTry) {
-                // no results but job is still running, sleep before retry
-                sleepBeforeRetry();
             }
-            beforeFirstTry = false;
+
+            sleepBeforeRetry(attempt++);
 
             if (isJobTerminated()) {
                 // job terminated, read results from accumulator
@@ -237,14 +240,14 @@ public class CollectResultFetcher<T> {
         }
     }
 
-    private void sleepBeforeRetry() {
-        if (retryMillis <= 0) {
+    private void sleepBeforeRetry(int attempt) {
+        // this is to avoid sleeping before first try
+        if (attempt <= 0) {
             return;
         }
 
         try {
-            // TODO a more proper retry strategy?
-            Thread.sleep(retryMillis);
+            Thread.sleep(retryStrategy.getBackoffTimeMillis(attempt));
         } catch (InterruptedException e) {
             LOG.warn("Interrupted when sleeping before a retry", e);
         }

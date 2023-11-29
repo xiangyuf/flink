@@ -25,6 +25,7 @@ import org.apache.flink.core.execution.JobClient;
 import org.apache.flink.runtime.jobgraph.OperatorID;
 import org.apache.flink.streaming.api.CheckpointingMode;
 import org.apache.flink.streaming.api.environment.CheckpointConfig;
+import org.apache.flink.streaming.util.retryable.AsyncRetryStrategies;
 import org.apache.flink.util.CloseableIterator;
 
 import java.io.IOException;
@@ -76,7 +77,9 @@ public class CollectResultIterator<T> implements CloseableIterator<T> {
                         buffer,
                         operatorIdFuture,
                         accumulatorName,
-                        retryMillis,
+                        new AsyncRetryStrategies.FixedDelayRetryStrategyBuilder<Void>(
+                                        Integer.MAX_VALUE, retryMillis)
+                                .build(),
                         AkkaOptions.ASK_TIMEOUT_DURATION.defaultValue().toMillis());
         this.bufferedResult = null;
     }
