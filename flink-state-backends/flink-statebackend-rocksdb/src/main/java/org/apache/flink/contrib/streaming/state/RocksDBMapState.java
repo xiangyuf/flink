@@ -32,6 +32,9 @@ import org.apache.flink.runtime.state.RegisteredKeyValueStateBackendMetaInfo;
 import org.apache.flink.runtime.state.SerializedCompositeKeyBuilder;
 import org.apache.flink.runtime.state.StateSnapshotTransformer;
 import org.apache.flink.runtime.state.internal.InternalMapState;
+import org.apache.flink.runtime.state.ttl.TtlStateFactory;
+import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
+import org.apache.flink.runtime.state.ttl.TtlValue;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StateMigrationException;
@@ -244,6 +247,43 @@ class RocksDBMapState<K, N, UK, UV> extends AbstractRocksDBState<K, N, Map<UK, U
             }
             serializedMigratedValueOutput.writeBoolean(mapUserValue == null);
             newMapValueSerializer.serialize(mapUserValue, serializedMigratedValueOutput);
+        } catch (Exception e) {
+            throw new StateMigrationException(
+                    "Error while trying to migrate RocksDB map state.", e);
+        }
+    }
+
+    @Override
+    @SuppressWarnings({"unchecked"})
+    public void migrateSerializedTtlValue(
+            DataInputDeserializer serializedOldValueInput,
+            DataOutputSerializer serializedMigratedValueOutput,
+            TypeSerializer<Map<UK, UV>> priorSerializer,
+            TypeSerializer<Map<UK, UV>> newSerializer,
+            TtlTimeProvider ttlTimeProvider)
+            throws StateMigrationException {
+        checkArgument(priorSerializer instanceof MapSerializer);
+        checkArgument(TtlStateFactory.TtlSerializer.isTtlMapStateSerializer(newSerializer));
+
+        TypeSerializer<UV> priorMapValueSerializer =
+                ((MapSerializer<UK, UV>) priorSerializer).getValueSerializer();
+        TtlStateFactory.TtlSerializer<UV> newMapValueSerializer =
+                (TtlStateFactory.TtlSerializer<UV>)
+                        ((MapSerializer<UK, UV>) newSerializer).getValueSerializer();
+
+        try {
+            boolean isNull = serializedOldValueInput.readBoolean();
+            UV mapUserValue = null;
+            TtlValue<UV> ttlMapUserValue = null;
+            if (!isNull) {
+                mapUserValue = priorMapValueSerializer.deserialize(serializedOldValueInput);
+                ttlMapUserValue =
+                        newMapValueSerializer.createInstance(
+                                ttlTimeProvider.currentTimestamp(), mapUserValue);
+            }
+
+            serializedMigratedValueOutput.writeBoolean(ttlMapUserValue == null);
+            newMapValueSerializer.serialize(ttlMapUserValue, serializedMigratedValueOutput);
         } catch (Exception e) {
             throw new StateMigrationException(
                     "Error while trying to migrate RocksDB map state.", e);

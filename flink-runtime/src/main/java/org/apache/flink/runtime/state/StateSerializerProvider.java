@@ -23,6 +23,9 @@ import org.apache.flink.api.common.typeutils.TypeSerializer;
 import org.apache.flink.api.common.typeutils.TypeSerializerSchemaCompatibility;
 import org.apache.flink.api.common.typeutils.TypeSerializerSnapshot;
 import org.apache.flink.api.common.typeutils.UnloadableDummyTypeSerializer;
+import org.apache.flink.api.common.typeutils.base.ListSerializer;
+import org.apache.flink.api.common.typeutils.base.MapSerializer;
+import org.apache.flink.runtime.state.ttl.TtlStateFactory;
 import org.apache.flink.util.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -294,7 +297,7 @@ public abstract class StateSerializerProvider<T> {
 
         @Nonnull
         @Override
-        @SuppressWarnings("ConstantConditions")
+        @SuppressWarnings({"ConstantConditions", "unchecked"})
         public TypeSerializerSchemaCompatibility<T> registerNewSerializerForRestoredState(
                 TypeSerializer<T> newSerializer) {
             checkNotNull(newSerializer);
@@ -303,8 +306,13 @@ public abstract class StateSerializerProvider<T> {
                         "A serializer has already been registered for the state; re-registration is not allowed.");
             }
 
+            TypeSerializer<T> originalSerializer = newSerializer;
+            if (isTtlMigration(newSerializer)) {
+                originalSerializer = getTtlValueSerializer(newSerializer);
+            }
+
             TypeSerializerSchemaCompatibility<T> result =
-                    newSerializer
+                    originalSerializer
                             .snapshotConfiguration()
                             .resolveSchemaCompatibility(previousSerializerSnapshot);
             if (result.isIncompatible()) {
@@ -324,6 +332,36 @@ public abstract class StateSerializerProvider<T> {
                 TypeSerializerSnapshot<T> previousSerializerSnapshot) {
             throw new UnsupportedOperationException(
                     "The snapshot of the state's previous serializer has already been set; cannot reset.");
+        }
+
+        @SuppressWarnings({"unchecked"})
+        private TypeSerializer<T> getTtlValueSerializer(TypeSerializer<T> newSerializer) {
+            if (TtlStateFactory.TtlSerializer.isTtlValueStateSerializer(newSerializer)) {
+                return ((TtlStateFactory.TtlSerializer<T>) newSerializer).getValueSerializer();
+            } else if (TtlStateFactory.TtlSerializer.isTtlListStateSerializer(newSerializer)) {
+                TtlStateFactory.TtlSerializer<T> elementSerializer =
+                        (TtlStateFactory.TtlSerializer<T>)
+                                ((ListSerializer<T>) newSerializer).getElementSerializer();
+
+                return (TypeSerializer<T>)
+                        new ListSerializer<>(elementSerializer.getValueSerializer());
+            } else if (TtlStateFactory.TtlSerializer.isTtlMapStateSerializer(newSerializer)) {
+                MapSerializer<?, ?> mapSerializer = ((MapSerializer<?, ?>) newSerializer);
+                TypeSerializer<?> keySerializer = mapSerializer.getKeySerializer();
+                TtlStateFactory.TtlSerializer<?> valueSerializer =
+                        (TtlStateFactory.TtlSerializer<?>) mapSerializer.getValueSerializer();
+                return (TypeSerializer<T>)
+                        new MapSerializer<>(keySerializer, valueSerializer.getValueSerializer());
+            }
+
+            return newSerializer;
+        }
+
+        private boolean isTtlMigration(TypeSerializer<T> newSerializer) {
+            return previousSerializerSnapshot != null
+                    && !TtlStateFactory.TtlSerializer.isTtlStateSerializer(
+                            previousSchemaSerializer())
+                    && TtlStateFactory.TtlSerializer.isTtlStateSerializer(newSerializer);
         }
     }
 

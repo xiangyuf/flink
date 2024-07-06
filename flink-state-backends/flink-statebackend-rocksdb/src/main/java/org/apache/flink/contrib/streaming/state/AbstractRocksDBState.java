@@ -19,6 +19,7 @@ package org.apache.flink.contrib.streaming.state;
 
 import org.apache.flink.api.common.state.State;
 import org.apache.flink.api.common.typeutils.TypeSerializer;
+import org.apache.flink.api.common.typeutils.base.MapSerializer;
 import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.core.memory.DataInputDeserializer;
 import org.apache.flink.core.memory.DataOutputSerializer;
@@ -26,6 +27,9 @@ import org.apache.flink.queryablestate.client.state.serialization.KvStateSeriali
 import org.apache.flink.runtime.state.KeyGroupRangeAssignment;
 import org.apache.flink.runtime.state.SerializedCompositeKeyBuilder;
 import org.apache.flink.runtime.state.internal.InternalKvState;
+import org.apache.flink.runtime.state.ttl.TtlStateFactory;
+import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
+import org.apache.flink.runtime.state.ttl.TtlValue;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StateMigrationException;
@@ -35,6 +39,8 @@ import org.rocksdb.RocksDBException;
 import org.rocksdb.WriteOptions;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Base class for {@link State} implementations that store state in a RocksDB database.
@@ -193,6 +199,47 @@ public abstract class AbstractRocksDBState<K, N, V> implements InternalKvState<K
         } catch (Exception e) {
             throw new StateMigrationException("Error while trying to migrate RocksDB state.", e);
         }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public void migrateSerializedTtlValue(
+            DataInputDeserializer serializedOldValueInput,
+            DataOutputSerializer serializedMigratedValueOutput,
+            TypeSerializer<V> priorSerializer,
+            TypeSerializer<V> newSerializer,
+            TtlTimeProvider ttlTimeProvider)
+            throws StateMigrationException {
+        try {
+            V value = priorSerializer.deserialize(serializedOldValueInput);
+            if (TtlStateFactory.TtlSerializer.isTtlValueStateSerializer(newSerializer)) {
+                TtlStateFactory.TtlSerializer<V> ttlSerializer =
+                        (TtlStateFactory.TtlSerializer<V>) newSerializer;
+                TtlValue<V> ttlValue =
+                        ttlSerializer.createInstance(ttlTimeProvider.currentTimestamp(), value);
+                ttlSerializer.serialize(ttlValue, serializedMigratedValueOutput);
+            } else if (TtlStateFactory.TtlSerializer.isTtlMapStateSerializer(newSerializer)) {
+                MapSerializer ttlMapSerializer = (MapSerializer) newSerializer;
+                Map ttlValueMap = getTtlValueMap(ttlTimeProvider, ttlMapSerializer, (Map) value);
+                ttlMapSerializer.serialize(ttlValueMap, serializedMigratedValueOutput);
+            }
+        } catch (Exception e) {
+            throw new StateMigrationException("Error while trying to migrate RocksDB state.", e);
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Map getTtlValueMap(
+            TtlTimeProvider ttlTimeProvider, MapSerializer ttlMapSerializer, Map valueMap) {
+        TtlStateFactory.TtlSerializer ttlValueSerializer =
+                (TtlStateFactory.TtlSerializer) ttlMapSerializer.getValueSerializer();
+        Map ttlValueMap = new HashMap<>();
+        valueMap.forEach(
+                (k, v) ->
+                        ttlValueMap.put(
+                                k,
+                                ttlValueSerializer.createInstance(
+                                        ttlTimeProvider.currentTimestamp(), v)));
+        return ttlValueMap;
     }
 
     byte[] getKeyBytes() {

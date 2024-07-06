@@ -1229,24 +1229,44 @@ public abstract class StateBackendMigrationTestBase<B extends StateBackend> {
     }
 
     @TestTemplate
-    void testStateMigrationAfterChangingTTLFromDisablingToEnabling() {
+    void testStateMigrationAfterChangingTTLFromDisablingToEnabling() throws Exception {
         final String stateName = "test-ttl";
 
         ValueStateDescriptor<TestType> initialAccessDescriptor =
                 new ValueStateDescriptor<>(stateName, new TestType.V1TestTypeSerializer());
-
         ValueStateDescriptor<TestType> newAccessDescriptorAfterRestore =
-                new ValueStateDescriptor<>(stateName, new TestType.V2TestTypeSerializer());
+                new ValueStateDescriptor<>(
+                        stateName,
+                        // restore with a V2 serializer that has a different schema
+                        new TestType.V2TestTypeSerializer());
         newAccessDescriptorAfterRestore.enableTimeToLive(
                 StateTtlConfig.newBuilder(Time.days(1)).build());
 
-        assertThatThrownBy(
-                        () ->
-                                testKeyedValueStateUpgrade(
-                                        initialAccessDescriptor, newAccessDescriptorAfterRestore))
-                .satisfiesAnyOf(
-                        e -> assertThat(e).isInstanceOf(StateMigrationException.class),
-                        e -> assertThat(e).hasCauseInstanceOf(StateMigrationException.class));
+        ListStateDescriptor<TestType> initialAccessListDescriptor =
+                new ListStateDescriptor<>(stateName, new TestType.V1TestTypeSerializer());
+        ListStateDescriptor<TestType> newAccessListDescriptorAfterRestore =
+                new ListStateDescriptor<>(
+                        stateName,
+                        // restore with a V2 serializer that has a different schema
+                        new TestType.V2TestTypeSerializer());
+        newAccessListDescriptorAfterRestore.enableTimeToLive(
+                StateTtlConfig.newBuilder(Time.days(1)).build());
+
+        MapStateDescriptor<Integer, TestType> initialAccessMapDescriptor =
+                new MapStateDescriptor<>(
+                        stateName, IntSerializer.INSTANCE, new TestType.V1TestTypeSerializer());
+        MapStateDescriptor<Integer, TestType> newAccessMapDescriptorAfterRestore =
+                new MapStateDescriptor<>(
+                        stateName,
+                        IntSerializer.INSTANCE,
+                        // restore with a V2 serializer that has a different schema
+                        new TestType.V2TestTypeSerializer());
+        newAccessMapDescriptorAfterRestore.enableTimeToLive(
+                StateTtlConfig.newBuilder(Time.days(1)).build());
+
+        testKeyedValueStateUpgrade(initialAccessDescriptor, newAccessDescriptorAfterRestore);
+        testKeyedListStateUpgrade(initialAccessListDescriptor, newAccessListDescriptorAfterRestore);
+        testKeyedMapStateUpgrade(initialAccessMapDescriptor, newAccessMapDescriptorAfterRestore);
     }
 
     // -------------------------------------------------------------------------------
