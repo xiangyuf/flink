@@ -51,6 +51,7 @@ import org.apache.flink.runtime.state.StateSnapshotTransformer.StateSnapshotTran
 import org.apache.flink.runtime.state.StateSnapshotTransformers;
 import org.apache.flink.runtime.state.StreamCompressionDecorator;
 import org.apache.flink.runtime.state.metrics.LatencyTrackingStateConfig;
+import org.apache.flink.runtime.state.ttl.TtlAwareSerializer;
 import org.apache.flink.runtime.state.ttl.TtlTimeProvider;
 import org.apache.flink.util.FlinkRuntimeException;
 import org.apache.flink.util.StateMigrationException;
@@ -206,7 +207,6 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
             boolean allowFutureMetadataUpdates)
             throws StateMigrationException {
 
-        @SuppressWarnings("unchecked")
         StateTable<K, N, V> stateTable =
                 (StateTable<K, N, V>) registeredKVStates.get(stateDesc.getName());
 
@@ -249,6 +249,17 @@ public class HeapKeyedStateBackend<K> extends AbstractKeyedStateBackend<K> {
                         "For heap backends, the new state serializer ("
                                 + newStateSerializer
                                 + ") must not be incompatible with the old state serializer ("
+                                + previousStateSerializer
+                                + ").");
+            }
+
+            // HeapKeyedStateBackend doesn't support ttl state migration currently.
+            if (TtlAwareSerializer.needTtlStateMigration(
+                    previousStateSerializer, newStateSerializer)) {
+                throw new StateMigrationException(
+                        "For heap backends, the new state serializer ("
+                                + newStateSerializer
+                                + ") must not need ttl state migration with the old state serializer ("
                                 + previousStateSerializer
                                 + ").");
             }
